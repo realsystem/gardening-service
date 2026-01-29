@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '../services/api';
-import type { IrrigationEvent, IrrigationSummary, IrrigationRecommendation } from '../types';
+import type { IrrigationEvent, IrrigationSummary } from '../types';
 
 interface IrrigationHistoryProps {
   gardenId?: number;

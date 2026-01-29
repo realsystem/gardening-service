@@ -43,3 +43,4 @@ class User(Base):
     sensor_readings = relationship("SensorReading", back_populates="user", cascade="all, delete-orphan")
     soil_samples = relationship("SoilSample", back_populates="user", cascade="all, delete-orphan")
     irrigation_events = relationship("IrrigationEvent", back_populates="user", cascade="all, delete-orphan")
+    password_reset_tokens = relationship("PasswordResetToken", back_populates="user", cascade="all, delete-orphan")

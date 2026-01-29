@@ -6,6 +6,7 @@ from app.models.seed_batch import SeedBatch
 from app.models.germination_event import GerminationEvent
 from app.models.planting_event import PlantingEvent
 from app.models.care_task import CareTask
+from app.models.password_reset_token import PasswordResetToken
 
 __all__ = [
     "User",
@@ -15,4 +16,5 @@ __all__ = [
     "GerminationEvent",
     "PlantingEvent",
     "CareTask",
+    "PasswordResetToken",
 ]

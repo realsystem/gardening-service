@@ -3,9 +3,10 @@ import { api } from '../services/api';
 
 interface AuthProps {
   onLogin: (token: string) => void;
+  onForgotPassword?: () => void;
 }
 
-export function Auth({ onLogin }: AuthProps) {
+export function Auth({ onLogin, onForgotPassword }: AuthProps) {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -38,7 +39,23 @@ export function Auth({ onLogin }: AuthProps) {
     <div className="auth-container">
       <h2>{isLogin ? 'Login' : 'Register'}</h2>
 
-      {error && <div className="error">{error}</div>}
+      {error && (
+        <div className="error">
+          {error}
+          {isLogin && onForgotPassword && (
+            <div style={{ marginTop: '10px' }}>
+              <button
+                type="button"
+                className="btn-link"
+                onClick={onForgotPassword}
+                style={{ fontSize: '14px', background: 'none', border: 'none', color: '#007bff', cursor: 'pointer', textDecoration: 'underline', fontWeight: 'bold' }}
+              >
+                Forgot your password? Click here to reset it
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       <form onSubmit={handleSubmit}>
         <div className="form-group">
@@ -61,6 +78,19 @@ export function Auth({ onLogin }: AuthProps) {
             required
             disabled={loading}
           />
+          {isLogin && onForgotPassword && (
+            <div style={{ textAlign: 'right', marginTop: '5px' }}>
+              <button
+                type="button"
+                className="btn-link"
+                onClick={onForgotPassword}
+                disabled={loading}
+                style={{ fontSize: '14px', background: 'none', border: 'none', color: '#007bff', cursor: 'pointer', textDecoration: 'underline' }}
+              >
+                Forgot password?
+              </button>
+            </div>
+          )}
         </div>
 
         {!isLogin && (
