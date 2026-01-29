@@ -88,6 +88,7 @@ export interface PlantingEvent {
   id: number;
   garden_id: number;
   plant_variety_id: number;
+  plant_variety?: PlantVariety;
   planting_date: string;
   planting_method: 'direct_sow' | 'transplant';
   plant_count?: number;

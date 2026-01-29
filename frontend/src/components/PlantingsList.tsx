@@ -105,7 +105,10 @@ export function PlantingsList() {
               {plantings.map(planting => (
                 <tr key={planting.id}>
                   <td>
-                    <strong>Plant #{planting.plant_variety_id}</strong>
+                    <strong>
+                      {planting.plant_variety?.common_name || `Plant #${planting.plant_variety_id}`}
+                      {planting.plant_variety?.variety_name && ` (${planting.plant_variety.variety_name})`}
+                    </strong>
                     {planting.location_in_garden && (
                       <div className="location">{planting.location_in_garden}</div>
                     )}

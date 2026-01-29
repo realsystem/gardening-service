@@ -73,12 +73,31 @@ def create_planting_event(
 
 @router.get("", response_model=List[PlantingEventResponse])
 def get_planting_events(
+    garden_id: int = None,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Get all planting events for current user"""
+    """Get all planting events for current user, optionally filtered by garden_id"""
     repo = PlantingEventRepository(db)
-    events = repo.get_user_events(current_user.id)
+
+    if garden_id is not None:
+        # Verify garden exists and belongs to user
+        garden_repo = GardenRepository(db)
+        garden = garden_repo.get_by_id(garden_id)
+        if not garden:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Garden not found"
+            )
+        if garden.user_id != current_user.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Not authorized to access this garden"
+            )
+        events = repo.get_by_garden(garden_id)
+    else:
+        events = repo.get_user_events(current_user.id)
+
     return events
 
 
