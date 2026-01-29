@@ -2,7 +2,12 @@
 export interface User {
   id: number;
   email: string;
+  display_name?: string;
+  avatar_url?: string;
+  city?: string;
+  gardening_preferences?: string;
   usda_zone?: string;
+  zip_code?: string;
 }
 
 export interface LoginResponse {
@@ -17,6 +22,9 @@ export interface PlantVariety {
   variety_name?: string;
   days_to_harvest?: number;
   water_requirement?: 'low' | 'medium' | 'high';
+  photo_url?: string;
+  tags?: string;
+  description?: string;
 }
 
 export interface Garden {
@@ -32,6 +40,7 @@ export interface SeedBatch {
   source?: string;
   harvest_year?: number;
   quantity?: number;
+  preferred_germination_method?: string;
   created_at?: string;
 }
 

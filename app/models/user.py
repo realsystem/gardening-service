@@ -1,5 +1,5 @@
 """User model"""
-from sqlalchemy import Column, Integer, String, DateTime, Float
+from sqlalchemy import Column, Integer, String, DateTime, Float, Text
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.database import Base
@@ -17,6 +17,12 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True, index=True, nullable=False)
     hashed_password = Column(String, nullable=False)
+
+    # Profile data
+    display_name = Column(String(100), nullable=True)
+    avatar_url = Column(String(500), nullable=True)
+    city = Column(String(100), nullable=True)
+    gardening_preferences = Column(Text, nullable=True)  # JSON string for preferences
 
     # Location data
     zip_code = Column(String(10), nullable=True)

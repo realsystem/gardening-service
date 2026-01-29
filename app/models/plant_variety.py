@@ -50,6 +50,8 @@ class PlantVariety(Base):
     # Additional info
     description = Column(Text, nullable=True)
     growing_notes = Column(Text, nullable=True)
+    photo_url = Column(String(500), nullable=True)
+    tags = Column(Text, nullable=True)  # Comma-separated tags: "easy,fruiting,perennial"
 
     # Relationships
     seed_batches = relationship("SeedBatch", back_populates="plant_variety")

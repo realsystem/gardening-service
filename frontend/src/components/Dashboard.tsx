@@ -4,19 +4,26 @@ import type { Task, User, SeedBatch } from '../types';
 import { TaskList } from './TaskList';
 import { CreateSeedBatch } from './CreateSeedBatch';
 import { CreatePlantingEvent } from './CreatePlantingEvent';
+import { Profile } from './Profile';
 
 interface DashboardProps {
   user: User;
   onLogout: () => void;
 }
 
-export function Dashboard({ user, onLogout }: DashboardProps) {
+export function Dashboard({ user: initialUser, onLogout }: DashboardProps) {
+  const [user, setUser] = useState(initialUser);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [seedBatches, setSeedBatches] = useState<SeedBatch[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [activeModal, setActiveModal] = useState<'seed' | 'planting' | null>(null);
+  const [activeModal, setActiveModal] = useState<'seed' | 'planting' | 'profile' | null>(null);
   const [priorityFilter, setPriorityFilter] = useState<'all' | 'high' | 'medium' | 'low'>('all');
+
+  // Update user when prop changes
+  useEffect(() => {
+    setUser(initialUser);
+  }, [initialUser]);
 
   const loadData = async () => {
     try {
@@ -97,7 +104,9 @@ export function Dashboard({ user, onLogout }: DashboardProps) {
       <div className="header">
         <h1>🌱 Gardening Helper</h1>
         <div className="header-right">
-          <span>{user.email}</span>
+          <button onClick={() => setActiveModal('profile')} className="btn btn-secondary" style={{ marginRight: '10px' }}>
+            Profile
+          </button>
           <button onClick={onLogout} className="btn btn-secondary">
             Logout
           </button>
@@ -105,6 +114,22 @@ export function Dashboard({ user, onLogout }: DashboardProps) {
       </div>
 
       <div className="container">
+        <div style={{ padding: '15px 0', borderBottom: '1px solid #ddd', marginBottom: '20px' }}>
+          <h2 style={{ margin: '0 0 5px 0' }}>
+            Welcome{user.display_name ? `, ${user.display_name}` : ''}! 👋
+          </h2>
+          <div style={{ fontSize: '0.9em', color: '#666' }}>
+            {user.city && <span>{user.city} • </span>}
+            {user.usda_zone && <span>Zone {user.usda_zone}</span>}
+            {!user.city && !user.usda_zone && <span>{user.email}</span>}
+          </div>
+          {user.gardening_preferences && (
+            <div style={{ marginTop: '8px', fontSize: '0.85em', color: '#555', fontStyle: 'italic' }}>
+              {user.gardening_preferences}
+            </div>
+          )}
+        </div>
+
         <div className="dashboard">
           {error && <div className="error">{error}</div>}
 
@@ -188,15 +213,33 @@ export function Dashboard({ user, onLogout }: DashboardProps) {
                           alignItems: 'center'
                         }}
                       >
+                        {batch.plant_variety?.photo_url && (
+                          <img
+                            src={batch.plant_variety.photo_url}
+                            alt={batch.plant_variety.common_name}
+                            style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '4px', marginRight: '15px' }}
+                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                          />
+                        )}
                         <div style={{ flex: 1 }}>
                           <div style={{ fontWeight: 'bold' }}>
                             {batch.plant_variety?.common_name || `Plant #${batch.plant_variety_id}`}
                             {batch.plant_variety?.variety_name && ` (${batch.plant_variety.variety_name})`}
                           </div>
+                          {batch.plant_variety?.tags && (
+                            <div style={{ fontSize: '0.8em', marginTop: '3px' }}>
+                              {batch.plant_variety.tags.split(',').map((tag: string) => (
+                                <span key={tag} style={{ display: 'inline-block', backgroundColor: '#e3f2fd', padding: '2px 6px', borderRadius: '3px', marginRight: '4px', marginTop: '2px' }}>
+                                  {tag.trim()}
+                                </span>
+                              ))}
+                            </div>
+                          )}
                           <div style={{ fontSize: '0.9em', color: '#666', marginTop: '5px' }}>
                             {batch.source && `Source: ${batch.source}`}
                             {batch.harvest_year && ` • Year: ${batch.harvest_year}`}
                             {batch.quantity && ` • Quantity: ${batch.quantity} seeds`}
+                            {batch.preferred_germination_method && ` • Method: ${batch.preferred_germination_method}`}
                           </div>
                         </div>
                         <button
@@ -248,6 +291,14 @@ export function Dashboard({ user, onLogout }: DashboardProps) {
         <CreatePlantingEvent
           onClose={() => setActiveModal(null)}
           onSuccess={handlePlantingEventCreated}
+        />
+      )}
+
+      {activeModal === 'profile' && (
+        <Profile
+          user={user}
+          onUpdate={setUser}
+          onClose={() => setActiveModal(null)}
         />
       )}
     </>

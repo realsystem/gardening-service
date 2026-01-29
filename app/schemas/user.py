@@ -19,10 +19,22 @@ class UserLogin(BaseModel):
     password: str
 
 
+class UserProfileUpdate(BaseModel):
+    """Schema for updating user profile"""
+    display_name: Optional[str] = Field(None, max_length=100)
+    avatar_url: Optional[str] = Field(None, max_length=500)
+    city: Optional[str] = Field(None, max_length=100)
+    gardening_preferences: Optional[str] = None
+
+
 class UserResponse(BaseModel):
     """Schema for user response"""
     id: int
     email: str
+    display_name: Optional[str] = None
+    avatar_url: Optional[str] = None
+    city: Optional[str] = None
+    gardening_preferences: Optional[str] = None
     zip_code: Optional[str] = None
     latitude: Optional[float] = None
     longitude: Optional[float] = None

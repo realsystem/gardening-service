@@ -20,6 +20,7 @@ class SeedBatch(Base):
     source = Column(String(200), nullable=True)  # Where seeds came from
     harvest_year = Column(Integer, nullable=True)  # Year seeds were harvested/packaged
     quantity = Column(Integer, nullable=True)     # Number of seeds (if known)
+    preferred_germination_method = Column(String(100), nullable=True)  # e.g., "paper towel", "direct sow", "soil blocks"
     notes = Column(Text, nullable=True)
 
     created_at = Column(DateTime(timezone=True), server_default=func.now())

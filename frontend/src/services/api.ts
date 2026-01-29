@@ -67,6 +67,18 @@ class ApiClient {
     return this.request<User>('/users/me');
   }
 
+  async updateProfile(data: {
+    display_name?: string;
+    avatar_url?: string;
+    city?: string;
+    gardening_preferences?: string;
+  }): Promise<User> {
+    return this.request<User>('/users/me', {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
   // Gardens
   async getGardens(): Promise<Garden[]> {
     return this.request<Garden[]>('/gardens');

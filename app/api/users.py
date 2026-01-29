@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.schemas.user import UserCreate, UserResponse, UserLogin, Token
+from app.schemas.user import UserCreate, UserResponse, UserLogin, Token, UserProfileUpdate
 from app.repositories.user_repository import UserRepository
 from app.services.auth_service import AuthService
 from app.services.climate_zone_service import ClimateZoneService
@@ -79,3 +79,21 @@ def get_current_user_info(current_user: User = Depends(get_current_user)):
     Get current user information.
     """
     return current_user
+
+
+@router.patch("/me", response_model=UserResponse)
+def update_user_profile(
+    profile_data: UserProfileUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Update current user's profile information.
+    """
+    repo = UserRepository(db)
+
+    # Update only provided fields
+    update_data = profile_data.model_dump(exclude_unset=True)
+    user = repo.update(current_user, **update_data)
+
+    return user
