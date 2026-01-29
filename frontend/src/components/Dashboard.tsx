@@ -6,6 +6,8 @@ import { CreateSeedBatch } from './CreateSeedBatch';
 import { CreatePlantingEvent } from './CreatePlantingEvent';
 import { CreateGarden } from './CreateGarden';
 import { CreateSensorReading } from './CreateSensorReading';
+import { CreateSoilSample } from './CreateSoilSample';
+import { CreateIrrigationEvent } from './CreateIrrigationEvent';
 import { Profile } from './Profile';
 import { PlantingsList } from './PlantingsList';
 import { SoilHealthCard } from './SoilHealthCard';
@@ -24,7 +26,7 @@ export function Dashboard({ user: initialUser, onLogout }: DashboardProps) {
   const [sensorReadings, setSensorReadings] = useState<SensorReading[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [activeModal, setActiveModal] = useState<'seed' | 'planting' | 'profile' | 'garden' | 'sensor' | null>(null);
+  const [activeModal, setActiveModal] = useState<'seed' | 'planting' | 'profile' | 'garden' | 'sensor' | 'soil' | 'irrigation' | null>(null);
   const [priorityFilter, setPriorityFilter] = useState<'all' | 'high' | 'medium' | 'low'>('all');
   const [deletingGardenId, setDeletingGardenId] = useState<number | null>(null);
   const [confirmDeleteGardenId, setConfirmDeleteGardenId] = useState<number | null>(null);
@@ -85,6 +87,16 @@ export function Dashboard({ user: initialUser, onLogout }: DashboardProps) {
   };
 
   const handleSensorReadingCreated = () => {
+    setActiveModal(null);
+    loadData();
+  };
+
+  const handleSoilSampleCreated = () => {
+    setActiveModal(null);
+    loadData();
+  };
+
+  const handleIrrigationEventCreated = () => {
     setActiveModal(null);
     loadData();
   };
@@ -414,9 +426,9 @@ export function Dashboard({ user: initialUser, onLogout }: DashboardProps) {
                 </div>
               )}
 
-              <SoilHealthCard />
+              <SoilHealthCard onAddSample={() => setActiveModal('soil')} />
 
-              <IrrigationOverviewCard />
+              <IrrigationOverviewCard onLogWatering={() => setActiveModal('irrigation')} />
 
               <div className="card">
                 <h2>Tasks for Today</h2>
@@ -473,6 +485,20 @@ export function Dashboard({ user: initialUser, onLogout }: DashboardProps) {
         <CreateSensorReading
           onClose={() => setActiveModal(null)}
           onSuccess={handleSensorReadingCreated}
+        />
+      )}
+
+      {activeModal === 'soil' && (
+        <CreateSoilSample
+          onClose={() => setActiveModal(null)}
+          onSuccess={handleSoilSampleCreated}
+        />
+      )}
+
+      {activeModal === 'irrigation' && (
+        <CreateIrrigationEvent
+          onClose={() => setActiveModal(null)}
+          onSuccess={handleIrrigationEventCreated}
         />
       )}
 

@@ -4,9 +4,10 @@ import type { SoilHealthSummary, SoilParameterStatus } from '../types';
 
 interface SoilHealthCardProps {
   gardenId?: number;
+  onAddSample?: () => void;
 }
 
-export function SoilHealthCard({ gardenId }: SoilHealthCardProps) {
+export function SoilHealthCard({ gardenId, onAddSample }: SoilHealthCardProps) {
   const [summary, setSummary] = useState<SoilHealthSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -128,13 +129,33 @@ export function SoilHealthCard({ gardenId }: SoilHealthCardProps) {
   if (!summary || summary.total_samples === 0) {
     return (
       <div className="bg-white rounded-lg shadow p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <span className="text-2xl">🌱</span>
-          <h2 className="text-xl font-semibold">Soil Health</h2>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <span className="text-2xl">🌱</span>
+            <h2 className="text-xl font-semibold">Soil Health</h2>
+          </div>
+          {onAddSample && (
+            <button
+              onClick={onAddSample}
+              className="btn btn-primary"
+              style={{ padding: '6px 12px', fontSize: '0.875rem' }}
+            >
+              + Add Sample
+            </button>
+          )}
         </div>
         <div className="text-center py-8">
           <p className="text-gray-500 mb-2">No soil samples recorded yet</p>
           <p className="text-sm text-gray-400">Add soil samples to track soil health</p>
+          {onAddSample && (
+            <button
+              onClick={onAddSample}
+              className="btn btn-primary"
+              style={{ marginTop: '16px' }}
+            >
+              Add Your First Sample
+            </button>
+          )}
         </div>
       </div>
     );
@@ -147,9 +168,20 @@ export function SoilHealthCard({ gardenId }: SoilHealthCardProps) {
           <span className="text-2xl">🌱</span>
           <h2 className="text-xl font-semibold">Soil Health</h2>
         </div>
-        <span className={`px-3 py-1 rounded-full text-xs font-medium ${getHealthBadgeColor(summary.overall_health)}`}>
-          {summary.overall_health.toUpperCase()}
-        </span>
+        <div className="flex items-center gap-2">
+          <span className={`px-3 py-1 rounded-full text-xs font-medium ${getHealthBadgeColor(summary.overall_health)}`}>
+            {summary.overall_health.toUpperCase()}
+          </span>
+          {onAddSample && (
+            <button
+              onClick={onAddSample}
+              className="btn btn-primary"
+              style={{ padding: '6px 12px', fontSize: '0.875rem' }}
+            >
+              + Add Sample
+            </button>
+          )}
+        </div>
       </div>
 
       {summary.garden_name && (
