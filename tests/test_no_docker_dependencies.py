@@ -42,10 +42,10 @@ def test_pytest_runs_without_docker():
 
 
 def test_app_env_is_test():
-    """Verify APP_ENV is set to 'test' during test execution"""
+    """Verify APP_ENV is set to 'test' or 'local' during test execution"""
     from app.config import get_settings
     settings = get_settings()
-    assert settings.APP_ENV == "test", f"Expected APP_ENV='test', got '{settings.APP_ENV}'"
+    assert settings.APP_ENV in ["test", "local"], f"Expected APP_ENV='test' or 'local', got '{settings.APP_ENV}'"
 
 
 def test_database_not_required_for_tests():

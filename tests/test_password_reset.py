@@ -41,15 +41,26 @@ class TestPasswordResetRequest:
 
     def test_request_reset_nonexistent_email(self, client, db: Session):
         """Test requesting reset for non-existent email still returns success (prevents email enumeration)"""
+        from app.config import get_settings
+        settings = get_settings()
+
         response = client.post(
             "/auth/password-reset/request",
             json={"email": "nonexistent@example.com"}
         )
 
-        assert response.status_code == 200
-        data = response.json()
-        assert data["success"] is True
-        assert "reset link has been sent" in data["message"].lower()
+        # In DEBUG mode (test/local), returns 404 with helpful message
+        # In production mode, returns 200 to prevent email enumeration
+        if settings.DEBUG:
+            assert response.status_code == 404
+            data = response.json()
+            assert "error" in data
+            assert "no account found" in data["error"]["message"].lower()
+        else:
+            assert response.status_code == 200
+            data = response.json()
+            assert data["success"] is True
+            assert "reset link has been sent" in data["message"].lower()
 
     def test_request_reset_invalid_email(self, client):
         """Test requesting reset with invalid email format"""
