@@ -1,5 +1,10 @@
-# Docker Compose configuration for local development
-# Provides: PostgreSQL database + API service
+# Docker Compose configuration for running services
+# Provides: PostgreSQL database + API service + Frontend UI
+#
+# IMPORTANT: Docker is for running SERVICES only, not for running tests
+# - Run tests locally with: pytest
+# - Run frontend tests with: npm test
+#
 # Usage: docker-compose up
 
 version: '3.8'
@@ -29,17 +34,12 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8080:8080"
+    env_file:
+      - .env.docker  # Use Docker-specific environment variables
     environment:
-      # Database connection (points to db service)
+      # Override specific variables for Docker network
       DATABASE_URL: postgresql://gardener:password@db:5432/gardening_db
-      # Security settings (development only - DO NOT use in production)
-      SECRET_KEY: dev-secret-key-change-in-production
-      ALGORITHM: HS256
-      ACCESS_TOKEN_EXPIRE_MINUTES: 10080  # 7 days
-      # Application settings
-      APP_NAME: Gardening Helper Service
-      APP_ENV: development
-      DEBUG: "True"
+      APP_ENV: docker
       PORT: "8080"
     depends_on:
       db:

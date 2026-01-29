@@ -11,37 +11,32 @@ class TestAuthEndpoints:
     def test_register_user(self, client):
         """Test user registration"""
         response = client.post(
-            "/auth/register",
+            "/users",
             json={
                 "email": "newuser@example.com",
-                "password": "securepass123",
-                "full_name": "New User"
-            }
+                "password": "securepass123",            }
         )
-        assert response.status_code == 200
+        assert response.status_code == 201  # Created
         data = response.json()
         assert data["email"] == "newuser@example.com"
-        assert data["full_name"] == "New User"
         assert "id" in data
 
     def test_register_duplicate_email(self, client, sample_user):
         """Test registering with existing email fails"""
         response = client.post(
-            "/auth/register",
+            "/users",
             json={
                 "email": sample_user.email,
-                "password": "password123",
-                "full_name": "Duplicate User"
-            }
+                "password": "password123",            }
         )
         assert response.status_code == 400
 
     def test_login_success(self, client, sample_user):
         """Test successful login"""
         response = client.post(
-            "/auth/login",
-            data={
-                "username": "test@example.com",
+            "/users/login",
+            json={
+                "email": "test@example.com",
                 "password": "testpass123"
             }
         )
@@ -53,9 +48,9 @@ class TestAuthEndpoints:
     def test_login_invalid_credentials(self, client, sample_user):
         """Test login with invalid credentials"""
         response = client.post(
-            "/auth/login",
-            data={
-                "username": "test@example.com",
+            "/users/login",
+            json={
+                "email": "test@example.com",
                 "password": "wrongpassword"
             }
         )
@@ -68,49 +63,29 @@ class TestUserProfileEndpoints:
     def test_get_current_user(self, client, sample_user, user_token):
         """Test getting current user"""
         response = client.get(
-            "/auth/me",
+            "/users/me",
             headers={"Authorization": f"Bearer {user_token}"}
         )
         assert response.status_code == 200
         data = response.json()
         assert data["email"] == sample_user.email
 
-    def test_create_user_profile(self, client, sample_user, user_token):
-        """Test creating user profile"""
-        response = client.post(
-            "/user-profiles/",
+    def test_update_user_profile(self, client, sample_user, user_token):
+        """Test updating user profile (profile fields are in User model, not separate UserProfile)"""
+        response = client.patch(
+            "/users/me",
             headers={"Authorization": f"Bearer {user_token}"},
             json={
-                "bio": "Love growing vegetables",
-                "location": "Seattle, WA",
-                "gardening_experience": "beginner"
+                "display_name": "Updated Name",
+                "city": "Seattle",
+                "gardening_preferences": "Organic gardening"
             }
         )
         assert response.status_code == 200
         data = response.json()
-        assert data["bio"] == "Love growing vegetables"
-        assert data["location"] == "Seattle, WA"
-
-    def test_get_user_profile(self, client, sample_user, sample_user_profile, user_token):
-        """Test getting user profile"""
-        response = client.get(
-            "/user-profiles/me",
-            headers={"Authorization": f"Bearer {user_token}"}
-        )
-        assert response.status_code == 200
-        data = response.json()
-        assert data["bio"] == sample_user_profile.bio
-
-    def test_update_user_profile(self, client, sample_user, sample_user_profile, user_token):
-        """Test updating user profile"""
-        response = client.put(
-            f"/user-profiles/{sample_user_profile.id}",
-            headers={"Authorization": f"Bearer {user_token}"},
-            json={"bio": "Updated bio text"}
-        )
-        assert response.status_code == 200
-        data = response.json()
-        assert data["bio"] == "Updated bio text"
+        assert data["display_name"] == "Updated Name"
+        assert data["city"] == "Seattle"
+        assert data["gardening_preferences"] == "Organic gardening"
 
 
 class TestPlantVarietyEndpoints:
@@ -148,7 +123,7 @@ class TestSeedBatchEndpoints:
                 "quantity": 100
             }
         )
-        assert response.status_code == 200
+        assert response.status_code == 201
         data = response.json()
         assert data["source"] == "Online Store"
         assert data["quantity"] == 100
@@ -171,7 +146,7 @@ class TestSeedBatchEndpoints:
             f"/seed-batches/{batch_id}",
             headers={"Authorization": f"Bearer {user_token}"}
         )
-        assert response.status_code == 200
+        assert response.status_code == 204
 
         # Verify it's deleted
         response = client.get(
@@ -195,7 +170,7 @@ class TestGardenEndpoints:
                 "garden_type": "outdoor"
             }
         )
-        assert response.status_code == 200
+        assert response.status_code == 201
         data = response.json()
         assert data["name"] == "Backyard Garden"
         assert data["garden_type"] == "outdoor"
@@ -215,7 +190,7 @@ class TestGardenEndpoints:
                 "temp_max_f": 75.0
             }
         )
-        assert response.status_code == 200
+        assert response.status_code == 201
         data = response.json()
         assert data["garden_type"] == "indoor"
         assert data["light_source_type"] == "led"
@@ -237,7 +212,7 @@ class TestGardenEndpoints:
                 "ec_max": 1.8
             }
         )
-        assert response.status_code == 200
+        assert response.status_code == 201
         data = response.json()
         assert data["is_hydroponic"] is True
         assert data["hydro_system_type"] == "dwc"
@@ -255,7 +230,7 @@ class TestGardenEndpoints:
 
     def test_update_garden(self, client, sample_user, outdoor_garden, user_token):
         """Test updating a garden"""
-        response = client.put(
+        response = client.patch(
             f"/gardens/{outdoor_garden.id}",
             headers={"Authorization": f"Bearer {user_token}"},
             json={"description": "Updated description"}
@@ -271,7 +246,7 @@ class TestGardenEndpoints:
             f"/gardens/{garden_id}",
             headers={"Authorization": f"Bearer {user_token}"}
         )
-        assert response.status_code == 200
+        assert response.status_code == 204
 
 
 class TestPlantingEventEndpoints:
@@ -291,7 +266,7 @@ class TestPlantingEventEndpoints:
                 "location_in_garden": "Bed 3"
             }
         )
-        assert response.status_code == 200
+        assert response.status_code == 201
         data = response.json()
         assert data["planting_method"] == "direct_sow"
         assert data["plant_count"] == 12
@@ -308,7 +283,7 @@ class TestPlantingEventEndpoints:
 
     def test_update_planting_event(self, client, sample_user, outdoor_planting_event, user_token):
         """Test updating a planting event"""
-        response = client.put(
+        response = client.patch(
             f"/planting-events/{outdoor_planting_event.id}",
             headers={"Authorization": f"Bearer {user_token}"},
             json={"health_status": "stressed"}
@@ -334,7 +309,7 @@ class TestSensorReadingEndpoints:
                 "light_hours": 16.0
             }
         )
-        assert response.status_code == 200
+        assert response.status_code == 201
         data = response.json()
         assert data["temperature_f"] == 72.0
         assert data["humidity_percent"] == 58.0
@@ -356,7 +331,7 @@ class TestSensorReadingEndpoints:
                 "water_temp_f": 68.0
             }
         )
-        assert response.status_code == 200
+        assert response.status_code == 201
         data = response.json()
         assert data["ph_level"] == 6.2
         assert data["ec_ms_cm"] == 1.6
@@ -379,7 +354,7 @@ class TestSensorReadingEndpoints:
             f"/sensor-readings/{reading_id}",
             headers={"Authorization": f"Bearer {user_token}"}
         )
-        assert response.status_code == 200
+        assert response.status_code == 204
 
 
 class TestCareTaskEndpoints:
@@ -399,7 +374,7 @@ class TestCareTaskEndpoints:
                 "due_date": str(date.today() + timedelta(days=7))
             }
         )
-        assert response.status_code == 200
+        assert response.status_code == 201
         data = response.json()
         assert data["task_type"] == "prune"
         assert data["priority"] == "medium"
@@ -416,9 +391,10 @@ class TestCareTaskEndpoints:
 
     def test_complete_task(self, client, sample_user, sample_care_task, user_token):
         """Test completing a task"""
-        response = client.patch(
+        response = client.post(
             f"/tasks/{sample_care_task.id}/complete",
-            headers={"Authorization": f"Bearer {user_token}"}
+            headers={"Authorization": f"Bearer {user_token}"},
+            json={}
         )
         assert response.status_code == 200
         data = response.json()
@@ -427,7 +403,7 @@ class TestCareTaskEndpoints:
 
     def test_update_task(self, client, sample_user, sample_care_task, user_token):
         """Test updating a task"""
-        response = client.put(
+        response = client.patch(
             f"/tasks/{sample_care_task.id}",
             headers={"Authorization": f"Bearer {user_token}"},
             json={"priority": "high"}
@@ -443,7 +419,7 @@ class TestCareTaskEndpoints:
             f"/tasks/{task_id}",
             headers={"Authorization": f"Bearer {user_token}"}
         )
-        assert response.status_code == 200
+        assert response.status_code == 204
 
 
 class TestAuthorizationAndSecurity:
@@ -452,20 +428,20 @@ class TestAuthorizationAndSecurity:
     def test_unauthorized_access(self, client, outdoor_garden):
         """Test that unauthorized users cannot access protected endpoints"""
         response = client.get("/gardens/")
-        assert response.status_code == 401
+        assert response.status_code == 403
 
     def test_user_cannot_access_other_users_data(self, client, sample_user, second_user, outdoor_garden):
         """Test that users cannot access other users' data"""
         # Create token for second user
-        from app.utils.auth import create_access_token
-        second_user_token = create_access_token(data={"sub": second_user.email})
+        from app.services.auth_service import AuthService
+        second_user_token = AuthService.create_access_token(second_user.id, second_user.email)
 
         # Try to access first user's garden
         response = client.get(
             f"/gardens/{outdoor_garden.id}",
             headers={"Authorization": f"Bearer {second_user_token}"}
         )
-        assert response.status_code == 404  # Or 403, depending on implementation
+        assert response.status_code == 403  # Forbidden - user not authorized
 
     def test_invalid_token(self, client):
         """Test that invalid tokens are rejected"""

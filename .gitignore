@@ -9,8 +9,18 @@ venv/
 ENV/
 .venv
 
-# Environment
+# Environment files (keep .env.example)
 .env
+.env.local
+.env.docker
+.env.test
+
+# Testing
+.pytest_cache/
+htmlcov/
+.coverage
+*.cover
+.hypothesis/
 
 # IDE
 .vscode/
@@ -28,3 +38,4 @@ ENV/
 # Frontend
 frontend/node_modules/
 frontend/dist/
+frontend/coverage/

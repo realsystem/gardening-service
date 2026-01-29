@@ -1,10 +1,14 @@
 """Application configuration"""
+import os
 from pydantic_settings import BaseSettings
 from functools import lru_cache
 
 
 class Settings(BaseSettings):
     """Application settings loaded from environment variables"""
+
+    # Environment
+    APP_ENV: str = "local"  # local, docker, test, production
 
     # Database
     DATABASE_URL: str = "postgresql://gardener:password@localhost:5432/gardening_db"
@@ -19,11 +23,28 @@ class Settings(BaseSettings):
     DEBUG: bool = True
 
     class Config:
+        # Auto-detect environment-specific .env file
+        # Priority: .env.{APP_ENV} > .env > defaults
         env_file = ".env"
         case_sensitive = True
+        extra = "allow"
+
+    @classmethod
+    def load_env_file(cls):
+        """Determine which .env file to load based on APP_ENV"""
+        app_env = os.getenv("APP_ENV", "local")
+        env_file = f".env.{app_env}"
+        if os.path.exists(env_file):
+            return env_file
+        elif os.path.exists(".env"):
+            return ".env"
+        return None
 
 
 @lru_cache()
 def get_settings() -> Settings:
     """Get cached settings instance"""
+    env_file = Settings.load_env_file()
+    if env_file:
+        return Settings(_env_file=env_file)
     return Settings()

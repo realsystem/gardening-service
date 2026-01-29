@@ -53,7 +53,7 @@ def generate_soil_recommendations(
     recommendations = []
 
     # Get plant-specific requirements
-    plant_name = plant_variety.plant_name if plant_variety else None
+    plant_name = plant_variety.common_name if plant_variety else None
     requirements = get_plant_requirements(plant_name)
 
     # pH Recommendations

@@ -202,9 +202,9 @@ class TestIrrigationEventCRUD:
         """Test that users cannot delete other users' irrigation events."""
         # Create another user
         from app.models.user import User
-        from app.auth import get_password_hash
+        from app.services.auth_service import AuthService
 
-        other_user = User(email="other@example.com", hashed_password=get_password_hash("password"))
+        other_user = User(email="other@example.com", hashed_password=AuthService.hash_password("testpass123"))
         test_db.add(other_user)
         test_db.commit()
 

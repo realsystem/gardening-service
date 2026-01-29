@@ -8,26 +8,24 @@ from app.models.care_task import TaskType, TaskStatus
 class TestCompleteOutdoorGardeningWorkflow:
     """Test complete outdoor gardening workflow from registration to harvest"""
 
-    def test_full_outdoor_workflow(self, client, test_db):
+    def test_full_outdoor_workflow(self, client, test_db, sample_plant_variety):
         """Test: Register → Create garden → Plant → Complete tasks → Harvest"""
 
         # Step 1: Register user
         register_response = client.post(
-            "/auth/register",
+            "/users",
             json={
                 "email": "gardener@example.com",
-                "password": "securepass123",
-                "full_name": "Test Gardener"
-            }
+                "password": "securepassword123",            }
         )
-        assert register_response.status_code == 200
+        assert register_response.status_code == 201
 
         # Step 2: Login
         login_response = client.post(
-            "/auth/login",
-            data={
-                "username": "gardener@example.com",
-                "password": "securepass123"
+            "/users/login",
+            json={
+                "email": "gardener@example.com",
+                "password": "securepassword123"
             }
         )
         assert login_response.status_code == 200
@@ -35,15 +33,15 @@ class TestCompleteOutdoorGardeningWorkflow:
         headers = {"Authorization": f"Bearer {token}"}
 
         # Step 3: Create user profile
-        profile_response = client.post(
-            "/user-profiles/",
+        profile_response = client.patch(
+            "/users/me",
             headers=headers,
             json={
                 "bio": "New to gardening",
                 "location": "Portland, OR"
             }
         )
-        assert profile_response.status_code == 200
+        # Profile is part of User model, not separate
 
         # Step 4: Create outdoor garden
         garden_response = client.post(
@@ -55,15 +53,12 @@ class TestCompleteOutdoorGardeningWorkflow:
                 "garden_type": "outdoor"
             }
         )
-        assert garden_response.status_code == 200
+        assert garden_response.status_code == 201
         garden = garden_response.json()
 
         # Step 5: Create seed batch
-        # First get plant varieties
-        varieties_response = client.get("/plant-varieties/")
-        assert varieties_response.status_code == 200
-        varieties = varieties_response.json()
-        tomato = next(v for v in varieties if v["common_name"] == "Tomato")
+        # Use the sample_plant_variety fixture (Tomato)
+        tomato = {"id": sample_plant_variety.id, "common_name": sample_plant_variety.common_name}
 
         seed_response = client.post(
             "/seed-batches/",
@@ -75,7 +70,7 @@ class TestCompleteOutdoorGardeningWorkflow:
                 "quantity": 20
             }
         )
-        assert seed_response.status_code == 200
+        assert seed_response.status_code == 201
 
         # Step 6: Create planting event
         planting_response = client.post(
@@ -90,7 +85,7 @@ class TestCompleteOutdoorGardeningWorkflow:
                 "location_in_garden": "Bed 1"
             }
         )
-        assert planting_response.status_code == 200
+        assert planting_response.status_code == 201
 
         # Step 7: Verify tasks were auto-generated
         tasks_response = client.get("/tasks/", headers=headers)
@@ -105,9 +100,10 @@ class TestCompleteOutdoorGardeningWorkflow:
 
         # Step 8: Complete a watering task
         water_task = next(t for t in tasks if t["task_type"] == "water")
-        complete_response = client.patch(
+        complete_response = client.post(
             f"/tasks/{water_task['id']}/complete",
-            headers=headers
+            headers=headers,
+            json={}
         )
         assert complete_response.status_code == 200
         completed_task = complete_response.json()
@@ -122,19 +118,21 @@ class TestCompleteOutdoorGardeningWorkflow:
 class TestCompleteIndoorGardeningWorkflow:
     """Test complete indoor gardening workflow with sensor monitoring"""
 
-    def test_full_indoor_workflow(self, client, test_db):
+    def test_full_indoor_workflow(self, client, test_db, lettuce_variety):
         """Test: Register → Create indoor garden → Plant → Monitor sensors → Adjust conditions"""
 
         # Setup: Register and login
-        client.post("/auth/register", json={
+        register_response = client.post("/users", json={
             "email": "indoor@example.com",
-            "password": "pass123",
-            "full_name": "Indoor Gardener"
+            "password": "password123"
         })
-        login = client.post("/auth/login", data={
-            "username": "indoor@example.com",
-            "password": "pass123"
+        assert register_response.status_code == 201
+
+        login = client.post("/users/login", json={
+            "email": "indoor@example.com",
+            "password": "password123"
         })
+        assert login.status_code == 200
         token = login.json()["access_token"]
         headers = {"Authorization": f"Bearer {token}"}
 
@@ -154,12 +152,11 @@ class TestCompleteIndoorGardeningWorkflow:
                 "humidity_max_percent": 60.0
             }
         )
-        assert garden_response.status_code == 200
+        assert garden_response.status_code == 201
         garden = garden_response.json()
 
-        # Get lettuce variety for indoor growing
-        varieties = client.get("/plant-varieties/").json()
-        lettuce = next(v for v in varieties if "Lettuce" in v["common_name"])
+        # Use the lettuce_variety fixture
+        lettuce = {"id": lettuce_variety.id, "common_name": lettuce_variety.common_name}
 
         # Create planting event
         planting_response = client.post(
@@ -173,7 +170,7 @@ class TestCompleteIndoorGardeningWorkflow:
                 "plant_count": 12
             }
         )
-        assert planting_response.status_code == 200
+        assert planting_response.status_code == 201
 
         # Simulate sensor reading with out-of-range temperature
         sensor_response = client.post(
@@ -187,7 +184,7 @@ class TestCompleteIndoorGardeningWorkflow:
                 "light_hours": 16.0
             }
         )
-        assert sensor_response.status_code == 200
+        assert sensor_response.status_code == 201
 
         # Verify high-priority temperature adjustment task was created
         tasks = client.get("/tasks/", headers=headers).json()
@@ -199,19 +196,21 @@ class TestCompleteIndoorGardeningWorkflow:
 class TestCompleteHydroponicsWorkflow:
     """Test complete hydroponics workflow with nutrient monitoring"""
 
-    def test_full_hydroponics_workflow(self, client, test_db):
+    def test_full_hydroponics_workflow(self, client, test_db, lettuce_variety):
         """Test: Register → Create hydro garden → Plant → Monitor nutrients → Adjust pH/EC"""
 
         # Setup
-        client.post("/auth/register", json={
+        register_response = client.post("/users", json={
             "email": "hydro@example.com",
-            "password": "pass123",
-            "full_name": "Hydro Grower"
+            "password": "password123"
         })
-        login = client.post("/auth/login", data={
-            "username": "hydro@example.com",
-            "password": "pass123"
+        assert register_response.status_code == 201
+
+        login = client.post("/users/login", json={
+            "email": "hydro@example.com",
+            "password": "password123"
         })
+        assert login.status_code == 200
         token = login.json()["access_token"]
         headers = {"Authorization": f"Bearer {token}"}
 
@@ -238,13 +237,12 @@ class TestCompleteHydroponicsWorkflow:
                 "light_hours_per_day": 18.0
             }
         )
-        assert garden_response.status_code == 200
+        assert garden_response.status_code == 201
         garden = garden_response.json()
         assert garden["is_hydroponic"] is True
 
-        # Get lettuce variety
-        varieties = client.get("/plant-varieties/").json()
-        lettuce = next(v for v in varieties if "Lettuce" in v["common_name"])
+        # Use the lettuce_variety fixture
+        lettuce = {"id": lettuce_variety.id, "common_name": lettuce_variety.common_name}
 
         # Create planting event
         planting_response = client.post(
@@ -258,7 +256,7 @@ class TestCompleteHydroponicsWorkflow:
                 "plant_count": 24
             }
         )
-        assert planting_response.status_code == 200
+        assert planting_response.status_code == 201
 
         # Verify hydroponic tasks were created
         tasks = client.get("/tasks/", headers=headers).json()
@@ -285,7 +283,7 @@ class TestCompleteHydroponicsWorkflow:
                 "water_temp_f": 68.0
             }
         )
-        assert sensor_response.status_code == 200
+        assert sensor_response.status_code == 201
 
         # Verify pH adjustment task was created
         updated_tasks = client.get("/tasks/", headers=headers).json()
@@ -306,12 +304,13 @@ class TestCompleteHydroponicsWorkflow:
                 "ec_ms_cm": 1.5
             }
         )
-        assert sensor_response2.status_code == 200
+        assert sensor_response2.status_code == 201
 
         # Complete the pH adjustment task
-        complete_response = client.patch(
+        complete_response = client.post(
             f"/tasks/{ph_task['id']}/complete",
-            headers=headers
+            headers=headers,
+            json={}
         )
         assert complete_response.status_code == 200
 
@@ -319,19 +318,21 @@ class TestCompleteHydroponicsWorkflow:
 class TestMultiGardenManagement:
     """Test managing multiple gardens simultaneously"""
 
-    def test_multiple_gardens_and_tasks(self, client, test_db):
+    def test_multiple_gardens_and_tasks(self, client, test_db, sample_plant_variety, lettuce_variety):
         """Test user with outdoor, indoor, and hydroponic gardens"""
 
         # Setup
-        client.post("/auth/register", json={
+        register_response = client.post("/users", json={
             "email": "multi@example.com",
-            "password": "pass123",
-            "full_name": "Multi Gardener"
+            "password": "password123"
         })
-        login = client.post("/auth/login", data={
-            "username": "multi@example.com",
-            "password": "pass123"
+        assert register_response.status_code == 201
+
+        login = client.post("/users/login", json={
+            "email": "multi@example.com",
+            "password": "password123"
         })
+        assert login.status_code == 200
         token = login.json()["access_token"]
         headers = {"Authorization": f"Bearer {token}"}
 
@@ -361,10 +362,9 @@ class TestMultiGardenManagement:
         gardens = client.get("/gardens/", headers=headers).json()
         assert len(gardens) == 3
 
-        # Get varieties
-        varieties = client.get("/plant-varieties/").json()
-        tomato = next(v for v in varieties if v["common_name"] == "Tomato")
-        lettuce = next(v for v in varieties if "Lettuce" in v["common_name"])
+        # Use the plant variety fixtures
+        tomato = {"id": sample_plant_variety.id, "common_name": sample_plant_variety.common_name}
+        lettuce = {"id": lettuce_variety.id, "common_name": lettuce_variety.common_name}
 
         # Plant in each garden
         for garden in [outdoor, indoor, hydro]:
@@ -418,32 +418,36 @@ class TestErrorRecoveryWorkflows:
                 "ph_level": 6.0
             }
         )
-        assert response.status_code == 200
+        assert response.status_code == 201
 
     def test_unauthorized_access_protection(self, client, test_db):
         """Test that users cannot access each other's data"""
 
         # Create two users
-        client.post("/auth/register", json={
+        register1 = client.post("/users", json={
             "email": "user1@example.com",
-            "password": "pass123",
-            "full_name": "User One"
+            "password": "password123"
         })
-        login1 = client.post("/auth/login", data={
-            "username": "user1@example.com",
-            "password": "pass123"
+        assert register1.status_code == 201
+
+        login1 = client.post("/users/login", json={
+            "email": "user1@example.com",
+            "password": "password123"
         })
+        assert login1.status_code == 200
         token1 = login1.json()["access_token"]
 
-        client.post("/auth/register", json={
+        register2 = client.post("/users", json={
             "email": "user2@example.com",
-            "password": "pass456",
-            "full_name": "User Two"
+            "password": "password456"
         })
-        login2 = client.post("/auth/login", data={
-            "username": "user2@example.com",
-            "password": "pass456"
+        assert register2.status_code == 201
+
+        login2 = client.post("/users/login", json={
+            "email": "user2@example.com",
+            "password": "password456"
         })
+        assert login2.status_code == 200
         token2 = login2.json()["access_token"]
 
         # User 1 creates a garden

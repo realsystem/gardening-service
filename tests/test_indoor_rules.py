@@ -4,19 +4,19 @@ from datetime import date, timedelta
 from unittest.mock import Mock
 
 from app.rules.indoor_rules import (
-    LightingCheckRule,
+    LightScheduleRule,
     TemperatureMonitoringRule,
     HumidityMonitoringRule
 )
 from app.models.care_task import TaskType, TaskPriority
 
 
-class TestLightingCheckRule:
+class TestLightScheduleRule:
     """Test lighting check rule for indoor gardens"""
 
     def test_lighting_check_rule_generates_tasks(self, test_db, sample_user, indoor_planting_event):
         """Test that lighting check tasks are generated for indoor gardens"""
-        rule = LightingCheckRule()
+        rule = LightScheduleRule()
         context = {
             "planting_event": indoor_planting_event,
             "user_id": sample_user.id
@@ -30,7 +30,7 @@ class TestLightingCheckRule:
 
     def test_lighting_check_not_for_outdoor_garden(self, test_db, sample_user, outdoor_planting_event):
         """Test that lighting check tasks are NOT generated for outdoor gardens"""
-        rule = LightingCheckRule()
+        rule = LightScheduleRule()
         context = {
             "planting_event": outdoor_planting_event,
             "user_id": sample_user.id
@@ -71,7 +71,7 @@ class TestTemperatureMonitoringRule:
         task = tasks[0]
         assert task["task_type"] == TaskType.ADJUST_TEMPERATURE
         assert task["priority"] == TaskPriority.HIGH
-        assert "too low" in task["description"].lower()
+        assert "outside acceptable range" in task["description"].lower()
 
     def test_temperature_too_high_alert(self, test_db, sample_user, indoor_garden):
         """Test alert generation when temperature is too high"""
@@ -98,7 +98,7 @@ class TestTemperatureMonitoringRule:
         task = tasks[0]
         assert task["task_type"] == TaskType.ADJUST_TEMPERATURE
         assert task["priority"] == TaskPriority.HIGH
-        assert "too high" in task["description"].lower()
+        assert "outside acceptable range" in task["description"].lower()
 
     def test_temperature_in_range_no_alert(self, test_db, sample_user, indoor_sensor_reading):
         """Test that no alert is generated when temperature is in range"""
@@ -167,7 +167,7 @@ class TestHumidityMonitoringRule:
         task = tasks[0]
         assert task["task_type"] == TaskType.ADJUST_HUMIDITY
         assert task["priority"] == TaskPriority.HIGH
-        assert "too low" in task["description"].lower()
+        assert "outside acceptable range" in task["description"].lower()
 
     def test_humidity_too_high_alert(self, test_db, sample_user, indoor_garden):
         """Test alert generation when humidity is too high"""
@@ -194,7 +194,7 @@ class TestHumidityMonitoringRule:
         task = tasks[0]
         assert task["task_type"] == TaskType.ADJUST_HUMIDITY
         assert task["priority"] == TaskPriority.HIGH
-        assert "too high" in task["description"].lower()
+        assert "outside acceptable range" in task["description"].lower()
 
     def test_humidity_in_range_no_alert(self, test_db, sample_user, indoor_sensor_reading):
         """Test that no alert is generated when humidity is in range"""

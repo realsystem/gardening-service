@@ -10,12 +10,11 @@ class GardenRepository:
     def __init__(self, db: Session):
         self.db = db
 
-    def create(self, user_id: int, name: str, description: Optional[str] = None) -> Garden:
-        """Create a new garden"""
+    def create(self, user_id: int, **kwargs) -> Garden:
+        """Create a new garden with any valid Garden model fields"""
         garden = Garden(
             user_id=user_id,
-            name=name,
-            description=description
+            **kwargs
         )
         self.db.add(garden)
         self.db.commit()
