@@ -9,7 +9,7 @@ from app.api.care_tasks import router as care_tasks_router
 from app.api.sensor_readings import router as sensor_readings_router
 from app.api.soil_samples import router as soil_samples_router
 from app.api.irrigation import router as irrigation_router
-from app.api.password_reset import router as password_reset_router
+from app.api.password_reset import router as password_reset_router, password_router
 
 __all__ = [
     "users_router",
@@ -23,4 +23,5 @@ __all__ = [
     "soil_samples_router",
     "irrigation_router",
     "password_reset_router",
+    "password_router",
 ]

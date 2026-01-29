@@ -12,7 +12,9 @@ This service helps home gardeners track and manage their gardening lifecycle fro
 
 - **User Authentication & Profiles**: Complete user management system
   - Email/password authentication with JWT tokens
-  - **Secure Password Reset**: Email-based password recovery
+  - **Password Management**: Multiple secure options for password updates
+    - **Change Password**: Direct password change from Profile > Security (requires current password)
+    - **Reset Password**: Email-based password recovery for forgotten passwords
     - Cryptographically secure tokens (256-bit)
     - Time-limited links (1 hour expiration)
     - Rate limiting protection (3 requests per 15 minutes)
@@ -22,7 +24,7 @@ This service helps home gardeners track and manage their gardening lifecycle fro
     - Production mode: SMTP email integration
   - User profiles with display name, avatar, location
   - Gardening preferences and personalization
-  - Profile editing capability
+  - Profile editing capability with Security tab
 - **Climate Zone Detection**: Automatic USDA zone determination from location
 - **Dual Garden Types**: Support for both outdoor and indoor gardening
   - **Outdoor Gardens**: Traditional gardening workflows
@@ -1146,9 +1148,25 @@ If you prefer not to use Docker, follow the original setup instructions at the t
 - `POST /users/login` - Login
 - `GET /users/me` - Get current user info (includes profile fields)
 - `PATCH /users/me` - Update user profile (display_name, avatar_url, city, gardening_preferences)
-- `POST /auth/password-reset/request` - Request password reset email
+- `POST /auth/password-reset/request` - Request password reset email (unauthenticated)
 - `POST /auth/password-reset/confirm` - Confirm password reset with token
 - `GET /auth/password-reset/requirements` - Get password strength requirements
+- `POST /auth/password/change` - Change password (authenticated, requires current password)
+- `POST /auth/password-reset/request-authenticated` - Request password reset email (authenticated users)
+
+#### Password Management Options
+
+Logged-in users can manage their passwords in two ways:
+
+1. **Change Password Directly** (Recommended when you know your current password)
+   - Go to Profile > Security tab
+   - Enter current password, new password, and confirm
+   - Immediate password update without email
+
+2. **Reset via Email** (Useful for forgotten passwords or security)
+   - Go to Profile > Security tab > "Send Password Reset Email"
+   - Receive reset link via email (or check backend logs in dev mode)
+   - Click link to set new password
 
 For detailed password reset documentation, see [PASSWORD_RESET.md](PASSWORD_RESET.md)
 

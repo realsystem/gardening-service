@@ -16,6 +16,16 @@ export function Profile({ user, onUpdate, onClose }: ProfileProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [activeTab, setActiveTab] = useState<'profile' | 'security'>('profile');
+
+  // Password change state
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [passwordSuccess, setPasswordSuccess] = useState('');
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [resetEmailSuccess, setResetEmailSuccess] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,15 +52,105 @@ export function Profile({ user, onUpdate, onClose }: ProfileProps) {
     }
   };
 
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordError('');
+    setPasswordSuccess('');
+
+    // Validate passwords match
+    if (newPassword !== confirmPassword) {
+      setPasswordError('New passwords do not match');
+      return;
+    }
+
+    // Validate password length
+    if (newPassword.length < 8) {
+      setPasswordError('Password must be at least 8 characters');
+      return;
+    }
+
+    setPasswordLoading(true);
+
+    try {
+      await api.changePassword(currentPassword, newPassword);
+      setPasswordSuccess('Password changed successfully!');
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      setTimeout(() => {
+        setPasswordSuccess('');
+      }, 5000);
+    } catch (err) {
+      setPasswordError(err instanceof Error ? err.message : 'Failed to change password');
+    } finally {
+      setPasswordLoading(false);
+    }
+  };
+
+  const handleRequestResetEmail = async () => {
+    setPasswordError('');
+    setResetEmailSuccess('');
+    setPasswordLoading(true);
+
+    try {
+      await api.requestPasswordResetAuthenticated();
+      setResetEmailSuccess('Password reset link sent to your email. Check your inbox (or backend logs in dev mode).');
+      setTimeout(() => {
+        setResetEmailSuccess('');
+      }, 10000);
+    } catch (err) {
+      setPasswordError(err instanceof Error ? err.message : 'Failed to send reset email');
+    } finally {
+      setPasswordLoading(false);
+    }
+  };
+
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
-        <h2>Edit Profile</h2>
+        <h2>Profile Settings</h2>
 
-        {error && <div className="error">{error}</div>}
-        {success && <div style={{ padding: '10px', backgroundColor: '#d4edda', color: '#155724', borderRadius: '4px', marginBottom: '15px' }}>
-          Profile updated successfully!
-        </div>}
+        {/* Tabs */}
+        <div style={{ display: 'flex', borderBottom: '2px solid #ddd', marginBottom: '20px' }}>
+          <button
+            onClick={() => setActiveTab('profile')}
+            style={{
+              flex: 1,
+              padding: '10px',
+              border: 'none',
+              background: activeTab === 'profile' ? '#4CAF50' : 'transparent',
+              color: activeTab === 'profile' ? 'white' : '#666',
+              fontWeight: activeTab === 'profile' ? 'bold' : 'normal',
+              cursor: 'pointer',
+              borderRadius: '4px 4px 0 0',
+            }}
+          >
+            Profile
+          </button>
+          <button
+            onClick={() => setActiveTab('security')}
+            style={{
+              flex: 1,
+              padding: '10px',
+              border: 'none',
+              background: activeTab === 'security' ? '#4CAF50' : 'transparent',
+              color: activeTab === 'security' ? 'white' : '#666',
+              fontWeight: activeTab === 'security' ? 'bold' : 'normal',
+              cursor: 'pointer',
+              borderRadius: '4px 4px 0 0',
+            }}
+          >
+            Security
+          </button>
+        </div>
+
+        {/* Profile Tab */}
+        {activeTab === 'profile' && (
+          <>
+            {error && <div className="error">{error}</div>}
+            {success && <div style={{ padding: '10px', backgroundColor: '#d4edda', color: '#155724', borderRadius: '4px', marginBottom: '15px' }}>
+              Profile updated successfully!
+            </div>}
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">
@@ -122,6 +222,96 @@ export function Profile({ user, onUpdate, onClose }: ProfileProps) {
             </button>
           </div>
         </form>
+          </>
+        )}
+
+        {/* Security Tab */}
+        {activeTab === 'security' && (
+          <>
+            <div style={{ marginBottom: '30px' }}>
+              <h3 style={{ marginBottom: '15px', fontSize: '1.1em' }}>Change Password</h3>
+              <p style={{ color: '#666', fontSize: '0.9em', marginBottom: '15px' }}>
+                Update your password by providing your current password and a new one.
+              </p>
+
+              {passwordError && <div className="error" style={{ marginBottom: '15px' }}>{passwordError}</div>}
+              {passwordSuccess && <div style={{ padding: '10px', backgroundColor: '#d4edda', color: '#155724', borderRadius: '4px', marginBottom: '15px' }}>
+                {passwordSuccess}
+              </div>}
+
+              <form onSubmit={handleChangePassword}>
+                <div className="form-group">
+                  <label>Current Password</label>
+                  <input
+                    type="password"
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    required
+                    disabled={passwordLoading}
+                    minLength={1}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>New Password</label>
+                  <input
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    required
+                    disabled={passwordLoading}
+                    minLength={8}
+                  />
+                  <small style={{ color: '#666', fontSize: '0.85em' }}>
+                    At least 8 characters, including uppercase, lowercase, number, and special character
+                  </small>
+                </div>
+
+                <div className="form-group">
+                  <label>Confirm New Password</label>
+                  <input
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                    disabled={passwordLoading}
+                    minLength={8}
+                  />
+                </div>
+
+                <button type="submit" className="btn" disabled={passwordLoading} style={{ width: '100%' }}>
+                  {passwordLoading ? 'Changing...' : 'Change Password'}
+                </button>
+              </form>
+            </div>
+
+            <div style={{ borderTop: '1px solid #ddd', paddingTop: '20px' }}>
+              <h3 style={{ marginBottom: '15px', fontSize: '1.1em' }}>Reset Password via Email</h3>
+              <p style={{ color: '#666', fontSize: '0.9em', marginBottom: '15px' }}>
+                Prefer to reset your password via email? We'll send you a secure reset link to <strong>{user.email}</strong>.
+              </p>
+
+              {resetEmailSuccess && <div style={{ padding: '10px', backgroundColor: '#d4edda', color: '#155724', borderRadius: '4px', marginBottom: '15px' }}>
+                {resetEmailSuccess}
+              </div>}
+
+              <button
+                onClick={handleRequestResetEmail}
+                className="btn btn-secondary"
+                disabled={passwordLoading}
+                style={{ width: '100%' }}
+              >
+                {passwordLoading ? 'Sending...' : 'Send Password Reset Email'}
+              </button>
+            </div>
+
+            <div className="form-actions" style={{ marginTop: '20px' }}>
+              <button type="button" onClick={onClose} className="btn btn-secondary">
+                Close
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
