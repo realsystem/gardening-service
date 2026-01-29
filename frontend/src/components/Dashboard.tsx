@@ -8,6 +8,8 @@ import { CreateGarden } from './CreateGarden';
 import { CreateSensorReading } from './CreateSensorReading';
 import { Profile } from './Profile';
 import { PlantingsList } from './PlantingsList';
+import { SoilHealthCard } from './SoilHealthCard';
+import { IrrigationOverviewCard } from './IrrigationOverviewCard';
 
 interface DashboardProps {
   user: User;
@@ -411,6 +413,10 @@ export function Dashboard({ user: initialUser, onLogout }: DashboardProps) {
                   )}
                 </div>
               )}
+
+              <SoilHealthCard />
+
+              <IrrigationOverviewCard />
 
               <div className="card">
                 <h2>Tasks for Today</h2>

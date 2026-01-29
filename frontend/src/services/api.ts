@@ -16,7 +16,9 @@ import type {
   IrrigationEvent,
   IrrigationEventCreate,
   IrrigationEventList,
-  IrrigationSummary
+  IrrigationSummary,
+  SoilHealthSummary,
+  IrrigationOverviewSummary
 } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
@@ -411,6 +413,17 @@ class ApiClient {
         'Authorization': `Bearer ${this.token}`,
       },
     });
+  }
+
+  // Dashboard
+  async getSoilHealthSummary(gardenId?: number): Promise<SoilHealthSummary> {
+    const query = gardenId ? `?garden_id=${gardenId}` : '';
+    return this.request<SoilHealthSummary>(`/dashboard/soil-summary${query}`);
+  }
+
+  async getIrrigationOverviewSummary(gardenId?: number): Promise<IrrigationOverviewSummary> {
+    const query = gardenId ? `?garden_id=${gardenId}` : '';
+    return this.request<IrrigationOverviewSummary>(`/dashboard/irrigation-summary${query}`);
   }
 }
 

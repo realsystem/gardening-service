@@ -17,6 +17,7 @@ from app.api import (
     irrigation_router,
     password_reset_router,
     password_router,
+    dashboard_router,
 )
 from app.error_handlers import (
     http_exception_handler,
@@ -61,6 +62,7 @@ app.include_router(care_tasks_router)
 app.include_router(sensor_readings_router)
 app.include_router(soil_samples_router)
 app.include_router(irrigation_router)
+app.include_router(dashboard_router)
 
 
 @app.get("/")
