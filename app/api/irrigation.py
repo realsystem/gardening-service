@@ -93,7 +93,7 @@ def create_irrigation_event(
             PlantVariety.id == planting.plant_variety_id
         ).first()
         if plant_variety:
-            response.plant_name = plant_variety.plant_name
+            response.plant_name = plant_variety.common_name
 
     return response
 
@@ -146,7 +146,7 @@ def list_irrigation_events(
                 PlantVariety.id == planting.plant_variety_id
             ).first()
             if plant_variety:
-                response.plant_name = plant_variety.plant_name
+                response.plant_name = plant_variety.common_name
 
         event_responses.append(response)
 

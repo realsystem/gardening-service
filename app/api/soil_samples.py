@@ -95,7 +95,7 @@ def create_soil_sample(
     if sample_data.garden_id:
         response.garden_name = garden.name
     if plant_variety:
-        response.plant_name = plant_variety.plant_name
+        response.plant_name = plant_variety.common_name
 
     return response
 
@@ -155,7 +155,7 @@ def list_soil_samples(
         if sample.garden:
             response.garden_name = sample.garden.name
         if plant_variety:
-            response.plant_name = plant_variety.plant_name
+            response.plant_name = plant_variety.common_name
 
         sample_responses.append(response)
 
@@ -207,7 +207,7 @@ def get_soil_sample(
     if sample.garden:
         response.garden_name = sample.garden.name
     if plant_variety:
-        response.plant_name = plant_variety.plant_name
+        response.plant_name = plant_variety.common_name
 
     return response
 

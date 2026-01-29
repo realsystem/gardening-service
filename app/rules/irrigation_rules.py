@@ -108,7 +108,7 @@ def generate_irrigation_recommendation(
     Returns:
         IrrigationRecommendation with specific watering advice
     """
-    plant_name = plant_variety.plant_name
+    plant_name = plant_variety.common_name
     requirements = get_plant_water_requirements(plant_name)
 
     recommended_frequency = requirements["frequency_days"]
@@ -224,7 +224,7 @@ def should_generate_irrigation_task(
     Returns:
         True if watering is needed, False otherwise
     """
-    requirements = get_plant_water_requirements(plant_variety.plant_name)
+    requirements = get_plant_water_requirements(plant_variety.common_name)
     recommended_frequency = requirements["frequency_days"]
 
     # Check soil moisture first

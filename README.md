@@ -762,26 +762,48 @@ npm test
 
 ### Running Tests
 
-The project has comprehensive test coverage for all components:
+## Local Testing (Recommended)
+
+**Backend:**
+```bash
+pytest
+```
+
+**Frontend:**
+```bash
+cd frontend
+npm test
+```
+
+**That's it!** No Docker, no database setup, no complex configuration.
+
+---
+
+The project uses a **hybrid testing model**:
+- ✅ **Tests run locally** (no Docker required)
+- ✅ **Docker is for services only** (database, API, frontend)
+- ✅ **Fast, simple, Docker-free testing**
 
 #### Backend Tests (pytest)
 
-**Install test dependencies:**
+**Prerequisites:**
 ```bash
+# Install dependencies in virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
 **Run all backend tests:**
 ```bash
-# Run all tests
+# Run all tests (uses in-memory SQLite, no external database needed)
 pytest
 
-# Run with coverage report
-pytest --cov=app tests/
-
-# Run with detailed coverage report
-pytest --cov=app --cov-report=html --cov-report=term tests/
+# Coverage is automatically generated (configured in pytest.ini)
+# View coverage report: open htmlcov/index.html
 ```
+
+**Note:** Tests use in-memory SQLite databases (see `tests/conftest.py`). No PostgreSQL or Docker required.
 
 **Run specific test suites:**
 ```bash
@@ -869,17 +891,23 @@ pytest tests/test_integration.py::TestCompleteHydroponicsWorkflow
 - ✅ Multi-Garden Management: Multiple gardens with different types
 - ✅ Error Recovery: Invalid data, unauthorized access, API failures
 
-#### Running Tests in Docker
+#### Docker Usage
 
-**Backend tests in Docker:**
+**Docker is for running SERVICES, not tests:**
+
 ```bash
-docker-compose run --rm api pytest --cov=app tests/
+# Start services (database, API, frontend)
+docker-compose up
+
+# Services available at:
+# - API: http://localhost:8080
+# - Frontend: http://localhost:3000
+# - Database: localhost:5432
 ```
 
-**Frontend tests in Docker:**
-```bash
-docker-compose run --rm frontend npm test
-```
+**DO NOT run tests in Docker locally.** Use `pytest` and `npm test` instead.
+
+**Docker tests are for CI/CD only** (smoke tests, deployment verification).
 
 #### Coverage Reports
 

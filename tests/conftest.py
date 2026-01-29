@@ -15,7 +15,7 @@ from app.models.garden import Garden, GardenType, LightSourceType, HydroSystemTy
 from app.models.planting_event import PlantingEvent, PlantingMethod, PlantHealth
 from app.models.sensor_reading import SensorReading
 from app.models.care_task import CareTask, TaskType, TaskPriority, TaskStatus, TaskSource
-from app.utils.auth import get_password_hash, create_access_token
+from app.services.auth_service import AuthService
 
 
 @pytest.fixture(scope="function")
@@ -65,7 +65,7 @@ def sample_user(test_db):
     """Create a sample user for testing"""
     user = User(
         email="test@example.com",
-        hashed_password=get_password_hash("testpass123"),
+        hashed_password=AuthService.hash_password("testpass123"),
         display_name="Test User",
         city="Portland"
     )
@@ -80,7 +80,7 @@ def second_user(test_db):
     """Create a second user for testing authorization"""
     user = User(
         email="user2@example.com",
-        hashed_password=get_password_hash("password456"),
+        hashed_password=AuthService.hash_password("password456"),
         display_name="Second User"
     )
     test_db.add(user)
@@ -92,7 +92,7 @@ def second_user(test_db):
 @pytest.fixture
 def user_token(sample_user):
     """Generate JWT token for sample user"""
-    return create_access_token(data={"sub": sample_user.email})
+    return AuthService.create_access_token(sample_user.id, sample_user.email)
 
 
 # Plant variety fixtures
@@ -397,3 +397,10 @@ def high_priority_task(test_db, sample_user, hydroponic_planting_event):
     test_db.commit()
     test_db.refresh(task)
     return task
+
+
+# Alias fixtures for compatibility with different test files
+@pytest.fixture
+def db(test_db):
+    """Alias for test_db fixture (for backward compatibility)"""
+    return test_db

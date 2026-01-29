@@ -30,10 +30,11 @@ def create_garden(
 ):
     """Create a new garden"""
     repo = GardenRepository(db)
+    # Convert Pydantic model to dict, excluding unset values
+    garden_dict = garden_data.model_dump(exclude_unset=True)
     garden = repo.create(
         user_id=current_user.id,
-        name=garden_data.name,
-        description=garden_data.description
+        **garden_dict
     )
     return garden
 
