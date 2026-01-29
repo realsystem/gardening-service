@@ -484,3 +484,206 @@ class TestEdgeCases:
             }
         )
         assert response.status_code == 422
+
+
+class TestPlantingEventDeletion:
+    """Test planting event deletion functionality"""
+
+    def test_delete_planting_event_success(self, client, sample_user, outdoor_planting_event, user_token):
+        """Test successful deletion of planting event"""
+        event_id = outdoor_planting_event.id
+        response = client.delete(
+            f"/planting-events/{event_id}",
+            headers={"Authorization": f"Bearer {user_token}"}
+        )
+        assert response.status_code == 204
+
+        # Verify deletion
+        response = client.get(
+            f"/planting-events/{event_id}",
+            headers={"Authorization": f"Bearer {user_token}"}
+        )
+        assert response.status_code == 404
+
+    def test_delete_planting_event_cascade_to_tasks(self, client, sample_user, outdoor_planting_event, sample_care_task, user_token):
+        """Test that deleting planting event cascades to delete tasks"""
+        event_id = outdoor_planting_event.id
+        task_id = sample_care_task.id
+
+        # Delete planting event
+        response = client.delete(
+            f"/planting-events/{event_id}",
+            headers={"Authorization": f"Bearer {user_token}"}
+        )
+        assert response.status_code == 204
+
+        # Verify task is also deleted
+        response = client.get(
+            f"/tasks/{task_id}",
+            headers={"Authorization": f"Bearer {user_token}"}
+        )
+        assert response.status_code == 404
+
+    def test_delete_nonexistent_planting_event(self, client, user_token):
+        """Test deleting non-existent planting event"""
+        response = client.delete(
+            "/planting-events/99999",
+            headers={"Authorization": f"Bearer {user_token}"}
+        )
+        assert response.status_code == 404
+
+    def test_delete_planting_event_unauthorized(self, client, sample_user, second_user, outdoor_planting_event):
+        """Test that user cannot delete another user's planting event"""
+        from app.services.auth_service import AuthService
+        second_token = AuthService.create_access_token(second_user.id, second_user.email)
+
+        response = client.delete(
+            f"/planting-events/{outdoor_planting_event.id}",
+            headers={"Authorization": f"Bearer {second_token}"}
+        )
+        assert response.status_code == 403
+
+
+class TestGardenSensorReadings:
+    """Test garden sensor readings endpoint"""
+
+    def test_get_garden_sensor_readings_success(self, client, sample_user, hydroponic_garden, user_token, test_db):
+        """Test getting sensor readings for a specific garden"""
+        # Create sensor readings
+        from app.models.sensor_reading import SensorReading
+        reading1 = SensorReading(
+            user_id=sample_user.id,
+            garden_id=hydroponic_garden.id,
+            reading_date=date.today(),
+            temperature_f=72.0,
+            humidity_percent=60.0,
+            ph_level=6.5
+        )
+        reading2 = SensorReading(
+            user_id=sample_user.id,
+            garden_id=hydroponic_garden.id,
+            reading_date=date.today() - timedelta(days=1),
+            temperature_f=70.0,
+            humidity_percent=55.0,
+            ph_level=6.3
+        )
+        test_db.add_all([reading1, reading2])
+        test_db.commit()
+
+        response = client.get(
+            f"/gardens/{hydroponic_garden.id}/sensor-readings",
+            headers={"Authorization": f"Bearer {user_token}"}
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data) == 2
+        assert data[0]["temperature_f"] == 72.0 or data[1]["temperature_f"] == 72.0
+
+    def test_get_garden_sensor_readings_empty(self, client, sample_user, outdoor_garden, user_token):
+        """Test getting sensor readings for garden with no readings"""
+        response = client.get(
+            f"/gardens/{outdoor_garden.id}/sensor-readings",
+            headers={"Authorization": f"Bearer {user_token}"}
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data) == 0
+
+    def test_get_garden_sensor_readings_unauthorized(self, client, sample_user, second_user, hydroponic_garden):
+        """Test that user cannot access another user's garden sensor readings"""
+        from app.services.auth_service import AuthService
+        second_token = AuthService.create_access_token(second_user.id, second_user.email)
+
+        response = client.get(
+            f"/gardens/{hydroponic_garden.id}/sensor-readings",
+            headers={"Authorization": f"Bearer {second_token}"}
+        )
+        assert response.status_code == 403
+
+    def test_get_sensor_readings_nonexistent_garden(self, client, user_token):
+        """Test getting sensor readings for non-existent garden"""
+        response = client.get(
+            "/gardens/99999/sensor-readings",
+            headers={"Authorization": f"Bearer {user_token}"}
+        )
+        assert response.status_code == 404
+
+
+class TestGardenDeletionCascade:
+    """Test garden deletion cascade behavior"""
+
+    def test_delete_garden_cascade_to_plantings(self, client, sample_user, outdoor_garden, outdoor_planting_event, user_token):
+        """Test that deleting garden cascades to delete plantings"""
+        garden_id = outdoor_garden.id
+        planting_id = outdoor_planting_event.id
+
+        # Delete garden
+        response = client.delete(
+            f"/gardens/{garden_id}",
+            headers={"Authorization": f"Bearer {user_token}"}
+        )
+        assert response.status_code == 204
+
+        # Verify planting is also deleted
+        response = client.get(
+            f"/planting-events/{planting_id}",
+            headers={"Authorization": f"Bearer {user_token}"}
+        )
+        assert response.status_code == 404
+
+    def test_delete_garden_cascade_to_sensor_readings(self, client, sample_user, hydroponic_garden, user_token, test_db):
+        """Test that deleting garden cascades to delete sensor readings"""
+        from app.models.sensor_reading import SensorReading
+
+        # Create sensor reading
+        reading = SensorReading(
+            user_id=sample_user.id,
+            garden_id=hydroponic_garden.id,
+            reading_date=date.today(),
+            temperature_f=72.0
+        )
+        test_db.add(reading)
+        test_db.commit()
+        reading_id = reading.id
+
+        # Delete garden
+        response = client.delete(
+            f"/gardens/{hydroponic_garden.id}",
+            headers={"Authorization": f"Bearer {user_token}"}
+        )
+        assert response.status_code == 204
+
+        # Verify sensor reading is also deleted
+        from app.models.sensor_reading import SensorReading
+        deleted_reading = test_db.query(SensorReading).filter(SensorReading.id == reading_id).first()
+        assert deleted_reading is None
+
+    def test_delete_garden_cascade_complete(self, client, sample_user, outdoor_garden, outdoor_planting_event, sample_care_task, user_token, test_db):
+        """Test complete cascade: garden -> planting -> tasks"""
+        garden_id = outdoor_garden.id
+        planting_id = outdoor_planting_event.id
+        task_id = sample_care_task.id
+
+        # Delete garden
+        response = client.delete(
+            f"/gardens/{garden_id}",
+            headers={"Authorization": f"Bearer {user_token}"}
+        )
+        assert response.status_code == 204
+
+        # Verify entire cascade
+        from app.models.care_task import CareTask
+        deleted_task = test_db.query(CareTask).filter(CareTask.id == task_id).first()
+        assert deleted_task is None
+
+        response = client.get(
+            f"/planting-events/{planting_id}",
+            headers={"Authorization": f"Bearer {user_token}"}
+        )
+        assert response.status_code == 404
+
+        response = client.get(
+            f"/gardens/{garden_id}",
+            headers={"Authorization": f"Bearer {user_token}"}
+        )
+        assert response.status_code == 404

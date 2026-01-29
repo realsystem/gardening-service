@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import type { GardenDetails as GardenDetailsType } from '../types';
+import { GardenSensorReadings } from './GardenSensorReadings';
 
 interface GardenDetailsProps {
   gardenId: number;
@@ -237,6 +238,9 @@ export function GardenDetails({ gardenId, onBack }: GardenDetailsProps) {
           </div>
         )}
       </div>
+
+      {/* Sensor Readings Section */}
+      <GardenSensorReadings gardenId={gardenId} />
     </div>
   );
 }

@@ -165,6 +165,10 @@ class ApiClient {
     return this.request<PlantingInGarden[]>(`/gardens/${gardenId}/plantings`);
   }
 
+  async getGardenSensorReadings(gardenId: number): Promise<SensorReading[]> {
+    return this.request<SensorReading[]>(`/gardens/${gardenId}/sensor-readings`);
+  }
+
   async deleteGarden(gardenId: number): Promise<void> {
     await fetch(`${API_BASE_URL}/gardens/${gardenId}`, {
       method: 'DELETE',
@@ -223,6 +227,11 @@ class ApiClient {
     });
   }
 
+  async getPlantingEvents(gardenId?: number): Promise<PlantingEvent[]> {
+    const query = gardenId ? `?garden_id=${gardenId}` : '';
+    return this.request<PlantingEvent[]>(`/planting-events${query}`);
+  }
+
   async updatePlantingEvent(eventId: number, data: {
     plant_count?: number;
     location_in_garden?: string;
@@ -232,6 +241,15 @@ class ApiClient {
     return this.request<PlantingEvent>(`/planting-events/${eventId}`, {
       method: 'PATCH',
       body: JSON.stringify(data),
+    });
+  }
+
+  async deletePlantingEvent(eventId: number): Promise<void> {
+    await fetch(`${API_BASE_URL}/planting-events/${eventId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${this.token}`,
+      },
     });
   }
 

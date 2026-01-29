@@ -1205,8 +1205,9 @@ For detailed password reset documentation, see [PASSWORD_RESET.md](PASSWORD_RESE
   - Hydroponics fields (when `is_hydroponic: true`): `hydro_system_type`, `reservoir_size_liters`, `nutrient_schedule`, `ph_min`, `ph_max`, `ec_min`, `ec_max`, `ppm_min`, `ppm_max`, `water_temp_min_f`, `water_temp_max_f`
 - `GET /gardens` - List user's gardens (includes indoor and hydroponics metadata)
 - `GET /gardens/{id}` - Get garden
+- `GET /gardens/{id}/sensor-readings` - Get all sensor readings for a specific garden (sorted by date, most recent first)
 - `PATCH /gardens/{id}` - Update garden
-- `DELETE /gardens/{id}` - Delete garden
+- `DELETE /gardens/{id}` - Delete garden (cascades to delete plantings, sensor readings, soil samples, and irrigation events)
 
 ### Sensor Readings (Indoor & Hydroponic Gardens)
 - `POST /sensor-readings` - Create sensor reading (+ auto-generates warning tasks if out of range)
@@ -1239,9 +1240,10 @@ For detailed password reset documentation, see [PASSWORD_RESET.md](PASSWORD_RESE
 ### Planting Events
 - `POST /planting-events` - Create event (+ auto-generates care tasks with priorities)
   - Accepts `health_status` and `plant_notes` fields
-- `GET /planting-events` - List user's events
+- `GET /planting-events` - List user's events (filterable by garden_id)
 - `GET /planting-events/{id}` - Get event
 - `PATCH /planting-events/{id}` - Update event (including health status and notes)
+- `DELETE /planting-events/{id}` - Delete planting event (cascades to delete associated care tasks; preserves historical sensor readings, soil samples, and irrigation events)
 
 ### Care Tasks
 - `POST /tasks` - Create manual task
