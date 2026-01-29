@@ -1,5 +1,5 @@
 """SensorReading schemas"""
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from typing import Optional
 from datetime import date, datetime
 
@@ -17,6 +17,27 @@ class SensorReadingCreate(BaseModel):
     ec_ms_cm: Optional[float] = Field(None, ge=0)
     ppm: Optional[int] = Field(None, ge=0)
     water_temp_f: Optional[float] = Field(None, ge=-50, le=150)
+
+    @model_validator(mode='after')
+    def validate_at_least_one_reading(self):
+        """Ensure at least one sensor value is provided"""
+        sensor_fields = [
+            self.temperature_f,
+            self.humidity_percent,
+            self.light_hours,
+            self.ph_level,
+            self.ec_ms_cm,
+            self.ppm,
+            self.water_temp_f
+        ]
+
+        if not any(value is not None for value in sensor_fields):
+            raise ValueError(
+                "At least one sensor reading must be provided. "
+                "Please provide temperature, humidity, light hours, pH, EC, PPM, or water temperature."
+            )
+
+        return self
 
 
 class SensorReadingResponse(BaseModel):

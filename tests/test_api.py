@@ -610,6 +610,23 @@ class TestEdgeCases:
         )
         assert response.status_code == 422
 
+    def test_sensor_reading_requires_at_least_one_value(self, client, sample_user, hydroponic_garden, user_token):
+        """Test that sensor reading requires at least one sensor value"""
+        response = client.post(
+            "/sensor-readings/",
+            headers={"Authorization": f"Bearer {user_token}"},
+            json={
+                "garden_id": hydroponic_garden.id,
+                "reading_date": str(date.today()),
+                # No sensor values provided
+            }
+        )
+        assert response.status_code == 422
+        response_data = response.json()
+        # Check if error message is in the response
+        error_msg = str(response_data).lower()
+        assert "at least one sensor reading must be provided" in error_msg
+
 
 class TestPlantingEventDeletion:
     """Test planting event deletion functionality"""
