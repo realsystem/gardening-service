@@ -1,11 +1,21 @@
 """Pytest configuration and fixtures for testing"""
 import pytest
+from datetime import date, timedelta
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
+from fastapi.testclient import TestClient
 
-from app.database import Base
+from app.database import Base, get_db
+from app.main import app
+from app.models.user import User
 from app.models.plant_variety import PlantVariety, WaterRequirement, SunRequirement
+from app.models.seed_batch import SeedBatch
+from app.models.garden import Garden, GardenType, LightSourceType, HydroSystemType
+from app.models.planting_event import PlantingEvent, PlantingMethod, PlantHealth
+from app.models.sensor_reading import SensorReading
+from app.models.care_task import CareTask, TaskType, TaskPriority, TaskStatus, TaskSource
+from app.utils.auth import get_password_hash, create_access_token
 
 
 @pytest.fixture(scope="function")
@@ -35,6 +45,58 @@ def test_db():
 
 
 @pytest.fixture
+def client(test_db):
+    """Create a test client with database override"""
+    def override_get_db():
+        try:
+            yield test_db
+        finally:
+            pass
+
+    app.dependency_overrides[get_db] = override_get_db
+    with TestClient(app) as test_client:
+        yield test_client
+    app.dependency_overrides.clear()
+
+
+# User fixtures
+@pytest.fixture
+def sample_user(test_db):
+    """Create a sample user for testing"""
+    user = User(
+        email="test@example.com",
+        hashed_password=get_password_hash("testpass123"),
+        display_name="Test User",
+        city="Portland"
+    )
+    test_db.add(user)
+    test_db.commit()
+    test_db.refresh(user)
+    return user
+
+
+@pytest.fixture
+def second_user(test_db):
+    """Create a second user for testing authorization"""
+    user = User(
+        email="user2@example.com",
+        hashed_password=get_password_hash("password456"),
+        display_name="Second User"
+    )
+    test_db.add(user)
+    test_db.commit()
+    test_db.refresh(user)
+    return user
+
+
+@pytest.fixture
+def user_token(sample_user):
+    """Generate JWT token for sample user"""
+    return create_access_token(data={"sub": sample_user.email})
+
+
+# Plant variety fixtures
+@pytest.fixture
 def sample_plant_variety(test_db):
     """Create a sample plant variety for testing"""
     variety = PlantVariety(
@@ -54,3 +116,284 @@ def sample_plant_variety(test_db):
     test_db.commit()
     test_db.refresh(variety)
     return variety
+
+
+@pytest.fixture
+def lettuce_variety(test_db):
+    """Create a lettuce variety for testing"""
+    variety = PlantVariety(
+        common_name="Lettuce",
+        scientific_name="Lactuca sativa",
+        variety_name="Romaine",
+        days_to_germination_min=3,
+        days_to_germination_max=7,
+        days_to_harvest=60,
+        spacing_inches=12,
+        row_spacing_inches=18,
+        sun_requirement=SunRequirement.PARTIAL_SUN,
+        water_requirement=WaterRequirement.MEDIUM,
+        description="Crisp romaine lettuce",
+    )
+    test_db.add(variety)
+    test_db.commit()
+    test_db.refresh(variety)
+    return variety
+
+
+# Seed batch fixtures
+@pytest.fixture
+def sample_seed_batch(test_db, sample_user, sample_plant_variety):
+    """Create a sample seed batch"""
+    seed_batch = SeedBatch(
+        user_id=sample_user.id,
+        plant_variety_id=sample_plant_variety.id,
+        source="Local Nursery",
+        harvest_year=2023,
+        quantity=50,
+        notes="Organic seeds"
+    )
+    test_db.add(seed_batch)
+    test_db.commit()
+    test_db.refresh(seed_batch)
+    return seed_batch
+
+
+# Garden fixtures
+@pytest.fixture
+def outdoor_garden(test_db, sample_user):
+    """Create an outdoor garden"""
+    garden = Garden(
+        user_id=sample_user.id,
+        name="Main Garden",
+        description="Outdoor vegetable garden",
+        garden_type=GardenType.OUTDOOR,
+        is_hydroponic=0
+    )
+    test_db.add(garden)
+    test_db.commit()
+    test_db.refresh(garden)
+    return garden
+
+
+@pytest.fixture
+def indoor_garden(test_db, sample_user):
+    """Create an indoor garden"""
+    garden = Garden(
+        user_id=sample_user.id,
+        name="Indoor Grow Room",
+        description="Indoor grow setup",
+        garden_type=GardenType.INDOOR,
+        location="Basement",
+        light_source_type=LightSourceType.LED,
+        light_hours_per_day=16.0,
+        temp_min_f=65.0,
+        temp_max_f=75.0,
+        humidity_min_percent=40.0,
+        humidity_max_percent=60.0,
+        container_type="Pots",
+        grow_medium="Soil",
+        is_hydroponic=0
+    )
+    test_db.add(garden)
+    test_db.commit()
+    test_db.refresh(garden)
+    return garden
+
+
+@pytest.fixture
+def hydroponic_garden(test_db, sample_user):
+    """Create a hydroponic garden"""
+    garden = Garden(
+        user_id=sample_user.id,
+        name="Hydro Setup",
+        description="NFT hydroponic system",
+        garden_type=GardenType.INDOOR,
+        location="Grow Tent",
+        light_source_type=LightSourceType.LED,
+        light_hours_per_day=18.0,
+        temp_min_f=68.0,
+        temp_max_f=78.0,
+        humidity_min_percent=50.0,
+        humidity_max_percent=70.0,
+        container_type="NFT channels",
+        grow_medium="Hydroponics",
+        is_hydroponic=1,
+        hydro_system_type=HydroSystemType.NFT,
+        reservoir_size_liters=100.0,
+        nutrient_schedule="General Hydroponics Flora Series",
+        ph_min=5.5,
+        ph_max=6.5,
+        ec_min=1.2,
+        ec_max=2.0,
+        ppm_min=800,
+        ppm_max=1400,
+        water_temp_min_f=65.0,
+        water_temp_max_f=72.0
+    )
+    test_db.add(garden)
+    test_db.commit()
+    test_db.refresh(garden)
+    return garden
+
+
+# Planting event fixtures
+@pytest.fixture
+def outdoor_planting_event(test_db, sample_user, outdoor_garden, sample_plant_variety):
+    """Create an outdoor planting event"""
+    planting_event = PlantingEvent(
+        user_id=sample_user.id,
+        garden_id=outdoor_garden.id,
+        plant_variety_id=sample_plant_variety.id,
+        planting_date=date.today(),
+        planting_method=PlantingMethod.DIRECT_SOW,
+        plant_count=6,
+        location_in_garden="Bed 1, Row 2",
+        health_status=PlantHealth.HEALTHY,
+        notes="First planting of the season"
+    )
+    test_db.add(planting_event)
+    test_db.commit()
+    test_db.refresh(planting_event)
+    return planting_event
+
+
+@pytest.fixture
+def indoor_planting_event(test_db, sample_user, indoor_garden, lettuce_variety):
+    """Create an indoor planting event"""
+    planting_event = PlantingEvent(
+        user_id=sample_user.id,
+        garden_id=indoor_garden.id,
+        plant_variety_id=lettuce_variety.id,
+        planting_date=date.today() - timedelta(days=10),
+        planting_method=PlantingMethod.TRANSPLANT,
+        plant_count=12,
+        location_in_garden="Shelf 2",
+        health_status=PlantHealth.HEALTHY
+    )
+    test_db.add(planting_event)
+    test_db.commit()
+    test_db.refresh(planting_event)
+    return planting_event
+
+
+@pytest.fixture
+def hydroponic_planting_event(test_db, sample_user, hydroponic_garden, lettuce_variety):
+    """Create a hydroponic planting event"""
+    planting_event = PlantingEvent(
+        user_id=sample_user.id,
+        garden_id=hydroponic_garden.id,
+        plant_variety_id=lettuce_variety.id,
+        planting_date=date.today() - timedelta(days=5),
+        planting_method=PlantingMethod.TRANSPLANT,
+        plant_count=24,
+        location_in_garden="Channel 1",
+        health_status=PlantHealth.HEALTHY
+    )
+    test_db.add(planting_event)
+    test_db.commit()
+    test_db.refresh(planting_event)
+    return planting_event
+
+
+# Sensor reading fixtures
+@pytest.fixture
+def indoor_sensor_reading(test_db, sample_user, indoor_garden):
+    """Create an indoor sensor reading"""
+    reading = SensorReading(
+        user_id=sample_user.id,
+        garden_id=indoor_garden.id,
+        reading_date=date.today(),
+        temperature_f=70.0,
+        humidity_percent=55.0,
+        light_hours=16.0
+    )
+    test_db.add(reading)
+    test_db.commit()
+    test_db.refresh(reading)
+    return reading
+
+
+@pytest.fixture
+def hydroponic_sensor_reading(test_db, sample_user, hydroponic_garden):
+    """Create a hydroponic sensor reading"""
+    reading = SensorReading(
+        user_id=sample_user.id,
+        garden_id=hydroponic_garden.id,
+        reading_date=date.today(),
+        temperature_f=72.0,
+        humidity_percent=60.0,
+        light_hours=18.0,
+        ph_level=6.0,
+        ec_ms_cm=1.5,
+        ppm=1050,
+        water_temp_f=68.0
+    )
+    test_db.add(reading)
+    test_db.commit()
+    test_db.refresh(reading)
+    return reading
+
+
+# Care task fixtures
+@pytest.fixture
+def sample_care_task(test_db, sample_user, outdoor_planting_event):
+    """Create a sample care task"""
+    task = CareTask(
+        user_id=sample_user.id,
+        planting_event_id=outdoor_planting_event.id,
+        task_type=TaskType.WATER,
+        task_source=TaskSource.AUTO_GENERATED,
+        title="Water Tomato - Beefsteak",
+        description="Water plants in Bed 1, Row 2",
+        priority=TaskPriority.MEDIUM,
+        due_date=date.today(),
+        is_recurring=False,
+        status=TaskStatus.PENDING
+    )
+    test_db.add(task)
+    test_db.commit()
+    test_db.refresh(task)
+    return task
+
+
+@pytest.fixture
+def completed_task(test_db, sample_user, outdoor_planting_event):
+    """Create a completed task"""
+    task = CareTask(
+        user_id=sample_user.id,
+        planting_event_id=outdoor_planting_event.id,
+        task_type=TaskType.FERTILIZE,
+        task_source=TaskSource.MANUAL,
+        title="Fertilize tomatoes",
+        description="Apply organic fertilizer",
+        priority=TaskPriority.LOW,
+        due_date=date.today() - timedelta(days=1),
+        is_recurring=False,
+        status=TaskStatus.COMPLETED,
+        completed_date=date.today() - timedelta(days=1)
+    )
+    test_db.add(task)
+    test_db.commit()
+    test_db.refresh(task)
+    return task
+
+
+@pytest.fixture
+def high_priority_task(test_db, sample_user, hydroponic_planting_event):
+    """Create a high priority task"""
+    task = CareTask(
+        user_id=sample_user.id,
+        planting_event_id=hydroponic_planting_event.id,
+        task_type=TaskType.ADJUST_PH,
+        task_source=TaskSource.AUTO_GENERATED,
+        title="Adjust pH in Hydro Setup",
+        description="pH is too high (7.2). Target: 5.5-6.5. Add pH DOWN solution.",
+        priority=TaskPriority.HIGH,
+        due_date=date.today(),
+        is_recurring=False,
+        status=TaskStatus.PENDING
+    )
+    test_db.add(task)
+    test_db.commit()
+    test_db.refresh(task)
+    return task

@@ -46,7 +46,10 @@ export function CreatePlantingEvent({ onClose, onSuccess }: CreatePlantingEventP
     if (!newGardenName.trim()) return;
 
     try {
-      const garden = await api.createGarden(newGardenName);
+      const garden = await api.createGarden({
+        name: newGardenName,
+        garden_type: 'outdoor'
+      });
       setGardens([...gardens, garden]);
       setGardenId(garden.id.toString());
       setNeedsGarden(false);
