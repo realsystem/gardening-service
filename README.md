@@ -12,6 +12,14 @@ This service helps home gardeners track and manage their gardening lifecycle fro
 
 - **User Authentication & Profiles**: Complete user management system
   - Email/password authentication with JWT tokens
+  - **Secure Password Reset**: Email-based password recovery
+    - Cryptographically secure tokens (256-bit)
+    - Time-limited links (1 hour expiration)
+    - Rate limiting protection (3 requests per 15 minutes)
+    - Password strength enforcement
+    - Single-use tokens with automatic invalidation
+    - Development mode: Console output (no email setup required)
+    - Production mode: SMTP email integration
   - User profiles with display name, avatar, location
   - Gardening preferences and personalization
   - Profile editing capability
@@ -1138,6 +1146,11 @@ If you prefer not to use Docker, follow the original setup instructions at the t
 - `POST /users/login` - Login
 - `GET /users/me` - Get current user info (includes profile fields)
 - `PATCH /users/me` - Update user profile (display_name, avatar_url, city, gardening_preferences)
+- `POST /auth/password-reset/request` - Request password reset email
+- `POST /auth/password-reset/confirm` - Confirm password reset with token
+- `GET /auth/password-reset/requirements` - Get password strength requirements
+
+For detailed password reset documentation, see [PASSWORD_RESET.md](PASSWORD_RESET.md)
 
 ### Gardens
 - `POST /gardens` - Create garden (outdoor, indoor, or hydroponic)

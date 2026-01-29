@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '../services/api';
-import type { SoilSample, SoilRecommendation } from '../types';
+import type { SoilSample } from '../types';
 
 interface SoilSampleListProps {
   gardenId?: number;

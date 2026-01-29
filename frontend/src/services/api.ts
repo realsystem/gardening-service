@@ -89,6 +89,24 @@ class ApiClient {
     });
   }
 
+  async requestPasswordReset(email: string): Promise<{ message: string; success: boolean }> {
+    return this.request<{ message: string; success: boolean }>('/auth/password-reset/request', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  }
+
+  async confirmPasswordReset(token: string, newPassword: string): Promise<{ message: string; success: boolean }> {
+    return this.request<{ message: string; success: boolean }>('/auth/password-reset/confirm', {
+      method: 'POST',
+      body: JSON.stringify({ token, new_password: newPassword }),
+    });
+  }
+
+  async getPasswordRequirements(): Promise<{ requirements: string[] }> {
+    return this.request<{ requirements: string[] }>('/auth/password-reset/requirements');
+  }
+
   // Gardens
   async getGardens(): Promise<Garden[]> {
     return this.request<Garden[]>('/gardens');

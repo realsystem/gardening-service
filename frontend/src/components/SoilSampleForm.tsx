@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '../services/api';
-import type { Garden, PlantingEvent, SoilSampleCreate } from '../types';
+import type { Garden, SoilSampleCreate } from '../types';
 
 interface SoilSampleFormProps {
   onSuccess?: () => void;
