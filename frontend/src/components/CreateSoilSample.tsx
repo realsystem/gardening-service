@@ -80,11 +80,12 @@ export function CreateSoilSample({ onClose, onSuccess, preselectedGardenId }: Cr
         ) : (
           <form onSubmit={handleSubmit}>
             <div className="form-group">
-              <label>Garden (optional)</label>
+              <label>Garden *</label>
               <select
                 value={gardenId}
                 onChange={(e) => setGardenId(e.target.value)}
                 disabled={loading}
+                required
               >
                 <option value="">Select a garden...</option>
                 {gardens.map((g) => (
@@ -93,9 +94,6 @@ export function CreateSoilSample({ onClose, onSuccess, preselectedGardenId }: Cr
                   </option>
                 ))}
               </select>
-              <small style={{ color: '#666', fontSize: '0.85em' }}>
-                Link this sample to a specific garden
-              </small>
             </div>
 
             <div className="form-group">

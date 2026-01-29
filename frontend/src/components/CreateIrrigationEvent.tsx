@@ -77,11 +77,12 @@ export function CreateIrrigationEvent({ onClose, onSuccess, preselectedGardenId 
         ) : (
           <form onSubmit={handleSubmit}>
             <div className="form-group">
-              <label>Garden (optional)</label>
+              <label>Garden *</label>
               <select
                 value={gardenId}
                 onChange={(e) => setGardenId(e.target.value)}
                 disabled={loading}
+                required
               >
                 <option value="">Select a garden...</option>
                 {gardens.map((g) => (
@@ -90,9 +91,6 @@ export function CreateIrrigationEvent({ onClose, onSuccess, preselectedGardenId 
                   </option>
                 ))}
               </select>
-              <small style={{ color: '#666', fontSize: '0.85em' }}>
-                Link this irrigation to a specific garden
-              </small>
             </div>
 
             <div className="form-group">
