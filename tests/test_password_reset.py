@@ -399,6 +399,199 @@ class TestPasswordResetRepository:
         assert active_token.id == created_token.id
 
 
+class TestChangePassword:
+    """Tests for change password endpoint (authenticated users)"""
+
+    def test_change_password_success(self, db: Session, test_user: User):
+        """Test changing password with correct current password"""
+        # Login to get token
+        login_response = client.post(
+            "/users/login",
+            json={"email": test_user.email, "password": "TestPassword123!"}
+        )
+        assert login_response.status_code == 200
+        token = login_response.json()["access_token"]
+
+        # Change password
+        new_password = "NewStrongPassword456!"
+        response = client.post(
+            "/auth/password/change",
+            json={
+                "current_password": "TestPassword123!",
+                "new_password": new_password
+            },
+            headers={"Authorization": f"Bearer {token}"}
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["success"] is True
+        assert "changed successfully" in data["message"].lower()
+
+        # Verify old password no longer works
+        old_login = client.post(
+            "/users/login",
+            json={"email": test_user.email, "password": "TestPassword123!"}
+        )
+        assert old_login.status_code == 401
+
+        # Verify new password works
+        new_login = client.post(
+            "/users/login",
+            json={"email": test_user.email, "password": new_password}
+        )
+        assert new_login.status_code == 200
+
+    def test_change_password_wrong_current_password(self, db: Session, test_user: User):
+        """Test changing password with incorrect current password"""
+        # Login to get token
+        login_response = client.post(
+            "/users/login",
+            json={"email": test_user.email, "password": "TestPassword123!"}
+        )
+        token = login_response.json()["access_token"]
+
+        # Try to change with wrong current password
+        response = client.post(
+            "/auth/password/change",
+            json={
+                "current_password": "WrongPassword123!",
+                "new_password": "NewPassword456!"
+            },
+            headers={"Authorization": f"Bearer {token}"}
+        )
+
+        assert response.status_code == 400
+        assert "incorrect" in response.json()["error"]["message"].lower()
+
+    def test_change_password_weak_new_password(self, db: Session, test_user: User):
+        """Test changing password with weak new password"""
+        # Login to get token
+        login_response = client.post(
+            "/users/login",
+            json={"email": test_user.email, "password": "TestPassword123!"}
+        )
+        token = login_response.json()["access_token"]
+
+        # Try to change to weak password
+        response = client.post(
+            "/auth/password/change",
+            json={
+                "current_password": "TestPassword123!",
+                "new_password": "weak"
+            },
+            headers={"Authorization": f"Bearer {token}"}
+        )
+
+        assert response.status_code == 422  # Validation error
+
+    def test_change_password_unauthenticated(self):
+        """Test changing password without authentication"""
+        response = client.post(
+            "/auth/password/change",
+            json={
+                "current_password": "TestPassword123!",
+                "new_password": "NewPassword456!"
+            }
+        )
+
+        assert response.status_code == 403  # Unauthorized
+
+    def test_change_password_invalidates_reset_tokens(self, db: Session, test_user: User):
+        """Test that changing password invalidates all reset tokens"""
+        # Create a reset token
+        raw_token, token_hash = TokenGenerator.generate_and_hash()
+        reset_repo = PasswordResetRepository(db)
+        expires_at = PasswordResetToken.get_expiration_time(hours=1)
+        reset_repo.create_token(test_user, token_hash, expires_at)
+
+        # Login to get token
+        login_response = client.post(
+            "/users/login",
+            json={"email": test_user.email, "password": "TestPassword123!"}
+        )
+        token = login_response.json()["access_token"]
+
+        # Change password
+        response = client.post(
+            "/auth/password/change",
+            json={
+                "current_password": "TestPassword123!",
+                "new_password": "NewPassword456!"
+            },
+            headers={"Authorization": f"Bearer {token}"}
+        )
+        assert response.status_code == 200
+
+        # Verify reset token is invalidated
+        db.refresh(test_user)
+        active_token = reset_repo.get_active_token_for_user(test_user.id)
+        assert active_token is None
+
+
+class TestRequestPasswordResetAuthenticated:
+    """Tests for authenticated password reset request endpoint"""
+
+    def test_request_reset_authenticated_success(self, db: Session, test_user: User):
+        """Test requesting reset as authenticated user"""
+        # Login to get token
+        login_response = client.post(
+            "/users/login",
+            json={"email": test_user.email, "password": "TestPassword123!"}
+        )
+        token = login_response.json()["access_token"]
+
+        # Request password reset
+        response = client.post(
+            "/auth/password-reset/request-authenticated",
+            headers={"Authorization": f"Bearer {token}"}
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["success"] is True
+        assert "reset link has been sent" in data["message"].lower()
+
+        # Verify token was created
+        reset_repo = PasswordResetRepository(db)
+        reset_token = reset_repo.get_active_token_for_user(test_user.id)
+        assert reset_token is not None
+        assert reset_token.is_valid()
+
+    def test_request_reset_authenticated_unauthenticated(self):
+        """Test requesting reset without authentication"""
+        response = client.post(
+            "/auth/password-reset/request-authenticated"
+        )
+
+        assert response.status_code == 403  # Unauthorized
+
+    def test_request_reset_authenticated_rate_limiting(self, db: Session, test_user: User):
+        """Test rate limiting for authenticated reset requests"""
+        # Login to get token
+        login_response = client.post(
+            "/users/login",
+            json={"email": test_user.email, "password": "TestPassword123!"}
+        )
+        token = login_response.json()["access_token"]
+        headers = {"Authorization": f"Bearer {token}"}
+
+        # Make 3 requests (should all succeed)
+        for _ in range(3):
+            response = client.post(
+                "/auth/password-reset/request-authenticated",
+                headers=headers
+            )
+            assert response.status_code == 200
+
+        # 4th request should be rate limited
+        response = client.post(
+            "/auth/password-reset/request-authenticated",
+            headers=headers
+        )
+        assert response.status_code == 429  # Too many requests
+
+
 # Fixtures
 
 @pytest.fixture

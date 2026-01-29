@@ -107,6 +107,19 @@ class ApiClient {
     return this.request<{ requirements: string[] }>('/auth/password-reset/requirements');
   }
 
+  async changePassword(currentPassword: string, newPassword: string): Promise<{ message: string; success: boolean }> {
+    return this.request<{ message: string; success: boolean }>('/auth/password/change', {
+      method: 'POST',
+      body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
+    });
+  }
+
+  async requestPasswordResetAuthenticated(): Promise<{ message: string; success: boolean }> {
+    return this.request<{ message: string; success: boolean }>('/auth/password-reset/request-authenticated', {
+      method: 'POST',
+    });
+  }
+
   // Gardens
   async getGardens(): Promise<Garden[]> {
     return this.request<Garden[]>('/gardens');

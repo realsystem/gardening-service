@@ -86,3 +86,32 @@ class PasswordRequirements(BaseModel):
                 ]
             }
         }
+
+
+class ChangePasswordRequest(BaseModel):
+    """Schema for changing password (authenticated users)"""
+    current_password: str = Field(
+        ...,
+        description="Current password for verification",
+        min_length=1
+    )
+    new_password: str = Field(
+        ...,
+        description="New password (must meet strength requirements)",
+        min_length=8
+    )
+
+    @field_validator('new_password')
+    @classmethod
+    def validate_password_strength(cls, v: str) -> str:
+        """Validate password meets strength requirements"""
+        PasswordValidator.validate_or_raise(v)
+        return v
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "current_password": "OldPassword123!",
+                "new_password": "NewStrongPassword456!"
+            }
+        }

@@ -16,6 +16,7 @@ from app.api import (
     soil_samples_router,
     irrigation_router,
     password_reset_router,
+    password_router,
 )
 from app.error_handlers import (
     http_exception_handler,
@@ -50,6 +51,7 @@ app.add_exception_handler(Exception, generic_exception_handler)
 # Include routers
 app.include_router(users_router)
 app.include_router(password_reset_router)
+app.include_router(password_router)
 app.include_router(gardens_router)
 app.include_router(plant_varieties_router)
 app.include_router(seed_batches_router)
