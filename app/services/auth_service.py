@@ -2,9 +2,8 @@
 from datetime import datetime, timedelta
 from typing import Optional
 import hashlib
-import base64
+import bcrypt
 from jose import JWTError, jwt
-from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -15,9 +14,6 @@ from app.repositories.user_repository import UserRepository
 
 settings = get_settings()
 
-# Password hashing context
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
 # HTTP Bearer token scheme
 security = HTTPBearer()
 
@@ -26,30 +22,27 @@ class AuthService:
     """Service for authentication and authorization"""
 
     @staticmethod
-    def _prepare_password(password: str) -> str:
+    def _prepare_password(password: str) -> bytes:
         """
-        Prepare password for bcrypt by pre-hashing if needed.
-        Bcrypt has a 72-byte limit, so we use SHA256 for long passwords.
+        Prepare password for bcrypt by pre-hashing with SHA256.
+        Bcrypt has a 72-byte limit, so we always use SHA256 to ensure consistent behavior.
         """
-        password_bytes = password.encode('utf-8')
-        if len(password_bytes) > 72:
-            # Pre-hash with SHA256 and base64 encode to keep it under 72 bytes
-            hashed = hashlib.sha256(password_bytes).digest()
-            return base64.b64encode(hashed).decode('ascii')
-        return password
+        # Always hash with SHA256 first to avoid bcrypt 72-byte limit
+        return hashlib.sha256(password.encode('utf-8')).hexdigest().encode('utf-8')
 
     @staticmethod
     def hash_password(password: str) -> str:
-        """Hash a password"""
+        """Hash a password using bcrypt"""
         prepared_password = AuthService._prepare_password(password)
-        return pwd_context.hash(prepared_password)
+        hashed = bcrypt.hashpw(prepared_password, bcrypt.gensalt())
+        return hashed.decode('utf-8')
 
     @staticmethod
     def verify_password(plain_password: str, hashed_password: str) -> bool:
         """Verify a password against a hash"""
-        prepared_password = AuthService._prepare_password(plain_password)
         try:
-            return pwd_context.verify(prepared_password, hashed_password)
+            prepared_password = AuthService._prepare_password(plain_password)
+            return bcrypt.checkpw(prepared_password, hashed_password.encode('utf-8'))
         except Exception:
             # If verification fails for any reason, return False
             return False
