@@ -90,6 +90,9 @@ def request_password_reset(
     user_repo = UserRepository(db)
     user = user_repo.get_by_email(email)
 
+    # Get settings to check if we're in debug mode
+    settings = get_settings()
+
     if user:
         # Generate secure token
         raw_token, token_hash = TokenGenerator.generate_and_hash()
@@ -100,7 +103,6 @@ def request_password_reset(
         reset_repo.create_token(user, token_hash, expires_at)
 
         # Build reset URL
-        settings = get_settings()
         # In production, this would be the frontend URL
         # For now, we'll use a placeholder that works in both dev and docker
         frontend_url = "http://localhost:3000"  # Frontend URL
@@ -115,8 +117,19 @@ def request_password_reset(
             # Don't reveal the error to the user (security)
 
         logger.info(f"Password reset requested for user: {user.id}")
+    else:
+        # User not found
+        logger.warning(f"Password reset requested for non-existent email: {email}")
 
-    # Always return success (prevent email enumeration)
+        # In development mode, return helpful error message
+        # In production, don't reveal that the email doesn't exist (security)
+        if settings.DEBUG:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"No account found with email '{email}'. Please check the email address or register a new account."
+            )
+
+    # Production mode: Always return success (prevent email enumeration)
     return PasswordResetResponse(
         message="If the email exists, a password reset link has been sent",
         success=True
