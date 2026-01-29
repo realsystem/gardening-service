@@ -17,12 +17,21 @@ export function CreateSeedBatch({ onClose, onSuccess }: CreateSeedBatchProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // Reset search on mount to ensure we load all varieties
+  useEffect(() => {
+    setSearch('');
+  }, []);
+
   useEffect(() => {
     const loadVarieties = async () => {
       try {
+        console.log('[CreateSeedBatch] Loading varieties with search:', search);
         const data = await api.getPlantVarieties(search);
+        console.log('[CreateSeedBatch] Received varieties:', data?.length, 'items');
+        console.log('[CreateSeedBatch] First variety:', data?.[0]);
         setVarieties(data);
       } catch (err) {
+        console.error('[CreateSeedBatch] Error loading varieties:', err);
         setError('Failed to load plant varieties');
       }
     };
@@ -58,23 +67,50 @@ export function CreateSeedBatch({ onClose, onSuccess }: CreateSeedBatchProps) {
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label>Search Plant Variety</label>
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by name..."
-            />
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search by name... (leave empty to see all)"
+                style={{ flex: 1 }}
+              />
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => setSearch('')}
+                  className="btn btn-secondary"
+                  style={{ padding: '0 12px' }}
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+            {search && varieties.length === 0 && (
+              <div style={{ color: '#666', fontSize: '0.9em', marginTop: '4px' }}>
+                No varieties found matching "{search}". Try clearing the search.
+              </div>
+            )}
+            {!search && varieties.length === 0 && (
+              <div style={{ color: '#666', fontSize: '0.9em', marginTop: '4px' }}>
+                Loading varieties...
+              </div>
+            )}
           </div>
 
           <div className="form-group">
-            <label>Plant Variety *</label>
+            <label>Plant Variety * {!search && `(${varieties.length} available)`}</label>
             <select
               value={plantVarietyId}
               onChange={(e) => setPlantVarietyId(e.target.value)}
               required
               disabled={loading}
             >
-              <option value="">Select a variety...</option>
+              <option value="">
+                {varieties.length === 0
+                  ? (search ? 'No matching varieties' : 'Loading...')
+                  : 'Select a variety...'}
+              </option>
               {varieties.map((v) => (
                 <option key={v.id} value={v.id}>
                   {v.common_name} {v.variety_name ? `(${v.variety_name})` : ''}
