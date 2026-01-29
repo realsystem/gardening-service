@@ -23,7 +23,7 @@ from app.rules.irrigation_rules import (
     calculate_total_water_volume,
     get_most_common_method,
 )
-from app.auth import get_current_user
+from app.api.dependencies import get_current_user
 
 router = APIRouter(prefix="/irrigation", tags=["Irrigation"])
 

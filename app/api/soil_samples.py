@@ -17,7 +17,7 @@ from app.schemas.soil_sample import (
     SoilSampleList,
 )
 from app.rules.soil_rules import generate_soil_recommendations
-from app.auth import get_current_user
+from app.api.dependencies import get_current_user
 
 router = APIRouter(prefix="/soil-samples", tags=["Soil Samples"])
 
