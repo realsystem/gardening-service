@@ -35,6 +35,10 @@ class PlantingEventRepository:
         """Get all planting events for a user"""
         return self.db.query(PlantingEvent).filter(PlantingEvent.user_id == user_id).all()
 
+    def get_by_garden(self, garden_id: int) -> List[PlantingEvent]:
+        """Get all planting events for a specific garden"""
+        return self.db.query(PlantingEvent).filter(PlantingEvent.garden_id == garden_id).all()
+
     def get_by_date_range(self, user_id: int, start_date: date, end_date: date) -> List[PlantingEvent]:
         """Get planting events within a date range"""
         return self.db.query(PlantingEvent).filter(

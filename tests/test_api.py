@@ -292,6 +292,131 @@ class TestPlantingEventEndpoints:
         data = response.json()
         assert data["health_status"] == "stressed"
 
+    def test_planting_event_includes_plant_variety(self, client, sample_user, outdoor_planting_event, sample_plant_variety, user_token):
+        """Test that planting event response includes plant_variety details"""
+        response = client.get(
+            f"/planting-events/{outdoor_planting_event.id}",
+            headers={"Authorization": f"Bearer {user_token}"}
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert "plant_variety" in data
+        assert data["plant_variety"] is not None
+        assert data["plant_variety"]["common_name"] == sample_plant_variety.common_name
+        assert data["plant_variety"]["id"] == sample_plant_variety.id
+
+    def test_list_planting_events_includes_plant_variety(self, client, sample_user, outdoor_planting_event, sample_plant_variety, user_token):
+        """Test that list planting events includes plant_variety details"""
+        response = client.get(
+            "/planting-events/",
+            headers={"Authorization": f"Bearer {user_token}"}
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data) >= 1
+        # Check first planting event has plant_variety
+        assert "plant_variety" in data[0]
+        assert data[0]["plant_variety"] is not None
+        assert "common_name" in data[0]["plant_variety"]
+
+    def test_filter_planting_events_by_garden(self, client, sample_user, outdoor_garden, sample_plant_variety, user_token, test_db):
+        """Test filtering planting events by garden_id"""
+        from app.models.garden import Garden
+        from app.models.planting_event import PlantingEvent
+
+        # Create second garden
+        garden2 = Garden(
+            user_id=sample_user.id,
+            name="Test Garden 2",
+            garden_type="outdoor",
+            is_hydroponic=False
+        )
+        test_db.add(garden2)
+        test_db.commit()
+        test_db.refresh(garden2)
+
+        # Create plantings in both gardens
+        planting1 = PlantingEvent(
+            user_id=sample_user.id,
+            garden_id=outdoor_garden.id,
+            plant_variety_id=sample_plant_variety.id,
+            planting_date=date.today(),
+            planting_method="direct_sow"
+        )
+        planting2 = PlantingEvent(
+            user_id=sample_user.id,
+            garden_id=garden2.id,
+            plant_variety_id=sample_plant_variety.id,
+            planting_date=date.today(),
+            planting_method="transplant"
+        )
+        test_db.add_all([planting1, planting2])
+        test_db.commit()
+
+        # Get all plantings
+        response = client.get(
+            "/planting-events/",
+            headers={"Authorization": f"Bearer {user_token}"}
+        )
+        assert response.status_code == 200
+        all_data = response.json()
+        assert len(all_data) >= 2
+
+        # Filter by first garden
+        response = client.get(
+            f"/planting-events/?garden_id={outdoor_garden.id}",
+            headers={"Authorization": f"Bearer {user_token}"}
+        )
+        assert response.status_code == 200
+        garden1_data = response.json()
+        # Check all plantings belong to garden 1
+        for planting in garden1_data:
+            assert planting["garden_id"] == outdoor_garden.id
+
+        # Filter by second garden
+        response = client.get(
+            f"/planting-events/?garden_id={garden2.id}",
+            headers={"Authorization": f"Bearer {user_token}"}
+        )
+        assert response.status_code == 200
+        garden2_data = response.json()
+        # Check all plantings belong to garden 2
+        for planting in garden2_data:
+            assert planting["garden_id"] == garden2.id
+
+    def test_filter_planting_events_unauthorized_garden(self, client, sample_user, second_user, outdoor_garden, user_token):
+        """Test that user cannot filter by another user's garden"""
+        from app.services.auth_service import AuthService
+        from app.models.garden import Garden
+
+        # Create garden for second user
+        second_user_garden = Garden(
+            user_id=second_user.id,
+            name="Second User Garden",
+            garden_type="outdoor",
+            is_hydroponic=False
+        )
+        # Get the test_db from outdoor_garden's session
+        db = outdoor_garden.__dict__['_sa_instance_state'].session
+        db.add(second_user_garden)
+        db.commit()
+        db.refresh(second_user_garden)
+
+        # Try to filter by second user's garden using first user's token
+        response = client.get(
+            f"/planting-events/?garden_id={second_user_garden.id}",
+            headers={"Authorization": f"Bearer {user_token}"}
+        )
+        assert response.status_code == 403
+
+    def test_filter_planting_events_nonexistent_garden(self, client, user_token):
+        """Test filtering by non-existent garden returns 404"""
+        response = client.get(
+            "/planting-events/?garden_id=99999",
+            headers={"Authorization": f"Bearer {user_token}"}
+        )
+        assert response.status_code == 404
+
 
 class TestSensorReadingEndpoints:
     """Test sensor reading endpoints"""

@@ -7,6 +7,7 @@ import { CreatePlantingEvent } from './CreatePlantingEvent';
 import { CreateGarden } from './CreateGarden';
 import { CreateSensorReading } from './CreateSensorReading';
 import { Profile } from './Profile';
+import { PlantingsList } from './PlantingsList';
 
 interface DashboardProps {
   user: User;
@@ -23,6 +24,9 @@ export function Dashboard({ user: initialUser, onLogout }: DashboardProps) {
   const [error, setError] = useState('');
   const [activeModal, setActiveModal] = useState<'seed' | 'planting' | 'profile' | 'garden' | 'sensor' | null>(null);
   const [priorityFilter, setPriorityFilter] = useState<'all' | 'high' | 'medium' | 'low'>('all');
+  const [deletingGardenId, setDeletingGardenId] = useState<number | null>(null);
+  const [confirmDeleteGardenId, setConfirmDeleteGardenId] = useState<number | null>(null);
+  const [viewMode, setViewMode] = useState<'dashboard' | 'plantings'>('dashboard');
 
   // Update user when prop changes
   useEffect(() => {
@@ -96,6 +100,19 @@ export function Dashboard({ user: initialUser, onLogout }: DashboardProps) {
     }
   };
 
+  const handleDeleteGarden = async (gardenId: number) => {
+    setDeletingGardenId(gardenId);
+    try {
+      await api.deleteGarden(gardenId);
+      setGardens(gardens.filter(g => g.id !== gardenId));
+      setConfirmDeleteGardenId(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete garden');
+    } finally {
+      setDeletingGardenId(null);
+    }
+  };
+
   // Filter tasks for today and upcoming
   const today = new Date().toISOString().split('T')[0];
 
@@ -166,11 +183,20 @@ export function Dashboard({ user: initialUser, onLogout }: DashboardProps) {
               <button className="btn" onClick={() => setActiveModal('sensor')}>
                 Add Sensor Reading
               </button>
+              <button
+                className="btn"
+                style={{ backgroundColor: viewMode === 'plantings' ? '#4a90e2' : undefined }}
+                onClick={() => setViewMode(viewMode === 'plantings' ? 'dashboard' : 'plantings')}
+              >
+                {viewMode === 'plantings' ? 'Back to Dashboard' : 'View Plantings'}
+              </button>
             </div>
           </div>
 
           {loading ? (
             <div className="loading">Loading...</div>
+          ) : viewMode === 'plantings' ? (
+            <PlantingsList />
           ) : (
             <>
               <div className="card">
@@ -234,34 +260,46 @@ export function Dashboard({ user: initialUser, onLogout }: DashboardProps) {
                           backgroundColor: garden.garden_type === 'indoor' ? '#f0f8ff' : '#f9f9f9',
                         }}
                       >
-                        <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>
-                          {garden.name}
-                          <span style={{
-                            marginLeft: '10px',
-                            padding: '2px 8px',
-                            backgroundColor: garden.garden_type === 'indoor' ? '#4a90e2' : '#5cb85c',
-                            color: 'white',
-                            borderRadius: '3px',
-                            fontSize: '0.75em',
-                            textTransform: 'uppercase'
-                          }}>
-                            {garden.garden_type}
-                          </span>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>
+                              {garden.name}
+                              <span style={{
+                                marginLeft: '10px',
+                                padding: '2px 8px',
+                                backgroundColor: garden.garden_type === 'indoor' ? '#4a90e2' : '#5cb85c',
+                                color: 'white',
+                                borderRadius: '3px',
+                                fontSize: '0.75em',
+                                textTransform: 'uppercase'
+                              }}>
+                                {garden.garden_type}
+                              </span>
+                            </div>
+                            {garden.description && (
+                              <div style={{ fontSize: '0.9em', color: '#666', marginBottom: '5px' }}>
+                                {garden.description}
+                              </div>
+                            )}
+                            {garden.garden_type === 'indoor' && (
+                              <div style={{ fontSize: '0.85em', color: '#555', marginTop: '5px' }}>
+                                {garden.location && `Location: ${garden.location}`}
+                                {garden.light_source_type && ` • Light: ${garden.light_source_type.toUpperCase()}`}
+                                {garden.light_hours_per_day && ` (${garden.light_hours_per_day}h/day)`}
+                                {garden.temp_min_f && garden.temp_max_f && ` • Temp: ${garden.temp_min_f}-${garden.temp_max_f}°F`}
+                                {garden.humidity_min_percent && garden.humidity_max_percent && ` • Humidity: ${garden.humidity_min_percent}-${garden.humidity_max_percent}%`}
+                              </div>
+                            )}
+                          </div>
+                          <button
+                            onClick={() => setConfirmDeleteGardenId(garden.id)}
+                            className="btn btn-secondary"
+                            style={{ marginLeft: '10px', padding: '5px 12px', fontSize: '0.85em' }}
+                            disabled={deletingGardenId === garden.id}
+                          >
+                            {deletingGardenId === garden.id ? 'Deleting...' : 'Delete'}
+                          </button>
                         </div>
-                        {garden.description && (
-                          <div style={{ fontSize: '0.9em', color: '#666', marginBottom: '5px' }}>
-                            {garden.description}
-                          </div>
-                        )}
-                        {garden.garden_type === 'indoor' && (
-                          <div style={{ fontSize: '0.85em', color: '#555', marginTop: '5px' }}>
-                            {garden.location && `Location: ${garden.location}`}
-                            {garden.light_source_type && ` • Light: ${garden.light_source_type.toUpperCase()}`}
-                            {garden.light_hours_per_day && ` (${garden.light_hours_per_day}h/day)`}
-                            {garden.temp_min_f && garden.temp_max_f && ` • Temp: ${garden.temp_min_f}-${garden.temp_max_f}°F`}
-                            {garden.humidity_min_percent && garden.humidity_max_percent && ` • Humidity: ${garden.humidity_min_percent}-${garden.humidity_max_percent}%`}
-                          </div>
-                        )}
                       </div>
                     ))}
                   </div>
@@ -430,6 +468,37 @@ export function Dashboard({ user: initialUser, onLogout }: DashboardProps) {
           onClose={() => setActiveModal(null)}
           onSuccess={handleSensorReadingCreated}
         />
+      )}
+
+      {/* Delete Garden Confirmation Modal */}
+      {confirmDeleteGardenId !== null && (
+        <div className="modal-overlay" onClick={() => setConfirmDeleteGardenId(null)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <h2>Delete Garden?</h2>
+            <p>
+              Are you sure you want to delete <strong>{gardens.find(g => g.id === confirmDeleteGardenId)?.name}</strong>?
+            </p>
+            <p style={{ color: '#d32f2f', fontSize: '0.9em' }}>
+              ⚠️ This will permanently delete all plantings, sensor readings, soil samples, irrigation events, and tasks associated with this garden.
+            </p>
+            <div className="form-actions">
+              <button
+                onClick={() => setConfirmDeleteGardenId(null)}
+                className="btn btn-secondary"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleDeleteGarden(confirmDeleteGardenId)}
+                className="btn"
+                style={{ backgroundColor: '#d32f2f' }}
+                disabled={deletingGardenId === confirmDeleteGardenId}
+              >
+                {deletingGardenId === confirmDeleteGardenId ? 'Deleting...' : 'Delete Garden'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </>
   );

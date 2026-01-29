@@ -3,6 +3,7 @@ from pydantic import BaseModel, Field
 from typing import Optional
 from datetime import date, datetime
 from app.models.planting_event import PlantingMethod, PlantHealth
+from app.schemas.plant_variety import PlantVarietyResponse
 
 
 class PlantingEventCreate(BaseModel):
@@ -34,6 +35,7 @@ class PlantingEventResponse(BaseModel):
     user_id: int
     garden_id: int
     plant_variety_id: int
+    plant_variety: Optional[PlantVarietyResponse] = None
     germination_event_id: Optional[int] = None
     planting_date: date
     planting_method: PlantingMethod
