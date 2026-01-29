@@ -6,7 +6,10 @@ import type {
   SeedBatch,
   PlantingEvent,
   Task,
-  ApiError
+  SensorReading,
+  ApiError,
+  GardenDetails,
+  PlantingInGarden
 } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
@@ -84,10 +87,52 @@ class ApiClient {
     return this.request<Garden[]>('/gardens');
   }
 
-  async createGarden(name: string, description?: string): Promise<Garden> {
+  async createGarden(data: {
+    name: string;
+    description?: string;
+    garden_type?: 'outdoor' | 'indoor';
+    location?: string;
+    light_source_type?: 'led' | 'fluorescent' | 'natural_supplement' | 'hps' | 'mh';
+    light_hours_per_day?: number;
+    temp_min_f?: number;
+    temp_max_f?: number;
+    humidity_min_percent?: number;
+    humidity_max_percent?: number;
+    container_type?: string;
+    grow_medium?: string;
+    is_hydroponic?: boolean;
+    hydro_system_type?: 'nft' | 'dwc' | 'ebb_flow' | 'aeroponics' | 'drip' | 'wick';
+    reservoir_size_liters?: number;
+    nutrient_schedule?: string;
+    ph_min?: number;
+    ph_max?: number;
+    ec_min?: number;
+    ec_max?: number;
+    ppm_min?: number;
+    ppm_max?: number;
+    water_temp_min_f?: number;
+    water_temp_max_f?: number;
+  }): Promise<Garden> {
     return this.request<Garden>('/gardens', {
       method: 'POST',
-      body: JSON.stringify({ name, description }),
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getGardenDetails(gardenId: number): Promise<GardenDetails> {
+    return this.request<GardenDetails>(`/gardens/${gardenId}`);
+  }
+
+  async getGardenPlantings(gardenId: number): Promise<PlantingInGarden[]> {
+    return this.request<PlantingInGarden[]>(`/gardens/${gardenId}/plantings`);
+  }
+
+  async deleteGarden(gardenId: number): Promise<void> {
+    await fetch(`${API_BASE_URL}/gardens/${gardenId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${this.token}`,
+      },
     });
   }
 
@@ -190,6 +235,42 @@ class ApiClient {
     return this.request<Task>(`/tasks/${taskId}/complete`, {
       method: 'POST',
       body: JSON.stringify({ completed_date: completedDate, notes }),
+    });
+  }
+
+  // Sensor Readings
+  async getSensorReadings(gardenId?: number, startDate?: string, endDate?: string): Promise<SensorReading[]> {
+    const params = new URLSearchParams();
+    if (gardenId) params.append('garden_id', gardenId.toString());
+    if (startDate) params.append('start_date', startDate);
+    if (endDate) params.append('end_date', endDate);
+    const query = params.toString() ? `?${params.toString()}` : '';
+    return this.request<SensorReading[]>(`/sensor-readings${query}`);
+  }
+
+  async createSensorReading(data: {
+    garden_id: number;
+    reading_date: string;
+    temperature_f?: number;
+    humidity_percent?: number;
+    light_hours?: number;
+    ph_level?: number;
+    ec_ms_cm?: number;
+    ppm?: number;
+    water_temp_f?: number;
+  }): Promise<SensorReading> {
+    return this.request<SensorReading>('/sensor-readings', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteSensorReading(readingId: number): Promise<void> {
+    await fetch(`${API_BASE_URL}/sensor-readings/${readingId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${this.token}`,
+      },
     });
   }
 }
