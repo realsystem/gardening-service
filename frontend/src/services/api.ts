@@ -9,7 +9,14 @@ import type {
   SensorReading,
   ApiError,
   GardenDetails,
-  PlantingInGarden
+  PlantingInGarden,
+  SoilSample,
+  SoilSampleCreate,
+  SoilSampleList,
+  IrrigationEvent,
+  IrrigationEventCreate,
+  IrrigationEventList,
+  IrrigationSummary
 } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
@@ -267,6 +274,89 @@ class ApiClient {
 
   async deleteSensorReading(readingId: number): Promise<void> {
     await fetch(`${API_BASE_URL}/sensor-readings/${readingId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${this.token}`,
+      },
+    });
+  }
+
+  // Soil Samples
+  async getSoilSamples(params?: {
+    garden_id?: number;
+    planting_event_id?: number;
+    start_date?: string;
+    end_date?: string;
+  }): Promise<SoilSampleList> {
+    const searchParams = new URLSearchParams();
+    if (params?.garden_id) searchParams.append('garden_id', params.garden_id.toString());
+    if (params?.planting_event_id) searchParams.append('planting_event_id', params.planting_event_id.toString());
+    if (params?.start_date) searchParams.append('start_date', params.start_date);
+    if (params?.end_date) searchParams.append('end_date', params.end_date);
+    const query = searchParams.toString() ? `?${searchParams.toString()}` : '';
+    return this.request<SoilSampleList>(`/soil-samples${query}`);
+  }
+
+  async getSoilSample(sampleId: number): Promise<SoilSample> {
+    return this.request<SoilSample>(`/soil-samples/${sampleId}`);
+  }
+
+  async createSoilSample(data: SoilSampleCreate): Promise<SoilSample> {
+    return this.request<SoilSample>('/soil-samples', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteSoilSample(sampleId: number): Promise<void> {
+    await fetch(`${API_BASE_URL}/soil-samples/${sampleId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${this.token}`,
+      },
+    });
+  }
+
+  // Irrigation Events
+  async getIrrigationEvents(params?: {
+    garden_id?: number;
+    planting_event_id?: number;
+    start_date?: string;
+    end_date?: string;
+    days?: number;
+  }): Promise<IrrigationEventList> {
+    const searchParams = new URLSearchParams();
+    if (params?.garden_id) searchParams.append('garden_id', params.garden_id.toString());
+    if (params?.planting_event_id) searchParams.append('planting_event_id', params.planting_event_id.toString());
+    if (params?.start_date) searchParams.append('start_date', params.start_date);
+    if (params?.end_date) searchParams.append('end_date', params.end_date);
+    if (params?.days) searchParams.append('days', params.days.toString());
+    const query = searchParams.toString() ? `?${searchParams.toString()}` : '';
+    return this.request<IrrigationEventList>(`/irrigation${query}`);
+  }
+
+  async getIrrigationSummary(params: {
+    garden_id?: number;
+    planting_event_id?: number;
+    days?: number;
+  }): Promise<IrrigationSummary> {
+    const searchParams = new URLSearchParams();
+    if (params.garden_id) searchParams.append('garden_id', params.garden_id.toString());
+    if (params.planting_event_id) searchParams.append('planting_event_id', params.planting_event_id.toString());
+    if (params.days) searchParams.append('days', params.days.toString());
+    const query = searchParams.toString() ? `?${searchParams.toString()}` : '';
+    return this.request<IrrigationSummary>(`/irrigation/summary${query}`);
+  }
+
+  async createIrrigationEvent(data: IrrigationEventCreate): Promise<IrrigationEvent> {
+    return this.request<IrrigationEvent>('/irrigation', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteIrrigationEvent(eventId: number): Promise<void> {
+    await fetch(`${API_BASE_URL}/irrigation/${eventId}`, {
       method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${this.token}`,

@@ -35,12 +35,12 @@ class PlantingEvent(Base):
 
     # Planting details
     planting_date = Column(Date, nullable=False, index=True)  # Key date for calculations
-    planting_method = Column(SQLEnum(PlantingMethod), nullable=False)
+    planting_method = Column(SQLEnum(PlantingMethod, values_callable=lambda x: [e.value for e in x]), nullable=False)
     plant_count = Column(Integer, nullable=True)
     location_in_garden = Column(String(200), nullable=True)  # e.g., "Bed 2, Row 3"
 
     # Plant tracking (NEW)
-    health_status = Column(SQLEnum(PlantHealth), nullable=True)
+    health_status = Column(SQLEnum(PlantHealth, values_callable=lambda x: [e.value for e in x]), nullable=True)
     plant_notes = Column(Text, nullable=True)
 
     notes = Column(Text, nullable=True)
@@ -53,3 +53,5 @@ class PlantingEvent(Base):
     plant_variety = relationship("PlantVariety", back_populates="planting_events")
     germination_event = relationship("GerminationEvent", back_populates="planting_events")
     care_tasks = relationship("CareTask", back_populates="planting_event", cascade="all, delete-orphan")
+    soil_samples = relationship("SoilSample", back_populates="planting_event", cascade="all, delete-orphan")
+    irrigation_events = relationship("IrrigationEvent", back_populates="planting_event", cascade="all, delete-orphan")

@@ -12,6 +12,9 @@ from app.api import (
     germination_events_router,
     planting_events_router,
     care_tasks_router,
+    sensor_readings_router,
+    soil_samples_router,
+    irrigation_router,
 )
 from app.error_handlers import (
     http_exception_handler,
@@ -51,6 +54,9 @@ app.include_router(seed_batches_router)
 app.include_router(germination_events_router)
 app.include_router(planting_events_router)
 app.include_router(care_tasks_router)
+app.include_router(sensor_readings_router)
+app.include_router(soil_samples_router)
+app.include_router(irrigation_router)
 
 
 @app.get("/")
