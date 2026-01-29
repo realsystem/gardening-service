@@ -1,6 +1,8 @@
 """Authentication service"""
 from datetime import datetime, timedelta
 from typing import Optional
+import hashlib
+import base64
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
@@ -24,24 +26,33 @@ class AuthService:
     """Service for authentication and authorization"""
 
     @staticmethod
+    def _prepare_password(password: str) -> str:
+        """
+        Prepare password for bcrypt by pre-hashing if needed.
+        Bcrypt has a 72-byte limit, so we use SHA256 for long passwords.
+        """
+        password_bytes = password.encode('utf-8')
+        if len(password_bytes) > 72:
+            # Pre-hash with SHA256 and base64 encode to keep it under 72 bytes
+            hashed = hashlib.sha256(password_bytes).digest()
+            return base64.b64encode(hashed).decode('ascii')
+        return password
+
+    @staticmethod
     def hash_password(password: str) -> str:
-        """Hash a password (bcrypt has 72 byte limit)"""
-        # Truncate to 72 bytes to avoid bcrypt error
-        password_bytes = password.encode('utf-8')[:72]
-        return pwd_context.hash(password_bytes.decode('utf-8', errors='ignore'))
+        """Hash a password"""
+        prepared_password = AuthService._prepare_password(password)
+        return pwd_context.hash(prepared_password)
 
     @staticmethod
     def verify_password(plain_password: str, hashed_password: str) -> bool:
-        """Verify a password against a hash (bcrypt has 72 byte limit)"""
-        # Truncate to 72 bytes to avoid bcrypt error
-        password_bytes = plain_password.encode('utf-8')[:72]
+        """Verify a password against a hash"""
+        prepared_password = AuthService._prepare_password(plain_password)
         try:
-            return pwd_context.verify(password_bytes.decode('utf-8', errors='ignore'), hashed_password)
-        except ValueError as e:
-            # Handle any remaining bcrypt errors gracefully
-            if "password cannot be longer than 72 bytes" in str(e):
-                return False
-            raise
+            return pwd_context.verify(prepared_password, hashed_password)
+        except Exception:
+            # If verification fails for any reason, return False
+            return False
 
     @staticmethod
     def create_access_token(user_id: int, email: str) -> str:
