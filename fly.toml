@@ -1,0 +1,45 @@
+# Fly.io deployment configuration for Gardening Helper Service
+# This file is created during `fly launch` and configures the deployment
+
+# Application name (will be set during fly launch)
+app = ""
+
+# Assign to prevent using a custom domain
+primary_region = "lax"  # Los Angeles - change to nearest region
+
+# Build configuration - uses Dockerfile
+[build]
+
+# Environment variables (non-secret)
+[env]
+  APP_NAME = "Gardening Helper Service"
+  APP_ENV = "production"
+  DEBUG = "False"
+  ALGORITHM = "HS256"
+  ACCESS_TOKEN_EXPIRE_MINUTES = "10080"  # 7 days
+  PORT = "8080"
+
+# HTTP service configuration
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 0  # Scale to zero when idle (free tier optimization)
+  processes = ["app"]
+
+  # Health check configuration
+  [http_service.checks]
+    [http_service.checks.alive]
+      type = "http"
+      path = "/health"
+      interval = "30s"
+      timeout = "5s"
+      grace_period = "10s"
+
+# VM resource allocation
+# Keep minimal for cost optimization
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory_mb = 256  # Minimum viable - increase to 512 if experiencing issues
