@@ -1,0 +1,54 @@
+# Python cache and bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Local development
+.env
+.env.local
+*.log
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+*.md
+docs/
+
+# Database
+*.db
+*.sqlite
+
+# Alembic - keep migrations, exclude local state
+alembic/__pycache__/
+
+# Fly.io
+fly.toml
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose.yml
