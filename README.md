@@ -10,9 +10,16 @@ This service helps home gardeners track and manage their gardening lifecycle fro
 
 ### Key Features
 
-- **User Authentication**: Simple email/password authentication with JWT tokens
+- **User Authentication & Profiles**: Complete user management system
+  - Email/password authentication with JWT tokens
+  - User profiles with display name, avatar, location
+  - Gardening preferences and personalization
+  - Profile editing capability
 - **Climate Zone Detection**: Automatic USDA zone determination from location
 - **Seed Management**: Track seed batches with viability warnings
+  - Preferred germination methods per batch
+  - Visual plant variety information with photos
+  - Tag-based organization (easy, fruiting, perennial, etc.)
 - **Germination Tracking**: Monitor seed germination with success rate tracking
 - **Planting Tracking**: Record planting events with health status monitoring
   - Plant health status (healthy, stressed, diseased)
@@ -26,7 +33,10 @@ This service helps home gardeners track and manage their gardening lifecycle fro
   - Task priorities: High, Medium, Low
   - Recurring tasks: Daily, Weekly, Biweekly, Monthly
   - Automatic next occurrence generation for recurring tasks
-- **Dashboard & Filters**: Visual task management with statistics and filtering
+- **Enhanced Dashboard**: Rich visual interface with personalization
+  - Personalized greeting with user name and location
+  - Profile information display
+  - Plant variety photos and tags
   - Filter tasks by priority
   - View task statistics by priority and status
   - Track recurring task counts
@@ -359,10 +369,18 @@ class FertilizeRule(BaseRule):
 
 ### Core Entities
 
-- **User**: User accounts with location and USDA zone
+- **User**: User accounts with profile and location
+  - `display_name`: User's preferred display name
+  - `avatar_url`: Optional profile picture URL
+  - `city`: User's city/location
+  - `gardening_preferences`: Gardening style and preferences
+  - `usda_zone`: Climate zone
 - **Garden**: User's growing areas
 - **PlantVariety**: Reference table of plant types (static seed data)
+  - `photo_url`: Optional plant variety image
+  - `tags`: Comma-separated tags (easy, fruiting, perennial, etc.)
 - **SeedBatch**: Seeds from a specific source and year
+  - `preferred_germination_method`: User's preferred germination approach
 - **GerminationEvent**: When seeds are started
   - `germination_success_rate`: Percentage (0-100) of successful germination
 - **PlantingEvent**: When/where plants are planted (lifecycle anchor)
@@ -725,7 +743,8 @@ If you prefer not to use Docker, follow the original setup instructions at the t
 ### Users
 - `POST /users` - Create user
 - `POST /users/login` - Login
-- `GET /users/me` - Get current user info
+- `GET /users/me` - Get current user info (includes profile fields)
+- `PATCH /users/me` - Update user profile (display_name, avatar_url, city, gardening_preferences)
 
 ### Gardens
 - `POST /gardens` - Create garden
@@ -735,14 +754,15 @@ If you prefer not to use Docker, follow the original setup instructions at the t
 - `DELETE /gardens/{id}` - Delete garden
 
 ### Plant Varieties
-- `GET /plant-varieties` - List varieties (searchable)
+- `GET /plant-varieties` - List varieties (searchable, includes photo_url and tags)
 - `GET /plant-varieties/{id}` - Get variety
 
 ### Seed Batches
 - `POST /seed-batches` - Create seed batch (+ auto-generates viability tasks)
-- `GET /seed-batches` - List user's batches
+  - Accepts `preferred_germination_method` field
+- `GET /seed-batches` - List user's batches (includes plant variety with photos/tags)
 - `GET /seed-batches/{id}` - Get batch
-- `PATCH /seed-batches/{id}` - Update batch
+- `PATCH /seed-batches/{id}` - Update batch (including preferred_germination_method)
 - `DELETE /seed-batches/{id}` - Delete batch
 
 ### Germination Events

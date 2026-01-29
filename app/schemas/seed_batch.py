@@ -11,6 +11,7 @@ class SeedBatchCreate(BaseModel):
     source: Optional[str] = None
     harvest_year: Optional[int] = Field(None, ge=1900, le=2100)
     quantity: Optional[int] = Field(None, ge=0)
+    preferred_germination_method: Optional[str] = None
     notes: Optional[str] = None
 
 
@@ -19,6 +20,7 @@ class SeedBatchUpdate(BaseModel):
     source: Optional[str] = None
     harvest_year: Optional[int] = Field(None, ge=1900, le=2100)
     quantity: Optional[int] = Field(None, ge=0)
+    preferred_germination_method: Optional[str] = None
     notes: Optional[str] = None
 
 
@@ -31,6 +33,7 @@ class SeedBatchResponse(BaseModel):
     source: Optional[str] = None
     harvest_year: Optional[int] = None
     quantity: Optional[int] = None
+    preferred_germination_method: Optional[str] = None
     notes: Optional[str] = None
     created_at: datetime
 

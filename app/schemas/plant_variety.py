@@ -19,6 +19,8 @@ class PlantVarietyResponse(BaseModel):
     water_requirement: Optional[WaterRequirement] = None
     description: Optional[str] = None
     growing_notes: Optional[str] = None
+    photo_url: Optional[str] = None
+    tags: Optional[str] = None
 
     class Config:
         from_attributes = True
