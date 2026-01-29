@@ -12,7 +12,9 @@ from app.schemas.garden_details import (
     TaskSummaryInGarden,
     GardenStatsResponse
 )
+from app.schemas.sensor_reading import SensorReadingResponse
 from app.repositories.garden_repository import GardenRepository
+from app.repositories.sensor_reading_repository import SensorReadingRepository
 from app.models.planting_event import PlantingEvent
 from app.models.care_task import CareTask, TaskStatus
 from app.models.plant_variety import PlantVariety
@@ -282,3 +284,35 @@ def delete_garden(
         )
 
     repo.delete(garden)
+
+
+@router.get("/{garden_id}/sensor-readings", response_model=List[SensorReadingResponse])
+def get_garden_sensor_readings(
+    garden_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Get all sensor readings for a specific garden.
+    Returns readings sorted by timestamp descending (most recent first).
+    """
+    repo = GardenRepository(db)
+    garden = repo.get_by_id(garden_id)
+
+    if not garden:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Garden not found"
+        )
+
+    if garden.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to access this garden"
+        )
+
+    # Get all sensor readings for this garden, sorted by date descending
+    reading_repo = SensorReadingRepository(db)
+    readings = reading_repo.get_by_garden(garden_id)
+
+    return readings

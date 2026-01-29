@@ -134,3 +134,32 @@ def update_planting_event(
     event = repo.update(event, **update_data)
 
     return event
+
+
+@router.delete("/{event_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_planting_event(
+    event_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Delete a planting event.
+    Cascades to delete all associated tasks.
+    Historical data (sensor readings, soil samples, irrigation events) is preserved.
+    """
+    repo = PlantingEventRepository(db)
+    event = repo.get_by_id(event_id)
+
+    if not event:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Planting event not found"
+        )
+
+    if event.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to delete this planting event"
+        )
+
+    repo.delete(event)
