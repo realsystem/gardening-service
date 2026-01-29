@@ -27,7 +27,10 @@ class IrrigationEvent(Base):
     # Irrigation details
     irrigation_date = Column(DateTime, nullable=False, default=datetime.utcnow)
     water_volume_liters = Column(Float, nullable=True)  # Volume in liters
-    irrigation_method = Column(SQLEnum(IrrigationMethod), nullable=False)
+    irrigation_method = Column(
+        SQLEnum(IrrigationMethod, values_callable=lambda x: [e.value for e in x]),
+        nullable=False
+    )
     duration_minutes = Column(Integer, nullable=True)  # Duration in minutes
 
     # Metadata
