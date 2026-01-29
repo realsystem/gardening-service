@@ -4,9 +4,10 @@ import type { IrrigationOverviewSummary } from '../types';
 
 interface IrrigationOverviewCardProps {
   gardenId?: number;
+  onLogWatering?: () => void;
 }
 
-export function IrrigationOverviewCard({ gardenId }: IrrigationOverviewCardProps) {
+export function IrrigationOverviewCard({ gardenId, onLogWatering }: IrrigationOverviewCardProps) {
   const [summary, setSummary] = useState<IrrigationOverviewSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -73,13 +74,33 @@ export function IrrigationOverviewCard({ gardenId }: IrrigationOverviewCardProps
   if (!summary || summary.total_events === 0) {
     return (
       <div className="bg-white rounded-lg shadow p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <span className="text-2xl">💧</span>
-          <h2 className="text-xl font-semibold">Irrigation Overview</h2>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <span className="text-2xl">💧</span>
+            <h2 className="text-xl font-semibold">Irrigation Overview</h2>
+          </div>
+          {onLogWatering && (
+            <button
+              onClick={onLogWatering}
+              className="btn btn-primary"
+              style={{ padding: '6px 12px', fontSize: '0.875rem' }}
+            >
+              + Log Watering
+            </button>
+          )}
         </div>
         <div className="text-center py-8">
           <p className="text-gray-500 mb-2">No irrigation events recorded yet</p>
           <p className="text-sm text-gray-400">Start tracking watering to monitor patterns</p>
+          {onLogWatering && (
+            <button
+              onClick={onLogWatering}
+              className="btn btn-primary"
+              style={{ marginTop: '16px' }}
+            >
+              Log Your First Watering
+            </button>
+          )}
         </div>
       </div>
     );
@@ -87,9 +108,20 @@ export function IrrigationOverviewCard({ gardenId }: IrrigationOverviewCardProps
 
   return (
     <div className="bg-white rounded-lg shadow p-6">
-      <div className="flex items-center gap-2 mb-4">
-        <span className="text-2xl">💧</span>
-        <h2 className="text-xl font-semibold">Irrigation Overview</h2>
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <span className="text-2xl">💧</span>
+          <h2 className="text-xl font-semibold">Irrigation Overview</h2>
+        </div>
+        {onLogWatering && (
+          <button
+            onClick={onLogWatering}
+            className="btn btn-primary"
+            style={{ padding: '6px 12px', fontSize: '0.875rem' }}
+          >
+            + Log Watering
+          </button>
+        )}
       </div>
 
       {summary.garden_name && (
