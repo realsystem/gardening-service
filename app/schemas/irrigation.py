@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional, List
 from datetime import datetime
 from app.models.irrigation_event import IrrigationMethod
@@ -6,6 +6,8 @@ from app.models.irrigation_event import IrrigationMethod
 
 class IrrigationEventCreate(BaseModel):
     """Schema for creating a new irrigation event."""
+    model_config = ConfigDict(use_enum_values=True)
+
     garden_id: Optional[int] = Field(None, description="Garden ID (either garden_id or planting_event_id required)")
     planting_event_id: Optional[int] = Field(None, description="Planting event ID")
 
