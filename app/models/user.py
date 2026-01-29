@@ -40,3 +40,6 @@ class User(Base):
     germination_events = relationship("GerminationEvent", back_populates="user", cascade="all, delete-orphan")
     planting_events = relationship("PlantingEvent", back_populates="user", cascade="all, delete-orphan")
     care_tasks = relationship("CareTask", back_populates="user", cascade="all, delete-orphan")
+    sensor_readings = relationship("SensorReading", back_populates="user", cascade="all, delete-orphan")
+    soil_samples = relationship("SoilSample", back_populates="user", cascade="all, delete-orphan")
+    irrigation_events = relationship("IrrigationEvent", back_populates="user", cascade="all, delete-orphan")

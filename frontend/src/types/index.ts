@@ -158,3 +158,102 @@ export interface GardenDetails {
   tasks: TaskSummary[];
   stats: GardenStats;
 }
+
+// Soil Tracking Types
+export interface SoilSample {
+  id: number;
+  user_id: number;
+  garden_id?: number;
+  planting_event_id?: number;
+  ph: number;
+  nitrogen_ppm?: number;
+  phosphorus_ppm?: number;
+  potassium_ppm?: number;
+  organic_matter_percent?: number;
+  moisture_percent?: number;
+  date_collected: string;
+  notes?: string;
+  garden_name?: string;
+  plant_name?: string;
+  recommendations: SoilRecommendation[];
+}
+
+export interface SoilRecommendation {
+  parameter: string;
+  current_value: number;
+  optimal_range: string;
+  status: 'optimal' | 'low' | 'high' | 'critical';
+  recommendation: string;
+  priority: 'low' | 'medium' | 'high' | 'critical';
+}
+
+export interface SoilSampleCreate {
+  garden_id?: number;
+  planting_event_id?: number;
+  ph: number;
+  nitrogen_ppm?: number;
+  phosphorus_ppm?: number;
+  potassium_ppm?: number;
+  organic_matter_percent?: number;
+  moisture_percent?: number;
+  date_collected: string;
+  notes?: string;
+}
+
+export interface SoilSampleList {
+  samples: SoilSample[];
+  total: number;
+  latest_sample?: SoilSample;
+}
+
+// Irrigation Tracking Types
+export type IrrigationMethod = 'drip' | 'sprinkler' | 'hand_watering' | 'soaker_hose' | 'flood' | 'misting';
+
+export interface IrrigationEvent {
+  id: number;
+  user_id: number;
+  garden_id?: number;
+  planting_event_id?: number;
+  irrigation_date: string;
+  water_volume_liters?: number;
+  irrigation_method: IrrigationMethod;
+  duration_minutes?: number;
+  notes?: string;
+  garden_name?: string;
+  plant_name?: string;
+}
+
+export interface IrrigationEventCreate {
+  garden_id?: number;
+  planting_event_id?: number;
+  irrigation_date: string;
+  water_volume_liters?: number;
+  irrigation_method: IrrigationMethod;
+  duration_minutes?: number;
+  notes?: string;
+}
+
+export interface IrrigationRecommendation {
+  plant_name: string;
+  days_since_last_watering?: number;
+  recommended_frequency_days: number;
+  recommended_volume_liters?: number;
+  status: 'on_schedule' | 'overdue' | 'overwatered' | 'no_data';
+  recommendation: string;
+  priority: 'low' | 'medium' | 'high' | 'critical';
+}
+
+export interface IrrigationSummary {
+  total_events: number;
+  total_volume_liters: number;
+  last_irrigation_date?: string;
+  days_since_last_irrigation?: number;
+  average_volume_per_event?: number;
+  most_common_method?: IrrigationMethod;
+  recommendations: IrrigationRecommendation[];
+}
+
+export interface IrrigationEventList {
+  events: IrrigationEvent[];
+  summary: IrrigationSummary;
+}
