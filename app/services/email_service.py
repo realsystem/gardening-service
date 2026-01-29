@@ -49,18 +49,21 @@ class ConsoleEmailProvider(EmailProvider):
         Returns:
             Always returns True (console logging never fails)
         """
-        # Print to stdout (visible in docker logs)
-        print("\n" + "=" * 80)
-        print("📧 PASSWORD RESET EMAIL (DEVELOPMENT MODE)")
-        print("=" * 80)
-        print(f"To: {to_email}")
-        print(f"Subject: Reset Your Gardening Helper Password")
-        print("")
-        print("🔗 Reset Link (copy this entire URL):")
-        print(f"   {reset_url}")
-        print("")
-        print("⏰ Link expires in: 1 hour")
-        print("=" * 80 + "\n")
+        import sys
+
+        # Print to stdout with immediate flush (visible in docker logs)
+        print("\n" + "=" * 80, flush=True)
+        print("📧 PASSWORD RESET EMAIL (DEVELOPMENT MODE)", flush=True)
+        print("=" * 80, flush=True)
+        print(f"To: {to_email}", flush=True)
+        print(f"Subject: Reset Your Gardening Helper Password", flush=True)
+        print("", flush=True)
+        print("🔗 Reset Link (copy this entire URL):", flush=True)
+        print(f"   {reset_url}", flush=True)
+        print("", flush=True)
+        print("⏰ Link expires in: 1 hour", flush=True)
+        print("=" * 80 + "\n", flush=True)
+        sys.stdout.flush()  # Force flush
 
         # Also log via logger for persistence
         logger.warning(f"[DEV MODE] Password reset requested for {to_email}")
