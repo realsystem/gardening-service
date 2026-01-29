@@ -106,6 +106,19 @@ This service helps home gardeners track and manage their gardening lifecycle fro
   - Filter tasks by priority
   - View task statistics by priority and status
   - Track recurring task counts
+  - **Soil Health Dashboard**: Real-time soil monitoring and recommendations
+    - Latest soil sample data with status indicators (in-range, low, high)
+    - pH, N-P-K, organic matter, and moisture tracking
+    - Visual trends over time for pH and moisture
+    - Automated recommendations based on soil chemistry
+    - Overall soil health assessment (good, fair, poor)
+    - Garden-specific filtering available
+  - **Irrigation Overview Dashboard**: Smart watering insights
+    - Last watering details (date, volume, method)
+    - 7-day irrigation summary (total volume, event count, intervals)
+    - Automated alerts for under-watering and over-watering
+    - Moisture mismatch detection (soil moisture vs irrigation frequency)
+    - Garden-specific filtering available
 
 ## Architecture
 

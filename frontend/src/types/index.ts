@@ -258,3 +258,66 @@ export interface IrrigationEventList {
   events: IrrigationEvent[];
   summary: IrrigationSummary;
 }
+
+// Dashboard Types
+export type SoilHealthStatus = 'in_range' | 'low' | 'high' | 'unknown';
+
+export interface SoilParameterStatus {
+  value?: number;
+  status: SoilHealthStatus;
+  unit: string;
+}
+
+export interface SoilTrendPoint {
+  date: string;
+  value: number;
+}
+
+export interface SoilRecommendationSummary {
+  severity: 'info' | 'warning' | 'critical';
+  message: string;
+  parameter: string;
+}
+
+export interface SoilHealthSummary {
+  garden_id?: number;
+  garden_name?: string;
+  last_sample_date?: string;
+  ph?: SoilParameterStatus;
+  nitrogen?: SoilParameterStatus;
+  phosphorus?: SoilParameterStatus;
+  potassium?: SoilParameterStatus;
+  organic_matter?: SoilParameterStatus;
+  moisture?: SoilParameterStatus;
+  ph_trend: SoilTrendPoint[];
+  moisture_trend: SoilTrendPoint[];
+  recommendations: SoilRecommendationSummary[];
+  overall_health: 'good' | 'fair' | 'poor' | 'unknown';
+  total_samples: number;
+}
+
+export interface IrrigationAlert {
+  type: 'under_watering' | 'over_watering' | 'moisture_mismatch';
+  severity: 'info' | 'warning' | 'critical';
+  message: string;
+  garden_id?: number;
+  planting_event_id?: number;
+}
+
+export interface IrrigationWeeklySummary {
+  total_volume_liters: number;
+  event_count: number;
+  average_interval_days?: number;
+}
+
+export interface IrrigationOverviewSummary {
+  garden_id?: number;
+  garden_name?: string;
+  last_irrigation_date?: string;
+  last_irrigation_volume?: number;
+  last_irrigation_method?: string;
+  days_since_last_watering?: number;
+  weekly: IrrigationWeeklySummary;
+  alerts: IrrigationAlert[];
+  total_events: number;
+}

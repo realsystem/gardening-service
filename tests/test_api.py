@@ -829,3 +829,236 @@ class TestGardenDeletionCascade:
             headers={"Authorization": f"Bearer {user_token}"}
         )
         assert response.status_code == 404
+
+
+class TestDashboardEndpoints:
+    """Test dashboard summary endpoints"""
+
+    def test_soil_summary_empty_state(self, client, sample_user, user_token):
+        """Test soil summary with no samples"""
+        response = client.get(
+            "/dashboard/soil-summary",
+            headers={"Authorization": f"Bearer {user_token}"}
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["total_samples"] == 0
+        assert data["overall_health"] == "unknown"
+        assert len(data["recommendations"]) == 0
+
+    def test_soil_summary_with_data(self, client, sample_user, outdoor_garden, user_token, test_db):
+        """Test soil summary with sample data"""
+        from app.models.soil_sample import SoilSample
+        from datetime import date
+
+        # Create soil samples
+        sample1 = SoilSample(
+            user_id=sample_user.id,
+            garden_id=outdoor_garden.id,
+            ph=6.5,
+            nitrogen_ppm=30.0,
+            phosphorus_ppm=25.0,
+            potassium_ppm=150.0,
+            organic_matter_percent=4.0,
+            moisture_percent=50.0,
+            date_collected=date.today()
+        )
+        test_db.add(sample1)
+        test_db.commit()
+
+        response = client.get(
+            "/dashboard/soil-summary",
+            headers={"Authorization": f"Bearer {user_token}"}
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["total_samples"] == 1
+        assert data["overall_health"] == "good"
+        assert data["ph"]["value"] == 6.5
+        assert data["ph"]["status"] == "in_range"
+
+    def test_soil_summary_by_garden(self, client, sample_user, outdoor_garden, indoor_garden, user_token, test_db):
+        """Test filtering soil summary by garden"""
+        from app.models.soil_sample import SoilSample
+        from datetime import date
+
+        # Create sample for outdoor garden
+        sample1 = SoilSample(
+            user_id=sample_user.id,
+            garden_id=outdoor_garden.id,
+            ph=6.0,
+            date_collected=date.today()
+        )
+        test_db.add(sample1)
+        test_db.commit()
+
+        response = client.get(
+            f"/dashboard/soil-summary?garden_id={outdoor_garden.id}",
+            headers={"Authorization": f"Bearer {user_token}"}
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["garden_id"] == outdoor_garden.id
+        assert data["garden_name"] == outdoor_garden.name
+        assert data["total_samples"] == 1
+
+    def test_soil_summary_with_recommendations(self, client, sample_user, outdoor_garden, user_token, test_db):
+        """Test soil summary generates recommendations for out-of-range values"""
+        from app.models.soil_sample import SoilSample
+        from datetime import date
+
+        # Create sample with low pH
+        sample = SoilSample(
+            user_id=sample_user.id,
+            garden_id=outdoor_garden.id,
+            ph=5.0,  # Low pH
+            nitrogen_ppm=10.0,  # Low nitrogen
+            date_collected=date.today()
+        )
+        test_db.add(sample)
+        test_db.commit()
+
+        response = client.get(
+            "/dashboard/soil-summary",
+            headers={"Authorization": f"Bearer {user_token}"}
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data["recommendations"]) > 0
+        # Should have recommendations for low pH and low nitrogen
+        assert any("ph" in rec["parameter"].lower() for rec in data["recommendations"])
+
+    def test_soil_summary_unauthorized_garden(self, client, sample_user, second_user, outdoor_garden, user_token):
+        """Test soil summary rejects unauthorized garden access"""
+        # outdoor_garden belongs to sample_user, try to access with sample_user's token but wrong garden
+        response = client.get(
+            "/dashboard/soil-summary?garden_id=99999",
+            headers={"Authorization": f"Bearer {user_token}"}
+        )
+        assert response.status_code == 404
+
+    def test_irrigation_summary_empty_state(self, client, sample_user, user_token):
+        """Test irrigation summary with no events"""
+        response = client.get(
+            "/dashboard/irrigation-summary",
+            headers={"Authorization": f"Bearer {user_token}"}
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["total_events"] == 0
+        assert data["weekly"]["event_count"] == 0
+        assert len(data["alerts"]) == 0
+
+    def test_irrigation_summary_with_data(self, client, sample_user, outdoor_garden, user_token, test_db):
+        """Test irrigation summary with event data"""
+        from app.models.irrigation_event import IrrigationEvent, IrrigationMethod
+        from datetime import datetime
+
+        # Create irrigation event
+        event = IrrigationEvent(
+            user_id=sample_user.id,
+            garden_id=outdoor_garden.id,
+            irrigation_date=datetime.utcnow(),
+            water_volume_liters=10.0,
+            irrigation_method=IrrigationMethod.HAND_WATERING,
+            duration_minutes=15
+        )
+        test_db.add(event)
+        test_db.commit()
+
+        response = client.get(
+            "/dashboard/irrigation-summary",
+            headers={"Authorization": f"Bearer {user_token}"}
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["total_events"] == 1
+        assert data["last_irrigation_volume"] == 10.0
+        assert data["last_irrigation_method"] == "hand_watering"
+
+    def test_irrigation_summary_weekly_stats(self, client, sample_user, outdoor_garden, user_token, test_db):
+        """Test irrigation summary weekly statistics"""
+        from app.models.irrigation_event import IrrigationEvent, IrrigationMethod
+        from datetime import datetime, timedelta
+
+        # Create multiple events within the week
+        for i in range(3):
+            event = IrrigationEvent(
+                user_id=sample_user.id,
+                garden_id=outdoor_garden.id,
+                irrigation_date=datetime.utcnow() - timedelta(days=i),
+                water_volume_liters=5.0,
+                irrigation_method=IrrigationMethod.DRIP
+            )
+            test_db.add(event)
+        test_db.commit()
+
+        response = client.get(
+            "/dashboard/irrigation-summary",
+            headers={"Authorization": f"Bearer {user_token}"}
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["weekly"]["event_count"] == 3
+        assert data["weekly"]["total_volume_liters"] == 15.0
+        assert data["weekly"]["average_interval_days"] is not None
+
+    def test_irrigation_summary_underwatering_alert(self, client, sample_user, outdoor_garden, user_token, test_db):
+        """Test irrigation summary generates under-watering alert"""
+        from app.models.irrigation_event import IrrigationEvent, IrrigationMethod
+        from datetime import datetime, timedelta
+
+        # Create event from 8 days ago
+        event = IrrigationEvent(
+            user_id=sample_user.id,
+            garden_id=outdoor_garden.id,
+            irrigation_date=datetime.utcnow() - timedelta(days=8),
+            water_volume_liters=10.0,
+            irrigation_method=IrrigationMethod.HAND_WATERING
+        )
+        test_db.add(event)
+        test_db.commit()
+
+        response = client.get(
+            "/dashboard/irrigation-summary",
+            headers={"Authorization": f"Bearer {user_token}"}
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data["alerts"]) > 0
+        # Should have under-watering alert
+        assert any(alert["type"] == "under_watering" for alert in data["alerts"])
+
+    def test_irrigation_summary_by_garden(self, client, sample_user, outdoor_garden, indoor_garden, user_token, test_db):
+        """Test filtering irrigation summary by garden"""
+        from app.models.irrigation_event import IrrigationEvent, IrrigationMethod
+        from datetime import datetime
+
+        # Create event for outdoor garden only
+        event = IrrigationEvent(
+            user_id=sample_user.id,
+            garden_id=outdoor_garden.id,
+            irrigation_date=datetime.utcnow(),
+            water_volume_liters=10.0,
+            irrigation_method=IrrigationMethod.HAND_WATERING
+        )
+        test_db.add(event)
+        test_db.commit()
+
+        response = client.get(
+            f"/dashboard/irrigation-summary?garden_id={outdoor_garden.id}",
+            headers={"Authorization": f"Bearer {user_token}"}
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["garden_id"] == outdoor_garden.id
+        assert data["garden_name"] == outdoor_garden.name
+        assert data["total_events"] == 1
+
+    def test_irrigation_summary_unauthorized_garden(self, client, sample_user, user_token):
+        """Test irrigation summary rejects unauthorized garden access"""
+        response = client.get(
+            "/dashboard/irrigation-summary?garden_id=99999",
+            headers={"Authorization": f"Bearer {user_token}"}
+        )
+        assert response.status_code == 404
