@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { api } from '../services/api';
-import type { Task, User, SeedBatch } from '../types';
+import type { Task, User, SeedBatch, Garden, SensorReading } from '../types';
 import { TaskList } from './TaskList';
 import { CreateSeedBatch } from './CreateSeedBatch';
 import { CreatePlantingEvent } from './CreatePlantingEvent';
+import { CreateGarden } from './CreateGarden';
+import { CreateSensorReading } from './CreateSensorReading';
 import { Profile } from './Profile';
 
 interface DashboardProps {
@@ -15,9 +17,11 @@ export function Dashboard({ user: initialUser, onLogout }: DashboardProps) {
   const [user, setUser] = useState(initialUser);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [seedBatches, setSeedBatches] = useState<SeedBatch[]>([]);
+  const [gardens, setGardens] = useState<Garden[]>([]);
+  const [sensorReadings, setSensorReadings] = useState<SensorReading[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [activeModal, setActiveModal] = useState<'seed' | 'planting' | 'profile' | null>(null);
+  const [activeModal, setActiveModal] = useState<'seed' | 'planting' | 'profile' | 'garden' | 'sensor' | null>(null);
   const [priorityFilter, setPriorityFilter] = useState<'all' | 'high' | 'medium' | 'low'>('all');
 
   // Update user when prop changes
@@ -28,12 +32,16 @@ export function Dashboard({ user: initialUser, onLogout }: DashboardProps) {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [tasksData, batchesData] = await Promise.all([
+      const [tasksData, batchesData, gardensData, readingsData] = await Promise.all([
         api.getTasks('pending'),
         api.getSeedBatches(),
+        api.getGardens(),
+        api.getSensorReadings(),
       ]);
       setTasks(tasksData);
       setSeedBatches(batchesData);
+      setGardens(gardensData);
+      setSensorReadings(readingsData);
       setError('');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load data');
@@ -61,6 +69,16 @@ export function Dashboard({ user: initialUser, onLogout }: DashboardProps) {
   };
 
   const handlePlantingEventCreated = () => {
+    setActiveModal(null);
+    loadData();
+  };
+
+  const handleGardenCreated = () => {
+    setActiveModal(null);
+    loadData();
+  };
+
+  const handleSensorReadingCreated = () => {
     setActiveModal(null);
     loadData();
   };
@@ -135,12 +153,18 @@ export function Dashboard({ user: initialUser, onLogout }: DashboardProps) {
 
           <div className="card">
             <h2>Quick Actions</h2>
-            <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '10px', marginTop: '15px' }}>
+              <button className="btn" onClick={() => setActiveModal('garden')}>
+                Create Garden
+              </button>
               <button className="btn" onClick={() => setActiveModal('seed')}>
                 Add Seed Batch
               </button>
               <button className="btn" onClick={() => setActiveModal('planting')}>
-                Create Planting Event
+                Create Planting
+              </button>
+              <button className="btn" onClick={() => setActiveModal('sensor')}>
+                Add Sensor Reading
               </button>
             </div>
           </div>
@@ -190,6 +214,58 @@ export function Dashboard({ user: initialUser, onLogout }: DashboardProps) {
                     <option value="low">Low Priority</option>
                   </select>
                 </div>
+              </div>
+
+              <div className="card">
+                <h2>Gardens ({gardens.length})</h2>
+                {gardens.length === 0 ? (
+                  <p style={{ color: '#666', fontStyle: 'italic' }}>
+                    No gardens yet. Create one to start tracking your plants!
+                  </p>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {gardens.map((garden) => (
+                      <div
+                        key={garden.id}
+                        style={{
+                          padding: '10px',
+                          border: '1px solid #ddd',
+                          borderRadius: '4px',
+                          backgroundColor: garden.garden_type === 'indoor' ? '#f0f8ff' : '#f9f9f9',
+                        }}
+                      >
+                        <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>
+                          {garden.name}
+                          <span style={{
+                            marginLeft: '10px',
+                            padding: '2px 8px',
+                            backgroundColor: garden.garden_type === 'indoor' ? '#4a90e2' : '#5cb85c',
+                            color: 'white',
+                            borderRadius: '3px',
+                            fontSize: '0.75em',
+                            textTransform: 'uppercase'
+                          }}>
+                            {garden.garden_type}
+                          </span>
+                        </div>
+                        {garden.description && (
+                          <div style={{ fontSize: '0.9em', color: '#666', marginBottom: '5px' }}>
+                            {garden.description}
+                          </div>
+                        )}
+                        {garden.garden_type === 'indoor' && (
+                          <div style={{ fontSize: '0.85em', color: '#555', marginTop: '5px' }}>
+                            {garden.location && `Location: ${garden.location}`}
+                            {garden.light_source_type && ` • Light: ${garden.light_source_type.toUpperCase()}`}
+                            {garden.light_hours_per_day && ` (${garden.light_hours_per_day}h/day)`}
+                            {garden.temp_min_f && garden.temp_max_f && ` • Temp: ${garden.temp_min_f}-${garden.temp_max_f}°F`}
+                            {garden.humidity_min_percent && garden.humidity_max_percent && ` • Humidity: ${garden.humidity_min_percent}-${garden.humidity_max_percent}%`}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="card">
@@ -258,6 +334,46 @@ export function Dashboard({ user: initialUser, onLogout }: DashboardProps) {
                 )}
               </div>
 
+              {gardens.filter(g => g.garden_type === 'indoor').length > 0 && (
+                <div className="card">
+                  <h2>Recent Sensor Readings</h2>
+                  {sensorReadings.length === 0 ? (
+                    <p style={{ color: '#666', fontStyle: 'italic' }}>
+                      No sensor readings yet. Add readings to track your indoor garden environment.
+                    </p>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      {sensorReadings.slice(0, 5).map((reading) => {
+                        const garden = gardens.find(g => g.id === reading.garden_id);
+                        return (
+                          <div
+                            key={reading.id}
+                            style={{
+                              padding: '10px',
+                              border: '1px solid #ddd',
+                              borderRadius: '4px',
+                              backgroundColor: '#f0f8ff',
+                            }}
+                          >
+                            <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>
+                              {garden?.name || `Garden #${reading.garden_id}`}
+                              <span style={{ marginLeft: '10px', color: '#666', fontSize: '0.9em', fontWeight: 'normal' }}>
+                                {new Date(reading.reading_date).toLocaleDateString()}
+                              </span>
+                            </div>
+                            <div style={{ fontSize: '0.9em', color: '#555' }}>
+                              {reading.temperature_f && `Temperature: ${reading.temperature_f}°F`}
+                              {reading.humidity_percent && ` • Humidity: ${reading.humidity_percent}%`}
+                              {reading.light_hours && ` • Light: ${reading.light_hours}h`}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div className="card">
                 <h2>Tasks for Today</h2>
                 <TaskList
@@ -299,6 +415,20 @@ export function Dashboard({ user: initialUser, onLogout }: DashboardProps) {
           user={user}
           onUpdate={setUser}
           onClose={() => setActiveModal(null)}
+        />
+      )}
+
+      {activeModal === 'garden' && (
+        <CreateGarden
+          onClose={() => setActiveModal(null)}
+          onSuccess={handleGardenCreated}
+        />
+      )}
+
+      {activeModal === 'sensor' && (
+        <CreateSensorReading
+          onClose={() => setActiveModal(null)}
+          onSuccess={handleSensorReadingCreated}
         />
       )}
     </>

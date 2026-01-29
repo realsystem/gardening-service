@@ -15,6 +15,18 @@ class TaskType(str, enum.Enum):
     WEED = "weed"
     PEST_CONTROL = "pest_control"
     HARVEST = "harvest"
+    # Indoor-specific task types
+    ADJUST_LIGHTING = "adjust_lighting"
+    ADJUST_TEMPERATURE = "adjust_temperature"
+    ADJUST_HUMIDITY = "adjust_humidity"
+    NUTRIENT_SOLUTION = "nutrient_solution"
+    TRAIN_PLANT = "train_plant"  # Topping, LST, trellis
+    # Hydroponics-specific task types
+    CHECK_NUTRIENT_SOLUTION = "check_nutrient_solution"  # Check EC/PPM levels
+    ADJUST_PH = "adjust_ph"  # Adjust pH levels
+    REPLACE_NUTRIENT_SOLUTION = "replace_nutrient_solution"  # Replace/top-up solution
+    CLEAN_RESERVOIR = "clean_reservoir"  # Clean reservoir/system maintenance
+    ADJUST_WATER_CIRCULATION = "adjust_water_circulation"  # Pumps, aeration
     OTHER = "other"
 
 
@@ -59,24 +71,24 @@ class CareTask(Base):
     planting_event_id = Column(Integer, ForeignKey("planting_events.id"), nullable=True)
 
     # Task details
-    task_type = Column(SQLEnum(TaskType), nullable=False)
-    task_source = Column(SQLEnum(TaskSource), nullable=False, default=TaskSource.MANUAL)
+    task_type = Column(SQLEnum(TaskType, values_callable=lambda x: [e.value for e in x]), nullable=False)
+    task_source = Column(SQLEnum(TaskSource, values_callable=lambda x: [e.value for e in x]), nullable=False, default=TaskSource.MANUAL)
     title = Column(String(200), nullable=False)
     description = Column(Text, nullable=True)
 
     # Priority (NEW)
-    priority = Column(SQLEnum(TaskPriority), nullable=False, default=TaskPriority.MEDIUM)
+    priority = Column(SQLEnum(TaskPriority, values_callable=lambda x: [e.value for e in x]), nullable=False, default=TaskPriority.MEDIUM)
 
     # Scheduling
     due_date = Column(Date, nullable=False, index=True)
 
     # Recurring tasks (NEW)
     is_recurring = Column(Boolean, nullable=False, default=False)
-    recurrence_frequency = Column(SQLEnum(RecurrenceFrequency), nullable=True)
+    recurrence_frequency = Column(SQLEnum(RecurrenceFrequency, values_callable=lambda x: [e.value for e in x]), nullable=True)
     parent_task_id = Column(Integer, ForeignKey("care_tasks.id"), nullable=True)
 
     # Completion tracking
-    status = Column(SQLEnum(TaskStatus), nullable=False, default=TaskStatus.PENDING)
+    status = Column(SQLEnum(TaskStatus, values_callable=lambda x: [e.value for e in x]), nullable=False, default=TaskStatus.PENDING)
     completed_date = Column(Date, nullable=True)
 
     notes = Column(Text, nullable=True)

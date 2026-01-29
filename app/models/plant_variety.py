@@ -44,8 +44,8 @@ class PlantVariety(Base):
     row_spacing_inches = Column(Integer, nullable=True)       # Row spacing
 
     # Requirements
-    sun_requirement = Column(SQLEnum(SunRequirement), nullable=True)
-    water_requirement = Column(SQLEnum(WaterRequirement), nullable=True)
+    sun_requirement = Column(SQLEnum(SunRequirement, values_callable=lambda x: [e.value for e in x]), nullable=True)
+    water_requirement = Column(SQLEnum(WaterRequirement, values_callable=lambda x: [e.value for e in x]), nullable=True)
 
     # Additional info
     description = Column(Text, nullable=True)
