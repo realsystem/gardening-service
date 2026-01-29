@@ -31,6 +31,46 @@ export interface Garden {
   id: number;
   name: string;
   description?: string;
+  garden_type: 'outdoor' | 'indoor';
+  location?: string;
+  light_source_type?: 'led' | 'fluorescent' | 'natural_supplement' | 'hps' | 'mh';
+  light_hours_per_day?: number;
+  temp_min_f?: number;
+  temp_max_f?: number;
+  humidity_min_percent?: number;
+  humidity_max_percent?: number;
+  container_type?: string;
+  grow_medium?: string;
+  // Hydroponics-specific fields
+  is_hydroponic: boolean;
+  hydro_system_type?: 'nft' | 'dwc' | 'ebb_flow' | 'aeroponics' | 'drip' | 'wick';
+  reservoir_size_liters?: number;
+  nutrient_schedule?: string;
+  ph_min?: number;
+  ph_max?: number;
+  ec_min?: number;
+  ec_max?: number;
+  ppm_min?: number;
+  ppm_max?: number;
+  water_temp_min_f?: number;
+  water_temp_max_f?: number;
+}
+
+export interface SensorReading {
+  id: number;
+  user_id: number;
+  garden_id: number;
+  reading_date: string;
+  // Indoor garden readings
+  temperature_f?: number;
+  humidity_percent?: number;
+  light_hours?: number;
+  // Hydroponics-specific readings
+  ph_level?: number;
+  ec_ms_cm?: number;
+  ppm?: number;
+  water_temp_f?: number;
+  created_at?: string;
 }
 
 export interface SeedBatch {
@@ -76,4 +116,45 @@ export interface ApiError {
     code: string;
     message: string;
   };
+}
+
+export interface PlantingInGarden {
+  id: number;
+  plant_variety_id: number;
+  plant_name: string;
+  variety_name?: string;
+  planting_date: string;
+  planting_method: string;
+  plant_count?: number;
+  location_in_garden?: string;
+  health_status?: string;
+  expected_harvest_date?: string;
+  days_to_harvest?: number;
+  status: string; // 'pending', 'growing', 'ready_to_harvest', 'harvested'
+}
+
+export interface TaskSummary {
+  id: number;
+  title: string;
+  task_type: string;
+  priority: string;
+  due_date: string;
+  status: string;
+  planting_event_id?: number;
+}
+
+export interface GardenStats {
+  total_plantings: number;
+  active_plantings: number;
+  total_tasks: number;
+  pending_tasks: number;
+  high_priority_tasks: number;
+  upcoming_harvests: number;
+}
+
+export interface GardenDetails {
+  garden: Garden;
+  plantings: PlantingInGarden[];
+  tasks: TaskSummary[];
+  stats: GardenStats;
 }
