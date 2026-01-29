@@ -25,13 +25,23 @@ class AuthService:
 
     @staticmethod
     def hash_password(password: str) -> str:
-        """Hash a password"""
-        return pwd_context.hash(password)
+        """Hash a password (bcrypt has 72 byte limit)"""
+        # Truncate to 72 bytes to avoid bcrypt error
+        password_bytes = password.encode('utf-8')[:72]
+        return pwd_context.hash(password_bytes.decode('utf-8', errors='ignore'))
 
     @staticmethod
     def verify_password(plain_password: str, hashed_password: str) -> bool:
-        """Verify a password against a hash"""
-        return pwd_context.verify(plain_password, hashed_password)
+        """Verify a password against a hash (bcrypt has 72 byte limit)"""
+        # Truncate to 72 bytes to avoid bcrypt error
+        password_bytes = plain_password.encode('utf-8')[:72]
+        try:
+            return pwd_context.verify(password_bytes.decode('utf-8', errors='ignore'), hashed_password)
+        except ValueError as e:
+            # Handle any remaining bcrypt errors gracefully
+            if "password cannot be longer than 72 bytes" in str(e):
+                return False
+            raise
 
     @staticmethod
     def create_access_token(user_id: int, email: str) -> str:
