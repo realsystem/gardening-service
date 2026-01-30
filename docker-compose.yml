@@ -20,7 +20,8 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      # Use local directory for persistent storage (survives container recreation)
+      - ./.data/postgres:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U gardener -d gardening_db"]
       interval: 10s
@@ -63,6 +64,3 @@ services:
       VITE_API_URL: http://localhost:8080
     depends_on:
       - api
-
-volumes:
-  postgres_data:

@@ -31,6 +31,8 @@ htmlcov/
 # Database
 *.db
 *.sqlite
+.data/
+backups/
 
 # Logs
 *.log
