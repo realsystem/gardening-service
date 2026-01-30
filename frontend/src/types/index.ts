@@ -321,3 +321,51 @@ export interface IrrigationOverviewSummary {
   alerts: IrrigationAlert[];
   total_events: number;
 }
+
+// Rule Insights Types (Science-Based Rule Engine)
+export type RuleSeverity = 'info' | 'warning' | 'critical';
+export type RuleCategory = 'water_stress' | 'soil_chemistry' | 'temperature_stress' | 'light_stress' | 'growth_stage' | 'pest_disease' | 'nutrient_timing';
+
+export interface RuleResult {
+  rule_id: string;
+  category: RuleCategory;
+  title: string;
+  triggered: boolean;
+  severity: RuleSeverity;
+  confidence: number;
+  explanation: string;
+  scientific_rationale: string;
+  recommended_action?: string;
+  measured_value?: number;
+  optimal_range?: string;
+  deviation_severity?: string;
+  evaluation_time: string;
+  references: string[];
+}
+
+export interface GardenRuleInsights {
+  garden_id: number;
+  garden_name: string;
+  evaluation_time: string;
+  triggered_rules: RuleResult[];
+  rules_by_severity: {
+    critical: number;
+    warning: number;
+    info: number;
+  };
+  rules_by_category: Record<RuleCategory, number>;
+}
+
+export interface PlantingRuleInsights {
+  planting_event_id: number;
+  plant_name: string;
+  garden_name: string;
+  evaluation_time: string;
+  triggered_rules: RuleResult[];
+  rules_by_severity: {
+    critical: number;
+    warning: number;
+    info: number;
+  };
+  rules_by_category: Record<RuleCategory, number>;
+}

@@ -13,6 +13,7 @@ from app.models.planting_event import PlantingEvent
 from app.models.plant_variety import PlantVariety
 from app.schemas.soil_sample import (
     SoilSampleCreate,
+    SoilSampleUpdate,
     SoilSampleResponse,
     SoilSampleList,
 )
@@ -212,7 +213,64 @@ def get_soil_sample(
     return response
 
 
-@router.delete("/{sample_id}", status_code=204)
+@router.put("/{sample_id}", response_model=SoilSampleResponse)
+def update_soil_sample(
+    sample_id: int,
+    update_data: SoilSampleUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Update an existing soil sample.
+
+    Only the owner can update their samples. Supports partial updates.
+    All numeric fields are validated against scientific ranges.
+    """
+    # Find and authorize
+    sample = db.query(SoilSample).filter(
+        SoilSample.id == sample_id,
+        SoilSample.user_id == current_user.id
+    ).first()
+
+    if not sample:
+        raise HTTPException(status_code=404, detail="Soil sample not found")
+
+    # Update only provided fields
+    update_dict = update_data.dict(exclude_unset=True)
+    for field, value in update_dict.items():
+        setattr(sample, field, value)
+
+    db.commit()
+    db.refresh(sample)
+
+    # Get plant variety if linked to planting
+    plant_variety = None
+    if sample.planting_event_id:
+        planting = db.query(PlantingEvent).filter(
+            PlantingEvent.id == sample.planting_event_id
+        ).first()
+        if planting:
+            plant_variety = db.query(PlantVariety).filter(
+                PlantVariety.id == planting.plant_variety_id
+            ).first()
+
+    # Generate updated recommendations
+    recommendations = generate_soil_recommendations(sample, plant_variety)
+
+    # Build response
+    response = SoilSampleResponse.from_orm(sample)
+    response.recommendations = recommendations
+
+    # Add names
+    if sample.garden:
+        response.garden_name = sample.garden.name
+    if plant_variety:
+        response.plant_name = plant_variety.common_name
+
+    return response
+
+
+@router.delete("/{sample_id}")
 def delete_soil_sample(
     sample_id: int,
     db: Session = Depends(get_db),
@@ -222,6 +280,7 @@ def delete_soil_sample(
     Delete a soil sample.
 
     Only the owner can delete their own samples.
+    Returns confirmation with deleted sample ID.
     """
     sample = db.query(SoilSample).filter(
         SoilSample.id == sample_id,
@@ -231,7 +290,16 @@ def delete_soil_sample(
     if not sample:
         raise HTTPException(status_code=404, detail="Soil sample not found")
 
+    sample_data = {
+        "id": sample.id,
+        "garden_id": sample.garden_id,
+        "date_collected": sample.date_collected.isoformat()
+    }
+
     db.delete(sample)
     db.commit()
 
-    return None
+    return {
+        "message": "Soil sample deleted successfully",
+        "deleted_sample": sample_data
+    }

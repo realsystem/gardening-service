@@ -29,14 +29,14 @@ export function IrrigationOverviewCard({ gardenId, onLogWatering }: IrrigationOv
     }
   };
 
-  const getSeverityColor = (severity: string): string => {
+  const getSeverityStyle = (severity: string): React.CSSProperties => {
     switch (severity) {
       case 'critical':
-        return 'bg-red-100 border-red-300 text-red-800';
+        return { backgroundColor: '#fee2e2', borderColor: '#fca5a5', color: '#991b1b' };
       case 'warning':
-        return 'bg-yellow-100 border-yellow-300 text-yellow-800';
+        return { backgroundColor: '#fef3c7', borderColor: '#fcd34d', color: '#92400e' };
       default:
-        return 'bg-blue-100 border-blue-300 text-blue-800';
+        return { backgroundColor: '#dbeafe', borderColor: '#93c5fd', color: '#1e40af' };
     }
   };
 
@@ -50,11 +50,11 @@ export function IrrigationOverviewCard({ gardenId, onLogWatering }: IrrigationOv
   if (loading) {
     return (
       <div>
-        <div className="flex items-center gap-2 mb-4">
-          <span className="text-2xl">💧</span>
-          <h2 className="text-xl font-semibold">Irrigation Overview</h2>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+          <span style={{ fontSize: '1.5rem' }}>💧</span>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: '600', margin: 0 }}>Irrigation Overview</h2>
         </div>
-        <p className="text-gray-500">Loading irrigation data...</p>
+        <div className="loading">Loading irrigation data...</div>
       </div>
     );
   }
@@ -62,11 +62,11 @@ export function IrrigationOverviewCard({ gardenId, onLogWatering }: IrrigationOv
   if (error) {
     return (
       <div>
-        <div className="flex items-center gap-2 mb-4">
-          <span className="text-2xl">💧</span>
-          <h2 className="text-xl font-semibold">Irrigation Overview</h2>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+          <span style={{ fontSize: '1.5rem' }}>💧</span>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: '600', margin: 0 }}>Irrigation Overview</h2>
         </div>
-        <p className="text-red-600">{error}</p>
+        <div className="error">{error}</div>
       </div>
     );
   }
@@ -74,28 +74,28 @@ export function IrrigationOverviewCard({ gardenId, onLogWatering }: IrrigationOv
   if (!summary || summary.total_events === 0) {
     return (
       <div>
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <span className="text-2xl">💧</span>
-            <h2 className="text-xl font-semibold">Irrigation Overview</h2>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '1.5rem' }}>💧</span>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: '600', margin: 0 }}>Irrigation Overview</h2>
           </div>
           {onLogWatering && (
             <button
               onClick={onLogWatering}
-              className="btn btn-primary"
+              className="btn"
               style={{ padding: '6px 12px', fontSize: '0.875rem' }}
             >
               + Log Watering
             </button>
           )}
         </div>
-        <div className="text-center py-8">
-          <p className="text-gray-500 mb-2">No irrigation events recorded yet</p>
-          <p className="text-sm text-gray-400">Start tracking watering to monitor patterns</p>
+        <div style={{ textAlign: 'center', padding: '32px 0' }}>
+          <p style={{ color: '#6b7280', marginBottom: '8px' }}>No irrigation events recorded yet</p>
+          <p style={{ fontSize: '0.875rem', color: '#9ca3af' }}>Start tracking watering to monitor patterns</p>
           {onLogWatering && (
             <button
               onClick={onLogWatering}
-              className="btn btn-primary"
+              className="btn"
               style={{ marginTop: '16px' }}
             >
               Log Your First Watering
@@ -108,15 +108,15 @@ export function IrrigationOverviewCard({ gardenId, onLogWatering }: IrrigationOv
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <span className="text-2xl">💧</span>
-          <h2 className="text-xl font-semibold">Irrigation Overview</h2>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{ fontSize: '1.5rem' }}>💧</span>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: '600', margin: 0 }}>Irrigation Overview</h2>
         </div>
         {onLogWatering && (
           <button
             onClick={onLogWatering}
-            className="btn btn-primary"
+            className="btn"
             style={{ padding: '6px 12px', fontSize: '0.875rem' }}
           >
             + Log Watering
@@ -125,70 +125,68 @@ export function IrrigationOverviewCard({ gardenId, onLogWatering }: IrrigationOv
       </div>
 
       {summary.garden_name && (
-        <p className="text-sm text-gray-600 mb-4">Garden: {summary.garden_name}</p>
+        <p style={{ fontSize: '0.875rem', color: '#4b5563', marginBottom: '16px' }}>Garden: {summary.garden_name}</p>
       )}
 
       {/* Recent Activity */}
-      <div className="bg-gray-50 rounded-lg p-4 mb-6">
-        <h3 className="text-sm font-medium text-gray-700 mb-3">Last Watering</h3>
+      <div style={{ backgroundColor: '#f9fafb', borderRadius: '8px', padding: '16px', marginBottom: '24px' }}>
+        <h3 style={{ fontSize: '0.875rem', fontWeight: '500', color: '#374151', marginBottom: '12px' }}>Last Watering</h3>
         {summary.last_irrigation_date ? (
-          <div className="space-y-2">
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">Date</span>
-              <span className="text-sm font-medium">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '0.875rem', color: '#4b5563' }}>Date</span>
+              <span style={{ fontSize: '0.875rem', fontWeight: '500' }}>
                 {new Date(summary.last_irrigation_date).toLocaleDateString()}
               </span>
             </div>
             {summary.last_irrigation_volume && (
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Volume</span>
-                <span className="text-sm font-medium">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '0.875rem', color: '#4b5563' }}>Volume</span>
+                <span style={{ fontSize: '0.875rem', fontWeight: '500' }}>
                   {summary.last_irrigation_volume.toFixed(1)} L
                 </span>
               </div>
             )}
             {summary.last_irrigation_method && (
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Method</span>
-                <span className="text-sm font-medium">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '0.875rem', color: '#4b5563' }}>Method</span>
+                <span style={{ fontSize: '0.875rem', fontWeight: '500' }}>
                   {formatMethod(summary.last_irrigation_method)}
                 </span>
               </div>
             )}
             {summary.days_since_last_watering !== undefined && summary.days_since_last_watering !== null && (
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Days ago</span>
-                <span className={`text-sm font-medium ${
-                  summary.days_since_last_watering >= 7 ? 'text-yellow-600' : 'text-gray-900'
-                }`}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '0.875rem', color: '#4b5563' }}>Days ago</span>
+                <span style={{ fontSize: '0.875rem', fontWeight: '500', color: summary.days_since_last_watering >= 7 ? '#ca8a04' : '#111827' }}>
                   {summary.days_since_last_watering}
                 </span>
               </div>
             )}
           </div>
         ) : (
-          <p className="text-sm text-gray-500">No recent data</p>
+          <p style={{ fontSize: '0.875rem', color: '#6b7280' }}>No recent data</p>
         )}
       </div>
 
       {/* Weekly Summary */}
-      <div className="bg-blue-50 rounded-lg p-4 mb-6">
-        <h3 className="text-sm font-medium text-gray-700 mb-3">Last 7 Days</h3>
-        <div className="space-y-2">
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-gray-600">Total water</span>
-            <span className="text-sm font-medium">
+      <div style={{ backgroundColor: '#eff6ff', borderRadius: '8px', padding: '16px', marginBottom: '24px' }}>
+        <h3 style={{ fontSize: '0.875rem', fontWeight: '500', color: '#374151', marginBottom: '12px' }}>Last 7 Days</h3>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: '0.875rem', color: '#4b5563' }}>Total water</span>
+            <span style={{ fontSize: '0.875rem', fontWeight: '500' }}>
               {summary.weekly.total_volume_liters.toFixed(1)} L
             </span>
           </div>
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-gray-600">Events</span>
-            <span className="text-sm font-medium">{summary.weekly.event_count}</span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: '0.875rem', color: '#4b5563' }}>Events</span>
+            <span style={{ fontSize: '0.875rem', fontWeight: '500' }}>{summary.weekly.event_count}</span>
           </div>
           {summary.weekly.average_interval_days && (
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">Avg interval</span>
-              <span className="text-sm font-medium">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '0.875rem', color: '#4b5563' }}>Avg interval</span>
+              <span style={{ fontSize: '0.875rem', fontWeight: '500' }}>
                 {summary.weekly.average_interval_days.toFixed(1)} days
               </span>
             </div>
@@ -198,14 +196,14 @@ export function IrrigationOverviewCard({ gardenId, onLogWatering }: IrrigationOv
 
       {/* Alerts */}
       {summary.alerts.length > 0 && (
-        <div className="space-y-2 mb-4">
-          <h3 className="text-sm font-medium text-gray-700">Alerts</h3>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
+          <h3 style={{ fontSize: '0.875rem', fontWeight: '500', color: '#374151' }}>Alerts</h3>
           {summary.alerts.map((alert, idx) => (
             <div
               key={idx}
-              className={`p-3 rounded border text-sm ${getSeverityColor(alert.severity)}`}
+              style={{ ...getSeverityStyle(alert.severity), padding: '12px', borderRadius: '4px', border: '1px solid', fontSize: '0.875rem' }}
             >
-              <div className="font-medium mb-1">
+              <div style={{ fontWeight: '500', marginBottom: '4px' }}>
                 {alert.type === 'under_watering' && '⚠️ Under-watering'}
                 {alert.type === 'over_watering' && '💦 Over-watering'}
                 {alert.type === 'moisture_mismatch' && 'ℹ️ Moisture Mismatch'}
@@ -217,8 +215,8 @@ export function IrrigationOverviewCard({ gardenId, onLogWatering }: IrrigationOv
       )}
 
       {/* Summary footer */}
-      <div className="border-t pt-4">
-        <p className="text-xs text-gray-500">
+      <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: '16px' }}>
+        <p style={{ fontSize: '0.75rem', color: '#6b7280' }}>
           {summary.total_events} irrigation events recorded
         </p>
       </div>

@@ -32,12 +32,12 @@ export function SoilHealthCard({ gardenId, onAddSample }: SoilHealthCardProps) {
   const getStatusColor = (status: string): string => {
     switch (status) {
       case 'in_range':
-        return 'text-green-600';
+        return '#16a34a';
       case 'low':
       case 'high':
-        return 'text-yellow-600';
+        return '#ca8a04';
       default:
-        return 'text-gray-400';
+        return '#9ca3af';
     }
   };
 
@@ -54,27 +54,16 @@ export function SoilHealthCard({ gardenId, onAddSample }: SoilHealthCardProps) {
     }
   };
 
-  const getSeverityColor = (severity: string): string => {
-    switch (severity) {
-      case 'critical':
-        return 'bg-red-100 border-red-300 text-red-800';
-      case 'warning':
-        return 'bg-yellow-100 border-yellow-300 text-yellow-800';
-      default:
-        return 'bg-blue-100 border-blue-300 text-blue-800';
-    }
-  };
-
-  const getHealthBadgeColor = (health: string): string => {
+  const getHealthBadgeStyle = (health: string): React.CSSProperties => {
     switch (health) {
       case 'good':
-        return 'bg-green-100 text-green-800';
+        return { backgroundColor: '#dcfce7', color: '#166534' };
       case 'fair':
-        return 'bg-yellow-100 text-yellow-800';
+        return { backgroundColor: '#fef3c7', color: '#92400e' };
       case 'poor':
-        return 'bg-red-100 text-red-800';
+        return { backgroundColor: '#fee2e2', color: '#991b1b' };
       default:
-        return 'bg-gray-100 text-gray-600';
+        return { backgroundColor: '#f3f4f6', color: '#4b5563' };
     }
   };
 
@@ -88,13 +77,13 @@ export function SoilHealthCard({ gardenId, onAddSample }: SoilHealthCardProps) {
     }
 
     return (
-      <div className="flex justify-between items-center py-2 border-b border-gray-100" title={tooltip}>
-        <span className="text-sm text-gray-600">{label}</span>
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid #f3f4f6' }} title={tooltip}>
+        <span style={{ fontSize: '0.875rem', color: '#4b5563' }}>{label}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{ fontSize: '0.875rem', fontWeight: '500' }}>
             {param.value.toFixed(1)} {param.unit}
           </span>
-          <span className={`text-lg ${getStatusColor(param.status)}`}>
+          <span style={{ fontSize: '1.125rem', color: getStatusColor(param.status) }}>
             {getStatusIcon(param.status)}
           </span>
         </div>
@@ -105,11 +94,11 @@ export function SoilHealthCard({ gardenId, onAddSample }: SoilHealthCardProps) {
   if (loading) {
     return (
       <div>
-        <div className="flex items-center gap-2 mb-4">
-          <span className="text-2xl">🌱</span>
-          <h2 className="text-xl font-semibold">Soil Health</h2>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+          <span style={{ fontSize: '1.5rem' }}>🌱</span>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: '600', margin: 0 }}>Soil Health</h2>
         </div>
-        <p className="text-gray-500">Loading soil data...</p>
+        <div className="loading">Loading soil data...</div>
       </div>
     );
   }
@@ -117,11 +106,11 @@ export function SoilHealthCard({ gardenId, onAddSample }: SoilHealthCardProps) {
   if (error) {
     return (
       <div>
-        <div className="flex items-center gap-2 mb-4">
-          <span className="text-2xl">🌱</span>
-          <h2 className="text-xl font-semibold">Soil Health</h2>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+          <span style={{ fontSize: '1.5rem' }}>🌱</span>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: '600', margin: 0 }}>Soil Health</h2>
         </div>
-        <p className="text-red-600">{error}</p>
+        <div className="error">{error}</div>
       </div>
     );
   }
@@ -129,28 +118,28 @@ export function SoilHealthCard({ gardenId, onAddSample }: SoilHealthCardProps) {
   if (!summary || summary.total_samples === 0) {
     return (
       <div>
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <span className="text-2xl">🌱</span>
-            <h2 className="text-xl font-semibold">Soil Health</h2>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '1.5rem' }}>🌱</span>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: '600', margin: 0 }}>Soil Health</h2>
           </div>
           {onAddSample && (
             <button
               onClick={onAddSample}
-              className="btn btn-primary"
+              className="btn"
               style={{ padding: '6px 12px', fontSize: '0.875rem' }}
             >
               + Add Sample
             </button>
           )}
         </div>
-        <div className="text-center py-8">
-          <p className="text-gray-500 mb-2">No soil samples recorded yet</p>
-          <p className="text-sm text-gray-400">Add soil samples to track soil health</p>
+        <div style={{ textAlign: 'center', padding: '32px 0' }}>
+          <p style={{ color: '#6b7280', marginBottom: '8px' }}>No soil samples recorded yet</p>
+          <p style={{ fontSize: '0.875rem', color: '#9ca3af' }}>Add soil samples to track soil health</p>
           {onAddSample && (
             <button
               onClick={onAddSample}
-              className="btn btn-primary"
+              className="btn"
               style={{ marginTop: '16px' }}
             >
               Add Your First Sample
@@ -163,19 +152,19 @@ export function SoilHealthCard({ gardenId, onAddSample }: SoilHealthCardProps) {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <span className="text-2xl">🌱</span>
-          <h2 className="text-xl font-semibold">Soil Health</h2>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{ fontSize: '1.5rem' }}>🌱</span>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: '600', margin: 0 }}>Soil Health</h2>
         </div>
-        <div className="flex items-center gap-2">
-          <span className={`px-3 py-1 rounded-full text-xs font-medium ${getHealthBadgeColor(summary.overall_health)}`}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{ ...getHealthBadgeStyle(summary.overall_health), padding: '4px 12px', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: '500' }}>
             {summary.overall_health.toUpperCase()}
           </span>
           {onAddSample && (
             <button
               onClick={onAddSample}
-              className="btn btn-primary"
+              className="btn"
               style={{ padding: '6px 12px', fontSize: '0.875rem' }}
             >
               + Add Sample
@@ -185,16 +174,16 @@ export function SoilHealthCard({ gardenId, onAddSample }: SoilHealthCardProps) {
       </div>
 
       {summary.garden_name && (
-        <p className="text-sm text-gray-600 mb-4">Garden: {summary.garden_name}</p>
+        <p style={{ fontSize: '0.875rem', color: '#4b5563', marginBottom: '16px' }}>Garden: {summary.garden_name}</p>
       )}
 
       {summary.last_sample_date && (
-        <p className="text-xs text-gray-500 mb-4">
+        <p style={{ fontSize: '0.75rem', color: '#6b7280', marginBottom: '16px' }}>
           Last sampled: {new Date(summary.last_sample_date).toLocaleDateString()}
         </p>
       )}
 
-      <div className="space-y-1 mb-6">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '24px' }}>
         {renderParameter('pH Level', summary.ph, 'Optimal: 6.0-7.0 for most plants')}
         {renderParameter('Nitrogen (N)', summary.nitrogen, 'Optimal: 20-50 ppm')}
         {renderParameter('Phosphorus (P)', summary.phosphorus, 'Optimal: 15-40 ppm')}
@@ -203,27 +192,18 @@ export function SoilHealthCard({ gardenId, onAddSample }: SoilHealthCardProps) {
         {renderParameter('Moisture', summary.moisture, 'Optimal: 40-60%')}
       </div>
 
-      {summary.recommendations.length > 0 && (
-        <div className="space-y-2 mb-4">
-          <h3 className="text-sm font-medium text-gray-700">Recommendations</h3>
-          {summary.recommendations.map((rec, idx) => (
-            <div
-              key={idx}
-              className={`p-3 rounded border text-sm ${getSeverityColor(rec.severity)}`}
-            >
-              <strong>{rec.parameter.toUpperCase()}:</strong> {rec.message}
-            </div>
-          ))}
-        </div>
-      )}
-
-      {(summary.ph_trend.length > 1 || summary.moisture_trend.length > 1) && (
-        <div className="border-t pt-4">
-          <p className="text-xs text-gray-500">
-            {summary.total_samples} samples collected • Trends available for pH and moisture
+      {/* Summary footer */}
+      <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: '16px', marginTop: '8px' }}>
+        <p style={{ fontSize: '0.75rem', color: '#6b7280' }}>
+          {summary.total_samples} sample{summary.total_samples !== 1 ? 's' : ''} collected
+          {(summary.ph_trend.length > 1 || summary.moisture_trend.length > 1) && ' • Trends available for pH and moisture'}
+        </p>
+        {summary.recommendations.length > 0 && (
+          <p style={{ fontSize: '0.75rem', color: '#f59e0b', marginTop: '4px' }}>
+            💡 See Scientific Insights below for detailed recommendations
           </p>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

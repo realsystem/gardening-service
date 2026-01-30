@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import type { SoilSample } from '../types';
+import { EditSoilSample } from './EditSoilSample';
 
 interface SoilSampleListProps {
   gardenId?: number;
@@ -13,6 +14,8 @@ export function SoilSampleList({ gardenId, plantingEventId, onRefresh }: SoilSam
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [editingSample, setEditingSample] = useState<SoilSample | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   useEffect(() => {
     loadSamples();
@@ -30,15 +33,23 @@ export function SoilSampleList({ gardenId, plantingEventId, onRefresh }: SoilSam
     }
   };
 
-  const handleDelete = async (sampleId: number) => {
-    if (!confirm('Delete this soil sample?')) return;
+  const handleEditSuccess = () => {
+    setEditingSample(null);
+    loadSamples();
+    if (onRefresh) onRefresh();
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deletingId) return;
 
     try {
-      await api.deleteSoilSample(sampleId);
-      setSamples(samples.filter(s => s.id !== sampleId));
+      await api.deleteSoilSample(deletingId);
+      setSamples(samples.filter(s => s.id !== deletingId));
+      setDeletingId(null);
       if (onRefresh) onRefresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete sample');
+      setDeletingId(null);
     }
   };
 
@@ -94,10 +105,43 @@ export function SoilSampleList({ gardenId, plantingEventId, onRefresh }: SoilSam
   }
 
   return (
-    <div style={{ padding: '20px' }}>
-      <h2>Soil Sample History</h2>
+    <>
+      {editingSample && (
+        <EditSoilSample
+          sample={editingSample}
+          onClose={() => setEditingSample(null)}
+          onSuccess={handleEditSuccess}
+        />
+      )}
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+      {deletingId && (
+        <div className="modal-overlay" onClick={() => setDeletingId(null)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '400px' }}>
+            <h2>Confirm Delete</h2>
+            <p>Are you sure you want to delete this soil sample? This action cannot be undone.</p>
+            <div className="button-group">
+              <button
+                onClick={() => setDeletingId(null)}
+                className="btn btn-secondary"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteConfirm}
+                className="btn"
+                style={{ backgroundColor: '#d32f2f', color: 'white' }}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div style={{ padding: '20px' }}>
+        <h2>Soil Sample History</h2>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
         {samples.map((sample) => (
           <div
             key={sample.id}
@@ -119,13 +163,22 @@ export function SoilSampleList({ gardenId, plantingEventId, onRefresh }: SoilSam
                   </div>
                 )}
               </div>
-              <button
-                onClick={() => handleDelete(sample.id)}
-                className="btn btn-secondary"
-                style={{ fontSize: '0.85em', padding: '4px 8px' }}
-              >
-                Delete
-              </button>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  onClick={() => setEditingSample(sample)}
+                  className="btn btn-primary"
+                  style={{ fontSize: '0.85em', padding: '4px 8px' }}
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={() => setDeletingId(sample.id)}
+                  className="btn btn-secondary"
+                  style={{ fontSize: '0.85em', padding: '4px 8px' }}
+                >
+                  Delete
+                </button>
+              </div>
             </div>
 
             {/* Soil Chemistry Data */}
@@ -138,35 +191,37 @@ export function SoilSampleList({ gardenId, plantingEventId, onRefresh }: SoilSam
               borderRadius: '4px',
               marginBottom: '10px'
             }}>
-              <div>
-                <div style={{ fontSize: '0.85em', color: '#666' }}>pH</div>
-                <div style={{ fontWeight: 'bold' }}>{sample.ph.toFixed(1)}</div>
-              </div>
-              {sample.nitrogen_ppm !== undefined && (
+              {sample.ph != null && (
+                <div>
+                  <div style={{ fontSize: '0.85em', color: '#666' }}>pH</div>
+                  <div style={{ fontWeight: 'bold' }}>{sample.ph.toFixed(1)}</div>
+                </div>
+              )}
+              {sample.nitrogen_ppm != null && (
                 <div>
                   <div style={{ fontSize: '0.85em', color: '#666' }}>Nitrogen</div>
                   <div style={{ fontWeight: 'bold' }}>{sample.nitrogen_ppm.toFixed(0)} ppm</div>
                 </div>
               )}
-              {sample.phosphorus_ppm !== undefined && (
+              {sample.phosphorus_ppm != null && (
                 <div>
                   <div style={{ fontSize: '0.85em', color: '#666' }}>Phosphorus</div>
                   <div style={{ fontWeight: 'bold' }}>{sample.phosphorus_ppm.toFixed(0)} ppm</div>
                 </div>
               )}
-              {sample.potassium_ppm !== undefined && (
+              {sample.potassium_ppm != null && (
                 <div>
                   <div style={{ fontSize: '0.85em', color: '#666' }}>Potassium</div>
                   <div style={{ fontWeight: 'bold' }}>{sample.potassium_ppm.toFixed(0)} ppm</div>
                 </div>
               )}
-              {sample.organic_matter_percent !== undefined && (
+              {sample.organic_matter_percent != null && (
                 <div>
                   <div style={{ fontSize: '0.85em', color: '#666' }}>Organic Matter</div>
                   <div style={{ fontWeight: 'bold' }}>{sample.organic_matter_percent.toFixed(1)}%</div>
                 </div>
               )}
-              {sample.moisture_percent !== undefined && (
+              {sample.moisture_percent != null && (
                 <div>
                   <div style={{ fontSize: '0.85em', color: '#666' }}>Moisture</div>
                   <div style={{ fontWeight: 'bold' }}>{sample.moisture_percent.toFixed(1)}%</div>
@@ -217,7 +272,7 @@ export function SoilSampleList({ gardenId, plantingEventId, onRefresh }: SoilSam
                         >
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                             <strong style={{ color: getStatusColor(rec.status) }}>
-                              {rec.parameter}: {rec.current_value.toFixed(1)}
+                              {rec.parameter}: {rec.current_value != null ? rec.current_value.toFixed(1) : 'N/A'}
                             </strong>
                             {getPriorityBadge(rec.priority)}
                           </div>
@@ -235,7 +290,8 @@ export function SoilSampleList({ gardenId, plantingEventId, onRefresh }: SoilSam
             )}
           </div>
         ))}
+        </div>
       </div>
-    </div>
+    </>
   );
 }

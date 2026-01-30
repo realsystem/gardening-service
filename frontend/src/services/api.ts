@@ -18,7 +18,9 @@ import type {
   IrrigationEventList,
   IrrigationSummary,
   SoilHealthSummary,
-  IrrigationOverviewSummary
+  IrrigationOverviewSummary,
+  GardenRuleInsights,
+  PlantingRuleInsights
 } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
@@ -359,12 +361,16 @@ class ApiClient {
     });
   }
 
-  async deleteSoilSample(sampleId: number): Promise<void> {
-    await fetch(`${API_BASE_URL}/soil-samples/${sampleId}`, {
+  async updateSoilSample(sampleId: number, data: Partial<SoilSampleCreate>): Promise<SoilSample> {
+    return this.request<SoilSample>(`/soil-samples/${sampleId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteSoilSample(sampleId: number): Promise<{message: string; deleted_sample: {id: number; garden_id: number; date_collected: string}}> {
+    return this.request(`/soil-samples/${sampleId}`, {
       method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${this.token}`,
-      },
     });
   }
 
@@ -424,6 +430,15 @@ class ApiClient {
   async getIrrigationOverviewSummary(gardenId?: number): Promise<IrrigationOverviewSummary> {
     const query = gardenId ? `?garden_id=${gardenId}` : '';
     return this.request<IrrigationOverviewSummary>(`/dashboard/irrigation-summary${query}`);
+  }
+
+  // Rule Insights (Science-Based Rule Engine)
+  async getGardenRuleInsights(gardenId: number): Promise<GardenRuleInsights> {
+    return this.request<GardenRuleInsights>(`/rule-insights/garden/${gardenId}`);
+  }
+
+  async getPlantingRuleInsights(plantingId: number): Promise<PlantingRuleInsights> {
+    return this.request<PlantingRuleInsights>(`/rule-insights/planting/${plantingId}`);
   }
 }
 
