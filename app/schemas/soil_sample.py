@@ -19,6 +19,19 @@ class SoilSampleCreate(BaseModel):
     notes: Optional[str] = Field(None, description="Additional observations")
 
 
+class SoilSampleUpdate(BaseModel):
+    """Schema for updating an existing soil sample. All fields are optional for partial updates."""
+    ph: Optional[float] = Field(None, ge=0, le=14, description="Soil pH (0-14)")
+    nitrogen_ppm: Optional[float] = Field(None, ge=0, description="Nitrogen in PPM")
+    phosphorus_ppm: Optional[float] = Field(None, ge=0, description="Phosphorus in PPM")
+    potassium_ppm: Optional[float] = Field(None, ge=0, description="Potassium in PPM")
+    organic_matter_percent: Optional[float] = Field(None, ge=0, le=100, description="Organic matter percentage")
+    moisture_percent: Optional[float] = Field(None, ge=0, le=100, description="Soil moisture percentage")
+
+    date_collected: Optional[date] = Field(None, description="Date sample was collected")
+    notes: Optional[str] = Field(None, description="Additional observations")
+
+
 class SoilRecommendation(BaseModel):
     """Scientific recommendation based on soil sample."""
     parameter: str = Field(..., description="Parameter being evaluated (pH, nitrogen, etc.)")

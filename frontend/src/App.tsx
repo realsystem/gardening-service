@@ -3,6 +3,7 @@ import { Auth } from './components/Auth';
 import { Dashboard } from './components/Dashboard';
 import { ForgotPassword } from './components/ForgotPassword';
 import { ResetPassword } from './components/ResetPassword';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { api } from './services/api';
 import type { User } from './types';
 import './App.css';
@@ -84,7 +85,11 @@ function App() {
     );
   }
 
-  return <Dashboard user={user} onLogout={handleLogout} />;
+  return (
+    <ErrorBoundary>
+      <Dashboard user={user} onLogout={handleLogout} />
+    </ErrorBoundary>
+  );
 }
 
 export default App;

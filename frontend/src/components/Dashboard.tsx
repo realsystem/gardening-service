@@ -11,7 +11,9 @@ import { CreateIrrigationEvent } from './CreateIrrigationEvent';
 import { Profile } from './Profile';
 import { PlantingsList } from './PlantingsList';
 import { SoilHealthCard } from './SoilHealthCard';
+import { SoilSampleList } from './SoilSampleList';
 import { IrrigationOverviewCard } from './IrrigationOverviewCard';
+import { RuleInsightsCard } from './RuleInsightsCard';
 
 interface DashboardProps {
   user: User;
@@ -31,6 +33,14 @@ export function Dashboard({ user: initialUser, onLogout }: DashboardProps) {
   const [deletingGardenId, setDeletingGardenId] = useState<number | null>(null);
   const [confirmDeleteGardenId, setConfirmDeleteGardenId] = useState<number | null>(null);
   const [viewMode, setViewMode] = useState<'dashboard' | 'plantings'>('dashboard');
+  const [selectedGardenId, setSelectedGardenId] = useState<number | undefined>(undefined);
+
+  // Update selected garden when gardens load
+  useEffect(() => {
+    if (gardens.length > 0 && selectedGardenId === undefined) {
+      setSelectedGardenId(gardens[0].id);
+    }
+  }, [gardens, selectedGardenId]);
 
   // Update user when prop changes
   useEffect(() => {
@@ -207,6 +217,28 @@ export function Dashboard({ user: initialUser, onLogout }: DashboardProps) {
             </div>
           </div>
 
+          {gardens.length > 1 && (
+            <div className="card">
+              <h2>Garden Selection</h2>
+              <div style={{ marginTop: '15px' }}>
+                <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>
+                  View data for:
+                </label>
+                <select
+                  value={selectedGardenId || ''}
+                  onChange={(e) => setSelectedGardenId(e.target.value ? Number(e.target.value) : undefined)}
+                  style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }}
+                >
+                  {gardens.map(garden => (
+                    <option key={garden.id} value={garden.id}>
+                      {garden.name} ({garden.garden_type})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          )}
+
           {loading ? (
             <div className="loading">Loading...</div>
           ) : viewMode === 'plantings' ? (
@@ -214,29 +246,19 @@ export function Dashboard({ user: initialUser, onLogout }: DashboardProps) {
           ) : (
             <>
               <div className="card">
-                <h2>Task Statistics</h2>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '10px', marginTop: '15px' }}>
-                  <div style={{ padding: '10px', backgroundColor: '#f5f5f5', borderRadius: '4px', textAlign: 'center' }}>
-                    <div style={{ fontSize: '1.5em', fontWeight: 'bold' }}>{stats.total}</div>
-                    <div style={{ fontSize: '0.9em', color: '#666' }}>Total Tasks</div>
-                  </div>
-                  <div style={{ padding: '10px', backgroundColor: '#ffebee', borderRadius: '4px', textAlign: 'center' }}>
-                    <div style={{ fontSize: '1.5em', fontWeight: 'bold', color: '#d32f2f' }}>{stats.high}</div>
-                    <div style={{ fontSize: '0.9em', color: '#666' }}>High Priority</div>
-                  </div>
-                  <div style={{ padding: '10px', backgroundColor: '#fff3e0', borderRadius: '4px', textAlign: 'center' }}>
-                    <div style={{ fontSize: '1.5em', fontWeight: 'bold', color: '#f57c00' }}>{stats.medium}</div>
-                    <div style={{ fontSize: '0.9em', color: '#666' }}>Medium Priority</div>
-                  </div>
-                  <div style={{ padding: '10px', backgroundColor: '#e8f5e9', borderRadius: '4px', textAlign: 'center' }}>
-                    <div style={{ fontSize: '1.5em', fontWeight: 'bold', color: '#388e3c' }}>{stats.low}</div>
-                    <div style={{ fontSize: '0.9em', color: '#666' }}>Low Priority</div>
-                  </div>
-                  <div style={{ padding: '10px', backgroundColor: '#e3f2fd', borderRadius: '4px', textAlign: 'center' }}>
-                    <div style={{ fontSize: '1.5em', fontWeight: 'bold', color: '#1976d2' }}>{stats.recurring}</div>
-                    <div style={{ fontSize: '0.9em', color: '#666' }}>Recurring</div>
-                  </div>
-                </div>
+                <SoilHealthCard gardenId={selectedGardenId} onAddSample={() => setActiveModal('soil')} />
+              </div>
+
+              <div className="card">
+                <SoilSampleList gardenId={selectedGardenId} onRefresh={loadData} />
+              </div>
+
+              <div className="card">
+                <RuleInsightsCard gardenId={selectedGardenId} />
+              </div>
+
+              <div className="card">
+                <IrrigationOverviewCard gardenId={selectedGardenId} onLogWatering={() => setActiveModal('irrigation')} />
               </div>
 
               <div className="card">
@@ -410,11 +432,29 @@ export function Dashboard({ user: initialUser, onLogout }: DashboardProps) {
               )}
 
               <div className="card">
-                <SoilHealthCard onAddSample={() => setActiveModal('soil')} />
-              </div>
-
-              <div className="card">
-                <IrrigationOverviewCard onLogWatering={() => setActiveModal('irrigation')} />
+                <h2>Task Statistics</h2>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '10px', marginTop: '15px' }}>
+                  <div style={{ padding: '10px', backgroundColor: '#f5f5f5', borderRadius: '4px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '1.5em', fontWeight: 'bold' }}>{stats.total}</div>
+                    <div style={{ fontSize: '0.9em', color: '#666' }}>Total Tasks</div>
+                  </div>
+                  <div style={{ padding: '10px', backgroundColor: '#ffebee', borderRadius: '4px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '1.5em', fontWeight: 'bold', color: '#d32f2f' }}>{stats.high}</div>
+                    <div style={{ fontSize: '0.9em', color: '#666' }}>High Priority</div>
+                  </div>
+                  <div style={{ padding: '10px', backgroundColor: '#fff3e0', borderRadius: '4px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '1.5em', fontWeight: 'bold', color: '#f57c00' }}>{stats.medium}</div>
+                    <div style={{ fontSize: '0.9em', color: '#666' }}>Medium Priority</div>
+                  </div>
+                  <div style={{ padding: '10px', backgroundColor: '#e8f5e9', borderRadius: '4px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '1.5em', fontWeight: 'bold', color: '#388e3c' }}>{stats.low}</div>
+                    <div style={{ fontSize: '0.9em', color: '#666' }}>Low Priority</div>
+                  </div>
+                  <div style={{ padding: '10px', backgroundColor: '#e3f2fd', borderRadius: '4px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '1.5em', fontWeight: 'bold', color: '#1976d2' }}>{stats.recurring}</div>
+                    <div style={{ fontSize: '0.9em', color: '#666' }}>Recurring</div>
+                  </div>
+                </div>
               </div>
 
               <div className="card">

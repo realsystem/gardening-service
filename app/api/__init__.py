@@ -11,6 +11,7 @@ from app.api.soil_samples import router as soil_samples_router
 from app.api.irrigation import router as irrigation_router
 from app.api.password_reset import router as password_reset_router, password_router
 from app.api.dashboard import router as dashboard_router
+from app.api.rule_insights import router as rule_insights_router
 
 __all__ = [
     "users_router",
@@ -26,4 +27,5 @@ __all__ = [
     "password_reset_router",
     "password_router",
     "dashboard_router",
+    "rule_insights_router",
 ]
