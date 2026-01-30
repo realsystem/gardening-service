@@ -49,7 +49,7 @@ export function IrrigationOverviewCard({ gardenId, onLogWatering }: IrrigationOv
 
   if (loading) {
     return (
-      <div className="bg-white rounded-lg shadow p-6">
+      <div>
         <div className="flex items-center gap-2 mb-4">
           <span className="text-2xl">💧</span>
           <h2 className="text-xl font-semibold">Irrigation Overview</h2>
@@ -61,7 +61,7 @@ export function IrrigationOverviewCard({ gardenId, onLogWatering }: IrrigationOv
 
   if (error) {
     return (
-      <div className="bg-white rounded-lg shadow p-6">
+      <div>
         <div className="flex items-center gap-2 mb-4">
           <span className="text-2xl">💧</span>
           <h2 className="text-xl font-semibold">Irrigation Overview</h2>
@@ -73,7 +73,7 @@ export function IrrigationOverviewCard({ gardenId, onLogWatering }: IrrigationOv
 
   if (!summary || summary.total_events === 0) {
     return (
-      <div className="bg-white rounded-lg shadow p-6">
+      <div>
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <span className="text-2xl">💧</span>
@@ -107,7 +107,7 @@ export function IrrigationOverviewCard({ gardenId, onLogWatering }: IrrigationOv
   }
 
   return (
-    <div className="bg-white rounded-lg shadow p-6">
+    <div>
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <span className="text-2xl">💧</span>

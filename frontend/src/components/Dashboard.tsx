@@ -240,23 +240,6 @@ export function Dashboard({ user: initialUser, onLogout }: DashboardProps) {
               </div>
 
               <div className="card">
-                <h2>Filters</h2>
-                <div style={{ marginTop: '15px' }}>
-                  <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Priority</label>
-                  <select
-                    value={priorityFilter}
-                    onChange={(e) => setPriorityFilter(e.target.value as typeof priorityFilter)}
-                    style={{ width: '200px', padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }}
-                  >
-                    <option value="all">All Priorities</option>
-                    <option value="high">High Priority</option>
-                    <option value="medium">Medium Priority</option>
-                    <option value="low">Low Priority</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="card">
                 <h2>Gardens ({gardens.length})</h2>
                 {gardens.length === 0 ? (
                   <p style={{ color: '#666', fontStyle: 'italic' }}>
@@ -426,9 +409,30 @@ export function Dashboard({ user: initialUser, onLogout }: DashboardProps) {
                 </div>
               )}
 
-              <SoilHealthCard onAddSample={() => setActiveModal('soil')} />
+              <div className="card">
+                <SoilHealthCard onAddSample={() => setActiveModal('soil')} />
+              </div>
 
-              <IrrigationOverviewCard onLogWatering={() => setActiveModal('irrigation')} />
+              <div className="card">
+                <IrrigationOverviewCard onLogWatering={() => setActiveModal('irrigation')} />
+              </div>
+
+              <div className="card">
+                <h2>Filters</h2>
+                <div style={{ marginTop: '15px' }}>
+                  <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Priority</label>
+                  <select
+                    value={priorityFilter}
+                    onChange={(e) => setPriorityFilter(e.target.value as typeof priorityFilter)}
+                    style={{ width: '200px', padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }}
+                  >
+                    <option value="all">All Priorities</option>
+                    <option value="high">High Priority</option>
+                    <option value="medium">Medium Priority</option>
+                    <option value="low">Low Priority</option>
+                  </select>
+                </div>
+              </div>
 
               <div className="card">
                 <h2>Tasks for Today</h2>

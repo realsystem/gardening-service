@@ -104,7 +104,7 @@ export function SoilHealthCard({ gardenId, onAddSample }: SoilHealthCardProps) {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-lg shadow p-6">
+      <div>
         <div className="flex items-center gap-2 mb-4">
           <span className="text-2xl">🌱</span>
           <h2 className="text-xl font-semibold">Soil Health</h2>
@@ -116,7 +116,7 @@ export function SoilHealthCard({ gardenId, onAddSample }: SoilHealthCardProps) {
 
   if (error) {
     return (
-      <div className="bg-white rounded-lg shadow p-6">
+      <div>
         <div className="flex items-center gap-2 mb-4">
           <span className="text-2xl">🌱</span>
           <h2 className="text-xl font-semibold">Soil Health</h2>
@@ -128,7 +128,7 @@ export function SoilHealthCard({ gardenId, onAddSample }: SoilHealthCardProps) {
 
   if (!summary || summary.total_samples === 0) {
     return (
-      <div className="bg-white rounded-lg shadow p-6">
+      <div>
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <span className="text-2xl">🌱</span>
@@ -162,7 +162,7 @@ export function SoilHealthCard({ gardenId, onAddSample }: SoilHealthCardProps) {
   }
 
   return (
-    <div className="bg-white rounded-lg shadow p-6">
+    <div>
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <span className="text-2xl">🌱</span>
