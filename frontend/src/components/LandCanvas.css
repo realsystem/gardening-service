@@ -1,0 +1,185 @@
+.land-canvas-container {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.land-header {
+  margin-bottom: 20px;
+}
+
+.land-header h3 {
+  margin: 0 0 5px 0;
+  color: #2c3e50;
+}
+
+.land-dimensions {
+  margin: 0;
+  color: #7f8c8d;
+  font-size: 0.9em;
+}
+
+.error-message {
+  background: #fee;
+  border: 1px solid #fcc;
+  color: #c33;
+  padding: 10px;
+  border-radius: 4px;
+  margin-bottom: 15px;
+}
+
+.canvas-wrapper {
+  overflow: auto;
+  border: 2px solid #34495e;
+  border-radius: 4px;
+  background: #f8f9fa;
+  margin-bottom: 20px;
+  max-height: 600px;
+}
+
+.land-canvas {
+  position: relative;
+  background: white;
+  cursor: default;
+}
+
+.grid-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+}
+
+.garden-plot {
+  position: absolute;
+  background: #3498db;
+  border: 2px solid #2980b9;
+  border-radius: 4px;
+  cursor: move;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: box-shadow 0.2s;
+  user-select: none;
+}
+
+.garden-plot:hover {
+  box-shadow: 0 0 10px rgba(52, 152, 219, 0.5);
+}
+
+.garden-plot.selected {
+  background: #2ecc71;
+  border-color: #27ae60;
+  box-shadow: 0 0 15px rgba(46, 204, 113, 0.6);
+}
+
+.garden-plot.dragging {
+  opacity: 0.8;
+  box-shadow: 0 4px 20px rgba(52, 152, 219, 0.5);
+  z-index: 1000;
+  transition: none; /* Disable transition during drag for smooth movement */
+}
+
+.garden-label {
+  color: white;
+  font-weight: bold;
+  font-size: 0.9em;
+  text-align: center;
+  padding: 5px;
+  word-break: break-word;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.remove-button {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #e74c3c;
+  color: white;
+  border: 2px solid white;
+  font-size: 18px;
+  line-height: 18px;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.remove-button:hover {
+  background: #c0392b;
+}
+
+.unplaced-gardens {
+  background: #ecf0f1;
+  padding: 15px;
+  border-radius: 4px;
+  margin-bottom: 15px;
+}
+
+.unplaced-gardens h4 {
+  margin: 0 0 5px 0;
+  color: #2c3e50;
+}
+
+.help-text {
+  margin: 0 0 10px 0;
+  color: #7f8c8d;
+  font-size: 0.85em;
+}
+
+.garden-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.garden-chip {
+  background: white;
+  border: 2px solid #3498db;
+  color: #3498db;
+  padding: 8px 16px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 0.9em;
+  transition: all 0.2s;
+}
+
+.garden-chip:hover:not(:disabled) {
+  background: #3498db;
+  color: white;
+}
+
+.garden-chip:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  border-color: #95a5a6;
+  color: #95a5a6;
+}
+
+.canvas-legend {
+  background: #f8f9fa;
+  padding: 15px;
+  border-radius: 4px;
+  border-left: 4px solid #3498db;
+}
+
+.canvas-legend p {
+  margin: 0 0 10px 0;
+  color: #2c3e50;
+}
+
+.canvas-legend ul {
+  margin: 0;
+  padding-left: 20px;
+  color: #555;
+}
+
+.canvas-legend li {
+  margin-bottom: 5px;
+  font-size: 0.9em;
+}

@@ -57,10 +57,10 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        # Build-time argument for API URL (used by browser, not container)
+        VITE_API_URL: http://localhost:8080
     ports:
       - "3000:3000"
-    environment:
-      # Point UI to API service (Docker network)
-      VITE_API_URL: http://localhost:8080
     depends_on:
       - api

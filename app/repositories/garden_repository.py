@@ -1,6 +1,6 @@
 """Garden repository"""
 from typing import Optional, List
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from app.models.garden import Garden
 
 
@@ -42,3 +42,25 @@ class GardenRepository:
         """Delete garden"""
         self.db.delete(garden)
         self.db.commit()
+
+    def get_gardens_on_land(self, land_id: int) -> List[Garden]:
+        """
+        Get all gardens placed on a specific land.
+        Only returns gardens with spatial data (x, y, width, height all set).
+        """
+        return self.db.query(Garden).filter(
+            Garden.land_id == land_id,
+            Garden.x.isnot(None),
+            Garden.y.isnot(None),
+            Garden.width.isnot(None),
+            Garden.height.isnot(None)
+        ).all()
+
+    def get_garden_with_land(self, garden_id: int) -> Optional[Garden]:
+        """
+        Get garden with land relationship eager-loaded.
+        Useful for validation when updating layout.
+        """
+        return self.db.query(Garden).options(
+            joinedload(Garden.land)
+        ).filter(Garden.id == garden_id).first()

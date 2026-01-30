@@ -66,11 +66,19 @@ class Garden(Base):
     water_temp_min_f = Column(Float, nullable=True)  # Minimum water temperature
     water_temp_max_f = Column(Float, nullable=True)  # Maximum water temperature
 
+    # Spatial layout fields (optional - for visual land layout)
+    land_id = Column(Integer, ForeignKey("lands.id", ondelete='SET NULL'), nullable=True, index=True)
+    x = Column(Float, nullable=True)  # x-coordinate on land (top-left origin)
+    y = Column(Float, nullable=True)  # y-coordinate on land (top-left origin)
+    width = Column(Float, nullable=True)  # garden width in abstract units
+    height = Column(Float, nullable=True)  # garden height in abstract units
+
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     # Relationships
     user = relationship("User", back_populates="gardens")
+    land = relationship("Land", back_populates="gardens", foreign_keys=[land_id])
     planting_events = relationship("PlantingEvent", back_populates="garden", cascade="all, delete-orphan")
     sensor_readings = relationship("SensorReading", back_populates="garden", cascade="all, delete-orphan")
     soil_samples = relationship("SoilSample", back_populates="garden", cascade="all, delete-orphan")

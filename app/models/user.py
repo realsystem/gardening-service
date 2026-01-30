@@ -36,6 +36,7 @@ class User(Base):
 
     # Relationships
     gardens = relationship("Garden", back_populates="user", cascade="all, delete-orphan")
+    lands = relationship("Land", back_populates="user", cascade="all, delete-orphan")
     seed_batches = relationship("SeedBatch", back_populates="user", cascade="all, delete-orphan")
     germination_events = relationship("GerminationEvent", back_populates="user", cascade="all, delete-orphan")
     planting_events = relationship("PlantingEvent", back_populates="user", cascade="all, delete-orphan")

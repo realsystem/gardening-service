@@ -54,6 +54,12 @@ export interface Garden {
   ppm_max?: number;
   water_temp_min_f?: number;
   water_temp_max_f?: number;
+  // Spatial layout fields
+  land_id?: number;
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
 }
 
 export interface SensorReading {
@@ -368,4 +374,48 @@ export interface PlantingRuleInsights {
     info: number;
   };
   rules_by_category: Record<RuleCategory, number>;
+}
+
+// Land Layout Types
+export interface Land {
+  id: number;
+  user_id: number;
+  name: string;
+  width: number;
+  height: number;
+  created_at: string;
+}
+
+export interface GardenSpatialInfo {
+  id: number;
+  name: string;
+  land_id?: number;
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
+}
+
+export interface LandWithGardens extends Land {
+  gardens: GardenSpatialInfo[];
+}
+
+export interface LandCreate {
+  name: string;
+  width: number;
+  height: number;
+}
+
+export interface LandUpdate {
+  name?: string;
+  width?: number;
+  height?: number;
+}
+
+export interface GardenLayoutUpdate {
+  land_id?: number;
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
 }

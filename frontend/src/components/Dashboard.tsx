@@ -14,6 +14,7 @@ import { SoilHealthCard } from './SoilHealthCard';
 import { SoilSampleList } from './SoilSampleList';
 import { IrrigationOverviewCard } from './IrrigationOverviewCard';
 import { RuleInsightsCard } from './RuleInsightsCard';
+import { LandList } from './LandList';
 
 interface DashboardProps {
   user: User;
@@ -32,13 +33,24 @@ export function Dashboard({ user: initialUser, onLogout }: DashboardProps) {
   const [priorityFilter, setPriorityFilter] = useState<'all' | 'high' | 'medium' | 'low'>('all');
   const [deletingGardenId, setDeletingGardenId] = useState<number | null>(null);
   const [confirmDeleteGardenId, setConfirmDeleteGardenId] = useState<number | null>(null);
-  const [viewMode, setViewMode] = useState<'dashboard' | 'plantings'>('dashboard');
+  const [viewMode, setViewMode] = useState<'dashboard' | 'plantings' | 'land-layout'>('dashboard');
   const [selectedGardenId, setSelectedGardenId] = useState<number | undefined>(undefined);
 
-  // Update selected garden when gardens load
+  // Update selected garden when gardens load or change
   useEffect(() => {
-    if (gardens.length > 0 && selectedGardenId === undefined) {
+    if (gardens.length === 0) {
+      // No gardens, clear selection
+      setSelectedGardenId(undefined);
+    } else if (selectedGardenId === undefined) {
+      // No selection, select first garden
       setSelectedGardenId(gardens[0].id);
+    } else {
+      // Check if currently selected garden still exists
+      const gardenExists = gardens.some(g => g.id === selectedGardenId);
+      if (!gardenExists) {
+        // Selected garden was deleted, select first available
+        setSelectedGardenId(gardens[0].id);
+      }
     }
   }, [gardens, selectedGardenId]);
 
@@ -214,10 +226,17 @@ export function Dashboard({ user: initialUser, onLogout }: DashboardProps) {
               >
                 {viewMode === 'plantings' ? 'Back to Dashboard' : 'View Plantings'}
               </button>
+              <button
+                className="btn"
+                style={{ backgroundColor: viewMode === 'land-layout' ? '#4a90e2' : undefined }}
+                onClick={() => setViewMode(viewMode === 'land-layout' ? 'dashboard' : 'land-layout')}
+              >
+                {viewMode === 'land-layout' ? 'Back to Dashboard' : 'Land Layout'}
+              </button>
             </div>
           </div>
 
-          {gardens.length > 1 && (
+          {gardens.length > 1 && viewMode === 'dashboard' && (
             <div className="card">
               <h2>Garden Selection</h2>
               <div style={{ marginTop: '15px' }}>
@@ -243,6 +262,8 @@ export function Dashboard({ user: initialUser, onLogout }: DashboardProps) {
             <div className="loading">Loading...</div>
           ) : viewMode === 'plantings' ? (
             <PlantingsList />
+          ) : viewMode === 'land-layout' ? (
+            <LandList />
           ) : (
             <>
               <div className="card">
@@ -312,8 +333,18 @@ export function Dashboard({ user: initialUser, onLogout }: DashboardProps) {
                           </div>
                           <button
                             onClick={() => setConfirmDeleteGardenId(garden.id)}
-                            className="btn btn-secondary"
-                            style={{ marginLeft: '10px', padding: '5px 12px', fontSize: '0.85em' }}
+                            style={{
+                              marginLeft: '10px',
+                              padding: '5px 12px',
+                              fontSize: '0.85em',
+                              backgroundColor: '#dc3545',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '4px',
+                              cursor: deletingGardenId === garden.id ? 'not-allowed' : 'pointer',
+                              whiteSpace: 'nowrap',
+                              flexShrink: 0
+                            }}
                             disabled={deletingGardenId === garden.id}
                           >
                             {deletingGardenId === garden.id ? 'Deleting...' : 'Delete'}

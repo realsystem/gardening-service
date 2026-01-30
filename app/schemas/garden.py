@@ -93,6 +93,12 @@ class GardenResponse(BaseModel):
     ppm_max: Optional[int] = None
     water_temp_min_f: Optional[float] = None
     water_temp_max_f: Optional[float] = None
+    # Spatial layout fields
+    land_id: Optional[int] = None
+    x: Optional[float] = None
+    y: Optional[float] = None
+    width: Optional[float] = None
+    height: Optional[float] = None
     created_at: datetime
 
     class Config:

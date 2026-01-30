@@ -119,6 +119,15 @@ This service helps home gardeners track and manage their gardening lifecycle fro
     - Automated alerts for under-watering and over-watering
     - Moisture mismatch detection (soil moisture vs irrigation frequency)
     - Garden-specific filtering available
+- **Garden Land Layout (Visual Schematic)**: Spatial planning and organization
+  - Define land areas with custom dimensions (any unit system: meters, feet, grid squares)
+  - Visual canvas for placing multiple gardens on the same land
+  - Drag-and-drop garden placement with real-time positioning
+  - Automatic collision detection prevents overlapping gardens
+  - Boundary validation ensures gardens fit within land dimensions
+  - Simple rectangular plots (architecture supports future extensions)
+  - Add or remove gardens from layouts
+  - Multiple lands per user for different properties
 
 ## Architecture
 
@@ -635,9 +644,19 @@ class FertilizeRule(BaseRule):
   - `city`: User's city/location
   - `gardening_preferences`: Gardening style and preferences
   - `usda_zone`: Climate zone
+- **Land**: Physical land areas for garden placement (spatial layout feature)
+  - `name`: Land identifier
+  - `width`, `height`: Dimensions in abstract units
+  - `user_id`: Owner reference
+  - Supports multiple gardens on a single land
+  - Future-ready for advanced spatial features
 - **Garden**: User's growing areas (outdoor, indoor, or hydroponic)
   - `garden_type`: "outdoor" or "indoor"
   - `is_hydroponic`: Boolean flag for hydroponic systems
+  - Spatial layout fields (optional):
+    - `land_id`: Reference to land (if placed on layout)
+    - `x`, `y`: Top-left coordinates on land
+    - `width`, `height`: Garden dimensions on land
   - Indoor-specific fields:
     - `location`: Location within indoor space (e.g., "Basement", "Spare Room")
     - `light_source_type`: LED, Fluorescent, Natural Supplement, HPS, MH
@@ -1211,6 +1230,15 @@ Logged-in users can manage their passwords in two ways:
 
 For detailed password reset documentation, see [PASSWORD_RESET.md](PASSWORD_RESET.md)
 
+### Lands (Spatial Layout)
+- `POST /lands` - Create land area
+  - Required: `name`, `width`, `height`
+  - Units are abstract (meters, feet, or grid squares)
+- `GET /lands` - List user's lands
+- `GET /lands/{id}` - Get land with all gardens placed on it
+- `PATCH /lands/{id}` - Update land (validates no gardens exceed new bounds)
+- `DELETE /lands/{id}` - Delete land (gardens are orphaned, not deleted)
+
 ### Gardens
 - `POST /gardens` - Create garden (outdoor, indoor, or hydroponic)
   - Outdoor garden fields: `name`, `description`, `garden_type: "outdoor"`
@@ -1219,6 +1247,10 @@ For detailed password reset documentation, see [PASSWORD_RESET.md](PASSWORD_RESE
 - `GET /gardens` - List user's gardens (includes indoor and hydroponics metadata)
 - `GET /gardens/{id}` - Get garden
 - `GET /gardens/{id}/sensor-readings` - Get all sensor readings for a specific garden (sorted by date, most recent first)
+- `PUT /gardens/{id}/layout` - Update garden's spatial layout on a land
+  - All spatial fields required together: `land_id`, `x`, `y`, `width`, `height`
+  - Validates: bounds checking, no overlaps, owner authorization
+  - Set all to null to remove from layout
 - `PATCH /gardens/{id}` - Update garden
 - `DELETE /gardens/{id}` - Delete garden (cascades to delete plantings, sensor readings, soil samples, and irrigation events)
 

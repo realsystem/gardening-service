@@ -20,7 +20,12 @@ import type {
   SoilHealthSummary,
   IrrigationOverviewSummary,
   GardenRuleInsights,
-  PlantingRuleInsights
+  PlantingRuleInsights,
+  Land,
+  LandWithGardens,
+  LandCreate,
+  LandUpdate,
+  GardenLayoutUpdate
 } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
@@ -439,6 +444,46 @@ class ApiClient {
 
   async getPlantingRuleInsights(plantingId: number): Promise<PlantingRuleInsights> {
     return this.request<PlantingRuleInsights>(`/rule-insights/planting/${plantingId}`);
+  }
+
+  // Land Management
+  async getLands(): Promise<Land[]> {
+    return this.request<Land[]>('/lands');
+  }
+
+  async getLand(landId: number): Promise<LandWithGardens> {
+    return this.request<LandWithGardens>(`/lands/${landId}`);
+  }
+
+  async createLand(data: LandCreate): Promise<Land> {
+    return this.request<Land>('/lands', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateLand(landId: number, data: LandUpdate): Promise<Land> {
+    return this.request<Land>(`/lands/${landId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteLand(landId: number): Promise<void> {
+    await fetch(`${API_BASE_URL}/lands/${landId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${this.token}`,
+      },
+    });
+  }
+
+  // Garden Layout
+  async updateGardenLayout(gardenId: number, layout: GardenLayoutUpdate): Promise<Garden> {
+    return this.request<Garden>(`/gardens/${gardenId}/layout`, {
+      method: 'PUT',
+      body: JSON.stringify(layout),
+    });
   }
 }
 

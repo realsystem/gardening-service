@@ -7,6 +7,7 @@ from app.config import get_settings
 from app.api import (
     users_router,
     gardens_router,
+    lands_router,
     plant_varieties_router,
     seed_batches_router,
     germination_events_router,
@@ -55,6 +56,7 @@ app.include_router(users_router)
 app.include_router(password_reset_router)
 app.include_router(password_router)
 app.include_router(gardens_router)
+app.include_router(lands_router)
 app.include_router(plant_varieties_router)
 app.include_router(seed_batches_router)
 app.include_router(germination_events_router)
