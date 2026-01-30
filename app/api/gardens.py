@@ -12,14 +12,20 @@ from app.schemas.garden_details import (
     TaskSummaryInGarden,
     GardenStatsResponse
 )
+from app.schemas.garden_layout import GardenLayoutUpdate
 from app.schemas.sensor_reading import SensorReadingResponse
 from app.repositories.garden_repository import GardenRepository
 from app.repositories.sensor_reading_repository import SensorReadingRepository
+from app.repositories.land_repository import LandRepository
 from app.models.planting_event import PlantingEvent
 from app.models.care_task import CareTask, TaskStatus
 from app.models.plant_variety import PlantVariety
 from app.api.dependencies import get_current_user
 from app.models.user import User
+from app.services.layout_service import (
+    validate_spatial_data_complete,
+    validate_garden_placement
+)
 
 router = APIRouter(prefix="/gardens", tags=["gardens"])
 
@@ -316,3 +322,108 @@ def get_garden_sensor_readings(
     readings = reading_repo.get_by_garden(garden_id)
 
     return readings
+
+
+@router.put("/{garden_id}/layout", response_model=GardenResponse)
+def update_garden_layout(
+    garden_id: int,
+    layout_data: GardenLayoutUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Update garden's spatial layout on a land.
+
+    Validates:
+    - All spatial fields provided together (all-or-nothing)
+    - Garden fits within land boundaries
+    - No overlap with other gardens on same land
+    - Only owner can modify
+
+    To remove garden from layout, set all fields to None.
+    """
+    garden_repo = GardenRepository(db)
+    garden = garden_repo.get_by_id(garden_id)
+
+    if not garden:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Garden not found"
+        )
+
+    if garden.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to modify this garden"
+        )
+
+    # Extract layout data
+    land_id = layout_data.land_id
+    x = layout_data.x
+    y = layout_data.y
+    width = layout_data.width
+    height = layout_data.height
+
+    # Validate spatial data completeness (all-or-nothing)
+    validation_error = validate_spatial_data_complete(land_id, x, y, width, height)
+    if validation_error:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=validation_error.message
+        )
+
+    # If all fields are None, remove from layout
+    if land_id is None:
+        garden.land_id = None
+        garden.x = None
+        garden.y = None
+        garden.width = None
+        garden.height = None
+        db.commit()
+        db.refresh(garden)
+        return garden
+
+    # Validate land exists and belongs to user
+    land_repo = LandRepository(db)
+    land = land_repo.get_land_with_gardens(land_id)
+
+    if not land:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Land not found"
+        )
+
+    if land.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to place gardens on this land"
+        )
+
+    # Validate placement (bounds and overlap)
+    placement_error = validate_garden_placement(
+        garden_id=garden_id,
+        land=land,
+        x=x,
+        y=y,
+        width=width,
+        height=height,
+        existing_gardens=land.gardens
+    )
+
+    if placement_error:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=placement_error.message
+        )
+
+    # Update garden layout
+    garden.land_id = land_id
+    garden.x = x
+    garden.y = y
+    garden.width = width
+    garden.height = height
+
+    db.commit()
+    db.refresh(garden)
+
+    return garden

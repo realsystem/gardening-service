@@ -35,7 +35,7 @@ def upgrade():
     """)
 
     # Add hydroponics fields to gardens table
-    op.add_column('gardens', sa.Column('is_hydroponic', sa.Integer(), nullable=False, server_default='0'))
+    op.add_column('gardens', sa.Column('is_hydroponic', sa.Boolean(), nullable=False, server_default='false'))
     op.add_column('gardens', sa.Column('hydro_system_type', hydro_system_type_enum, nullable=True))
     op.add_column('gardens', sa.Column('reservoir_size_liters', sa.Float(), nullable=True))
     op.add_column('gardens', sa.Column('nutrient_schedule', sa.Text(), nullable=True))

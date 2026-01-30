@@ -1,0 +1,320 @@
+import { useState, useRef, useEffect } from 'react';
+import { api } from '../services/api';
+import type { LandWithGardens, Garden, GardenSpatialInfo } from '../types';
+import './LandCanvas.css';
+
+interface LandCanvasProps {
+  land: LandWithGardens;
+  gardens: Garden[];
+  onUpdate: () => void;
+}
+
+interface DragState {
+  gardenId: number;
+  offsetX: number;
+  offsetY: number;
+  initialX: number;
+  initialY: number;
+  currentX?: number;
+  currentY?: number;
+}
+
+const GRID_SIZE = 50; // 50px per unit
+
+export function LandCanvas({ land, gardens, onUpdate }: LandCanvasProps) {
+  const [dragState, setDragState] = useState<DragState | null>(null);
+  const [selectedGarden, setSelectedGarden] = useState<number | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string>('');
+  const [placingGarden, setPlacingGarden] = useState<number | null>(null);
+  const canvasRef = useRef<HTMLDivElement>(null);
+
+  // Calculate canvas dimensions
+  const canvasWidth = land.width * GRID_SIZE;
+  const canvasHeight = land.height * GRID_SIZE;
+
+  // Get unplaced gardens (not on this land)
+  const unplacedGardens = gardens.filter(g => !g.land_id || g.land_id !== land.id);
+
+  const handleMouseDown = (e: React.MouseEvent, garden: GardenSpatialInfo) => {
+    if (garden.x == null || garden.y == null) return;
+
+    const rect = canvasRef.current?.getBoundingClientRect();
+    if (!rect) return;
+
+    const offsetX = e.clientX - rect.left - garden.x * GRID_SIZE;
+    const offsetY = e.clientY - rect.top - garden.y * GRID_SIZE;
+
+    setDragState({
+      gardenId: garden.id,
+      offsetX,
+      offsetY,
+      initialX: garden.x,
+      initialY: garden.y,
+    });
+    setSelectedGarden(garden.id);
+    setErrorMessage('');
+  };
+
+  const handleMouseMove = (e: MouseEvent) => {
+    if (!dragState || !canvasRef.current) return;
+
+    const garden = land.gardens.find(g => g.id === dragState.gardenId);
+    if (!garden || garden.width == null || garden.height == null) return;
+
+    const rect = canvasRef.current.getBoundingClientRect();
+    let x = (e.clientX - rect.left - dragState.offsetX) / GRID_SIZE;
+    let y = (e.clientY - rect.top - dragState.offsetY) / GRID_SIZE;
+
+    // Constrain to land boundaries
+    x = Math.max(0, Math.min(x, land.width - garden.width));
+    y = Math.max(0, Math.min(y, land.height - garden.height));
+
+    // Update drag state to trigger re-render with current position
+    setDragState({
+      ...dragState,
+      currentX: x,
+      currentY: y,
+    });
+  };
+
+  const handleMouseUp = async (e: MouseEvent) => {
+    if (!dragState || !canvasRef.current) return;
+
+    const garden = land.gardens.find(g => g.id === dragState.gardenId);
+    if (!garden || garden.width == null || garden.height == null) {
+      setDragState(null);
+      return;
+    }
+
+    const rect = canvasRef.current.getBoundingClientRect();
+    let newX = (e.clientX - rect.left - dragState.offsetX) / GRID_SIZE;
+    let newY = (e.clientY - rect.top - dragState.offsetY) / GRID_SIZE;
+
+    // Constrain to land boundaries
+    newX = Math.max(0, Math.min(newX, land.width - garden.width));
+    newY = Math.max(0, Math.min(newY, land.height - garden.height));
+
+    // Snap to grid (optional)
+    const snappedX = Math.round(newX * 2) / 2; // Snap to 0.5 units
+    const snappedY = Math.round(newY * 2) / 2;
+
+    try {
+      await api.updateGardenLayout(dragState.gardenId, {
+        land_id: land.id,
+        x: snappedX,
+        y: snappedY,
+        width: garden.width,
+        height: garden.height,
+      });
+      // Update local state optimistically
+      garden.x = snappedX;
+      garden.y = snappedY;
+      setErrorMessage('');
+      // Don't reload - position is already updated locally
+    } catch (error) {
+      // Revert to original position on error
+      garden.x = dragState.initialX;
+      garden.y = dragState.initialY;
+      setErrorMessage((error as Error).message || 'Failed to update garden position');
+    } finally {
+      setDragState(null);
+    }
+  };
+
+  useEffect(() => {
+    if (dragState) {
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+      return () => {
+        window.removeEventListener('mousemove', handleMouseMove);
+        window.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  }, [dragState]);
+
+  const handlePlaceGarden = async (garden: Garden) => {
+    // Prevent double-click placement
+    if (placingGarden) {
+      console.log('Placement already in progress, ignoring click');
+      return;
+    }
+
+    console.log('Placing garden:', {
+      id: garden.id,
+      name: garden.name,
+      landId: land.id,
+      landName: land.name
+    });
+    setPlacingGarden(garden.id);
+
+    // Place in center with default size
+    const defaultWidth = 2;
+    const defaultHeight = 2;
+    const centerX = Math.max(0, (land.width - defaultWidth) / 2);
+    const centerY = Math.max(0, (land.height - defaultHeight) / 2);
+
+    console.log('Position:', { centerX, centerY, defaultWidth, defaultHeight });
+
+    try {
+      console.log('Calling API with:', {
+        gardenId: garden.id,
+        payload: {
+          land_id: land.id,
+          x: centerX,
+          y: centerY,
+          width: defaultWidth,
+          height: defaultHeight,
+        }
+      });
+      const result = await api.updateGardenLayout(garden.id, {
+        land_id: land.id,
+        x: centerX,
+        y: centerY,
+        width: defaultWidth,
+        height: defaultHeight,
+      });
+      console.log('Garden placed successfully:', result);
+      setErrorMessage('');
+      await onUpdate();
+    } catch (error) {
+      console.error('Failed to place garden - full error:', error);
+      console.error('Error type:', error instanceof Error ? 'Error' : typeof error);
+      console.error('Error message:', error instanceof Error ? error.message : String(error));
+      const errorMessage = error instanceof Error ? error.message : 'Failed to place garden';
+      setErrorMessage(errorMessage);
+    } finally {
+      setPlacingGarden(null);
+    }
+  };
+
+  const handleRemoveGarden = async (gardenId: number) => {
+    try {
+      await api.updateGardenLayout(gardenId, {
+        land_id: undefined,
+        x: undefined,
+        y: undefined,
+        width: undefined,
+        height: undefined,
+      });
+      setErrorMessage('');
+      setSelectedGarden(null);
+      onUpdate();
+    } catch (error) {
+      setErrorMessage((error as Error).message || 'Failed to remove garden');
+    }
+  };
+
+  return (
+    <div className="land-canvas-container">
+      <div className="land-header">
+        <h3>{land.name}</h3>
+        <p className="land-dimensions">
+          {land.width} × {land.height} units
+        </p>
+      </div>
+
+      {errorMessage && (
+        <div className="error-message">{errorMessage}</div>
+      )}
+
+      <div className="canvas-wrapper">
+        <div
+          ref={canvasRef}
+          className="land-canvas"
+          style={{
+            width: `${canvasWidth}px`,
+            height: `${canvasHeight}px`,
+          }}
+        >
+          {/* Grid lines */}
+          <svg className="grid-overlay" width={canvasWidth} height={canvasHeight}>
+            <defs>
+              <pattern
+                id="grid"
+                width={GRID_SIZE}
+                height={GRID_SIZE}
+                patternUnits="userSpaceOnUse"
+              >
+                <path
+                  d={`M ${GRID_SIZE} 0 L 0 0 0 ${GRID_SIZE}`}
+                  fill="none"
+                  stroke="#e0e0e0"
+                  strokeWidth="1"
+                />
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#grid)" />
+          </svg>
+
+          {/* Placed gardens */}
+          {land.gardens.map((garden) => {
+            if (garden.x == null || garden.y == null || garden.width == null || garden.height == null) return null;
+
+            // Use drag position if this garden is being dragged
+            const isDragging = dragState?.gardenId === garden.id;
+            const displayX = isDragging && dragState.currentX !== undefined ? dragState.currentX : garden.x;
+            const displayY = isDragging && dragState.currentY !== undefined ? dragState.currentY : garden.y;
+
+            return (
+              <div
+                key={garden.id}
+                className={`garden-plot ${selectedGarden === garden.id ? 'selected' : ''} ${isDragging ? 'dragging' : ''}`}
+                style={{
+                  left: `${displayX * GRID_SIZE}px`,
+                  top: `${displayY * GRID_SIZE}px`,
+                  width: `${garden.width * GRID_SIZE}px`,
+                  height: `${garden.height * GRID_SIZE}px`,
+                }}
+                onMouseDown={(e) => handleMouseDown(e, garden)}
+                onClick={() => setSelectedGarden(garden.id)}
+              >
+                <span className="garden-label">{garden.name}</span>
+                {selectedGarden === garden.id && (
+                  <button
+                    className="remove-button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleRemoveGarden(garden.id);
+                    }}
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Unplaced gardens */}
+      {unplacedGardens.length > 0 && (
+        <div className="unplaced-gardens">
+          <h4>Available Gardens</h4>
+          <p className="help-text">Click to place on land</p>
+          <div className="garden-chips">
+            {unplacedGardens.map((garden) => (
+              <button
+                key={garden.id}
+                className="garden-chip"
+                onClick={() => handlePlaceGarden(garden)}
+                disabled={placingGarden === garden.id}
+              >
+                {placingGarden === garden.id ? 'Placing...' : garden.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="canvas-legend">
+        <p><strong>Instructions:</strong></p>
+        <ul>
+          <li>Click unplaced gardens to add them to the land</li>
+          <li>Drag gardens to reposition them</li>
+          <li>Click × to remove a garden from the land</li>
+          <li>Gardens cannot overlap</li>
+        </ul>
+      </div>
+    </div>
+  );
+}
