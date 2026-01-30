@@ -11,6 +11,9 @@ from app.models.sensor_reading import SensorReading
 from app.models.soil_sample import SoilSample
 from app.models.irrigation_event import IrrigationEvent
 from app.models.password_reset_token import PasswordResetToken
+from app.models.irrigation_source import IrrigationSource
+from app.models.irrigation_zone import IrrigationZone
+from app.models.watering_event import WateringEvent
 
 __all__ = [
     "User",
@@ -25,4 +28,7 @@ __all__ = [
     "SoilSample",
     "IrrigationEvent",
     "PasswordResetToken",
+    "IrrigationSource",
+    "IrrigationZone",
+    "WateringEvent",
 ]

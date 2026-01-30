@@ -97,3 +97,30 @@ def update_user_profile(
     user = repo.update(current_user, **update_data)
 
     return user
+
+
+@router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)
+def delete_current_user(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Delete current user account and all associated data.
+
+    This will CASCADE delete:
+    - All gardens
+    - All planting events
+    - All care tasks
+    - All seed batches
+    - All soil samples
+    - All irrigation zones, sources, and watering events
+    - All sensor readings
+    - All germination events
+    - All lands
+    - All password reset tokens
+    """
+    repo = UserRepository(db)
+    repo.delete(current_user)
+    db.commit()
+
+    return None

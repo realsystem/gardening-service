@@ -15,6 +15,8 @@ import { SoilSampleList } from './SoilSampleList';
 import { IrrigationOverviewCard } from './IrrigationOverviewCard';
 import { RuleInsightsCard } from './RuleInsightsCard';
 import { LandList } from './LandList';
+import { IrrigationDashboard } from './IrrigationDashboard';
+import { IrrigationZoneManager } from './IrrigationZoneManager';
 
 interface DashboardProps {
   user: User;
@@ -33,7 +35,7 @@ export function Dashboard({ user: initialUser, onLogout }: DashboardProps) {
   const [priorityFilter, setPriorityFilter] = useState<'all' | 'high' | 'medium' | 'low'>('all');
   const [deletingGardenId, setDeletingGardenId] = useState<number | null>(null);
   const [confirmDeleteGardenId, setConfirmDeleteGardenId] = useState<number | null>(null);
-  const [viewMode, setViewMode] = useState<'dashboard' | 'plantings' | 'land-layout'>('dashboard');
+  const [viewMode, setViewMode] = useState<'dashboard' | 'plantings' | 'land-layout' | 'irrigation-system'>('dashboard');
   const [selectedGardenId, setSelectedGardenId] = useState<number | undefined>(undefined);
 
   // Update selected garden when gardens load or change
@@ -233,6 +235,13 @@ export function Dashboard({ user: initialUser, onLogout }: DashboardProps) {
               >
                 {viewMode === 'land-layout' ? 'Back to Dashboard' : 'Land Layout'}
               </button>
+              <button
+                className="btn"
+                style={{ backgroundColor: viewMode === 'irrigation-system' ? '#4a90e2' : undefined }}
+                onClick={() => setViewMode(viewMode === 'irrigation-system' ? 'dashboard' : 'irrigation-system')}
+              >
+                {viewMode === 'irrigation-system' ? 'Back to Dashboard' : 'Irrigation System'}
+              </button>
             </div>
           </div>
 
@@ -264,6 +273,11 @@ export function Dashboard({ user: initialUser, onLogout }: DashboardProps) {
             <PlantingsList />
           ) : viewMode === 'land-layout' ? (
             <LandList />
+          ) : viewMode === 'irrigation-system' ? (
+            <>
+              <IrrigationDashboard />
+              <IrrigationZoneManager />
+            </>
           ) : (
             <>
               <div className="card">

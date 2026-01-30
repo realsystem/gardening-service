@@ -60,6 +60,11 @@ export interface Garden {
   y?: number;
   width?: number;
   height?: number;
+  // Irrigation system fields
+  irrigation_zone_id?: number;
+  mulch_depth_inches?: number;
+  is_raised_bed: boolean;
+  soil_texture_override?: string;
 }
 
 export interface SensorReading {
@@ -418,4 +423,152 @@ export interface GardenLayoutUpdate {
   y?: number;
   width?: number;
   height?: number;
+}
+
+// ============================================================================
+// IRRIGATION SYSTEM TYPES
+// ============================================================================
+
+export interface IrrigationSource {
+  id: number;
+  user_id: number;
+  name: string;
+  source_type: 'city' | 'well' | 'rain' | 'manual';
+  flow_capacity_lpm?: number;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface IrrigationSourceCreate {
+  name: string;
+  source_type: 'city' | 'well' | 'rain' | 'manual';
+  flow_capacity_lpm?: number;
+  notes?: string;
+}
+
+export interface IrrigationSourceUpdate {
+  name?: string;
+  source_type?: 'city' | 'well' | 'rain' | 'manual';
+  flow_capacity_lpm?: number;
+  notes?: string;
+}
+
+export interface IrrigationZoneSchedule {
+  frequency_days?: number;
+  duration_minutes?: number;
+  time_of_day?: string;
+  [key: string]: any; // Allow additional fields
+}
+
+export interface IrrigationZone {
+  id: number;
+  user_id: number;
+  irrigation_source_id?: number;
+  name: string;
+  delivery_type: 'drip' | 'sprinkler' | 'soaker' | 'manual';
+  schedule?: IrrigationZoneSchedule;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+  garden_count?: number; // Populated by backend
+}
+
+export interface IrrigationZoneCreate {
+  name: string;
+  irrigation_source_id?: number;
+  delivery_type: 'drip' | 'sprinkler' | 'soaker' | 'manual';
+  schedule?: IrrigationZoneSchedule;
+  notes?: string;
+}
+
+export interface IrrigationZoneUpdate {
+  name?: string;
+  irrigation_source_id?: number;
+  delivery_type?: 'drip' | 'sprinkler' | 'soaker' | 'manual';
+  schedule?: IrrigationZoneSchedule;
+  notes?: string;
+}
+
+export interface WateringEvent {
+  id: number;
+  user_id: number;
+  irrigation_zone_id: number;
+  watered_at: string;
+  duration_minutes: number;
+  estimated_volume_liters?: number;
+  is_manual: boolean;
+  notes?: string;
+  created_at: string;
+}
+
+export interface WateringEventCreate {
+  irrigation_zone_id: number;
+  watered_at: string;
+  duration_minutes: number;
+  estimated_volume_liters?: number;
+  is_manual?: boolean;
+  notes?: string;
+}
+
+export interface WateringEventUpdate {
+  watered_at?: string;
+  duration_minutes?: number;
+  estimated_volume_liters?: number;
+  is_manual?: boolean;
+  notes?: string;
+}
+
+export interface IrrigationInsight {
+  rule_id: string;
+  severity: 'info' | 'warning' | 'critical';
+  title: string;
+  explanation: string;
+  suggested_action: string;
+  affected_zones: number[];
+  affected_gardens: number[];
+}
+
+export interface IrrigationInsightsResponse {
+  insights: IrrigationInsight[];
+  total_count: number;
+  by_severity: {
+    critical: number;
+    warning: number;
+    info: number;
+  };
+}
+
+export interface UpcomingWatering {
+  zone_id: number;
+  zone_name: string;
+  next_watering: string;
+  days_until: number;
+  status: 'upcoming' | 'today' | 'overdue';
+  last_watered?: string;
+}
+
+export interface IrrigationOverview {
+  zones: Array<{
+    zone: IrrigationZone;
+    garden_count: number;
+  }>;
+  sources: IrrigationSource[];
+  recent_events: WateringEvent[];
+  upcoming_waterings: UpcomingWatering[];
+}
+
+export interface ZoneStatistics {
+  total_events: number;
+  avg_duration_minutes: number;
+  total_duration_hours: number;
+  manual_count: number;
+  automated_count: number;
+}
+
+export interface IrrigationZoneDetails {
+  zone: IrrigationZone;
+  gardens: Garden[];
+  recent_events: WateringEvent[];
+  statistics: ZoneStatistics;
 }
