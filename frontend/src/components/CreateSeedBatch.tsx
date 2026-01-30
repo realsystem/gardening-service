@@ -29,7 +29,15 @@ export function CreateSeedBatch({ onClose, onSuccess }: CreateSeedBatchProps) {
         const data = await api.getPlantVarieties(search);
         console.log('[CreateSeedBatch] Received varieties:', data?.length, 'items');
         console.log('[CreateSeedBatch] First variety:', data?.[0]);
-        setVarieties(data);
+
+        // Sort varieties alphabetically by common name, then by variety name
+        const sortedData = data.sort((a, b) => {
+          const nameCompare = a.common_name.localeCompare(b.common_name);
+          if (nameCompare !== 0) return nameCompare;
+          return (a.variety_name || '').localeCompare(b.variety_name || '');
+        });
+
+        setVarieties(sortedData);
       } catch (err) {
         console.error('[CreateSeedBatch] Error loading varieties:', err);
         setError('Failed to load plant varieties');

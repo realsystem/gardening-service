@@ -30,8 +30,16 @@ export function CreatePlantingEvent({ onClose, onSuccess }: CreatePlantingEventP
           api.getGardens(),
           api.getPlantVarieties(),
         ]);
+
+        // Sort varieties alphabetically by common name, then by variety name
+        const sortedVarieties = varietiesData.sort((a, b) => {
+          const nameCompare = a.common_name.localeCompare(b.common_name);
+          if (nameCompare !== 0) return nameCompare;
+          return (a.variety_name || '').localeCompare(b.variety_name || '');
+        });
+
         setGardens(gardensData);
-        setVarieties(varietiesData);
+        setVarieties(sortedVarieties);
         if (gardensData.length === 0) {
           setNeedsGarden(true);
         }
