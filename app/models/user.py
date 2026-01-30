@@ -45,3 +45,8 @@ class User(Base):
     soil_samples = relationship("SoilSample", back_populates="user", cascade="all, delete-orphan")
     irrigation_events = relationship("IrrigationEvent", back_populates="user", cascade="all, delete-orphan")
     password_reset_tokens = relationship("PasswordResetToken", back_populates="user", cascade="all, delete-orphan")
+
+    # Irrigation system relationships
+    irrigation_sources = relationship("IrrigationSource", back_populates="user", cascade="all, delete-orphan")
+    irrigation_zones = relationship("IrrigationZone", back_populates="user", cascade="all, delete-orphan")
+    watering_events = relationship("WateringEvent", back_populates="user", cascade="all, delete-orphan")

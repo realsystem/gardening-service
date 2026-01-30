@@ -33,6 +33,11 @@ class GardenCreate(BaseModel):
     ppm_max: Optional[int] = Field(None, ge=0)
     water_temp_min_f: Optional[float] = None
     water_temp_max_f: Optional[float] = None
+    # Irrigation system fields
+    irrigation_zone_id: Optional[int] = None
+    mulch_depth_inches: Optional[float] = Field(None, ge=0)
+    is_raised_bed: bool = False
+    soil_texture_override: Optional[str] = Field(None, max_length=50)
 
 
 class GardenUpdate(BaseModel):
@@ -61,6 +66,11 @@ class GardenUpdate(BaseModel):
     ppm_max: Optional[int] = Field(None, ge=0)
     water_temp_min_f: Optional[float] = None
     water_temp_max_f: Optional[float] = None
+    # Irrigation system fields
+    irrigation_zone_id: Optional[int] = None
+    mulch_depth_inches: Optional[float] = Field(None, ge=0)
+    is_raised_bed: Optional[bool] = None
+    soil_texture_override: Optional[str] = Field(None, max_length=50)
 
 
 class GardenResponse(BaseModel):
@@ -99,6 +109,11 @@ class GardenResponse(BaseModel):
     y: Optional[float] = None
     width: Optional[float] = None
     height: Optional[float] = None
+    # Irrigation system fields
+    irrigation_zone_id: Optional[int] = None
+    mulch_depth_inches: Optional[float] = None
+    is_raised_bed: bool
+    soil_texture_override: Optional[str] = None
     created_at: datetime
 
     class Config:
