@@ -75,7 +75,7 @@ def upgrade() -> None:
     # Add irrigation fields to gardens table
     op.add_column('gardens', sa.Column('irrigation_zone_id', sa.Integer(), nullable=True))
     op.add_column('gardens', sa.Column('mulch_depth_inches', sa.Float(), nullable=True))
-    op.add_column('gardens', sa.Column('is_raised_bed', sa.Integer(), nullable=False, server_default='0'))
+    op.add_column('gardens', sa.Column('is_raised_bed', sa.Boolean(), nullable=False, server_default='false'))
     op.add_column('gardens', sa.Column('soil_texture_override', sa.String(length=50), nullable=True))
 
     # Create foreign key and index for irrigation_zone_id
