@@ -167,7 +167,7 @@ def outdoor_garden(test_db, sample_user):
         name="Main Garden",
         description="Outdoor vegetable garden",
         garden_type=GardenType.OUTDOOR,
-        is_hydroponic=0
+        is_hydroponic=False
     )
     test_db.add(garden)
     test_db.commit()
@@ -192,7 +192,7 @@ def indoor_garden(test_db, sample_user):
         humidity_max_percent=60.0,
         container_type="Pots",
         grow_medium="Soil",
-        is_hydroponic=0
+        is_hydroponic=False
     )
     test_db.add(garden)
     test_db.commit()
@@ -217,7 +217,7 @@ def hydroponic_garden(test_db, sample_user):
         humidity_max_percent=70.0,
         container_type="NFT channels",
         grow_medium="Hydroponics",
-        is_hydroponic=1,
+        is_hydroponic=True,
         hydro_system_type=HydroSystemType.NFT,
         reservoir_size_liters=100.0,
         nutrient_schedule="General Hydroponics Flora Series",
