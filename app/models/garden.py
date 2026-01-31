@@ -1,5 +1,5 @@
 """Garden model"""
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text, Float, Enum as SQLEnum
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text, Float, Boolean, Enum as SQLEnum
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.database import Base
@@ -53,7 +53,7 @@ class Garden(Base):
     grow_medium = Column(String(100), nullable=True)  # soil, hydroponics, coco coir
 
     # Hydroponics-specific fields
-    is_hydroponic = Column(Integer, nullable=False, default=0)  # Boolean flag (0 or 1)
+    is_hydroponic = Column(Boolean, nullable=False, default=False)
     hydro_system_type = Column(SQLEnum(HydroSystemType, values_callable=lambda x: [e.value for e in x]), nullable=True)  # NFT, DWC, etc.
     reservoir_size_liters = Column(Float, nullable=True)  # Reservoir capacity
     nutrient_schedule = Column(Text, nullable=True)  # Nutrient solution schedule/notes
@@ -76,7 +76,7 @@ class Garden(Base):
     # Irrigation system fields
     irrigation_zone_id = Column(Integer, ForeignKey("irrigation_zones.id", ondelete='SET NULL'), nullable=True, index=True)
     mulch_depth_inches = Column(Float, nullable=True)  # Mulch depth affects water retention
-    is_raised_bed = Column(Integer, nullable=False, default=0)  # Raised beds drain differently
+    is_raised_bed = Column(Boolean, nullable=False, default=False)  # Raised beds drain differently
     soil_texture_override = Column(String(50), nullable=True)  # sandy, loamy, clay (overrides defaults)
 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
