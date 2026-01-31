@@ -45,6 +45,38 @@ Creates a test user account for running API tests.
 TEST_EMAIL="custom@test.com" TEST_PASSWORD="custom123" ./scripts/setup_test_user.sh
 ```
 
+### 0b. Setup Comprehensive Test Data: `setup_test_data.sh`
+
+Creates a complete test environment with gardens, land layout, irrigation system, and soil samples designed to trigger alerts.
+
+**Usage:**
+```bash
+./scripts/setup_test_data.sh
+```
+
+**What it creates:**
+- 1 Land parcel (100x80 ft) with positioned gardens
+- 5 Gardens:
+  - Vegetable Garden (Outdoor, Loam soil)
+  - Herb Garden (Outdoor, Sandy soil) - **triggers alerts**
+  - Flower Garden (Outdoor, Clay soil)
+  - Indoor Herb Garden
+  - Hydroponic Greens (NFT system)
+- 2 Water sources (City water + Rain barrel)
+- 2 Irrigation zones with assigned gardens
+- 8 Watering events (designed to trigger frequency/duration alerts)
+- 5 Soil samples (including low moisture samples)
+
+**Alerts triggered:**
+- ⚠️ FREQ_001: Watering too frequently (daily watering on Herb & Flower Zone)
+- ⚠️ DUR_001: Short duration watering (8 minutes instead of 20-30)
+- 🔴 RESPONSE_001: Low soil moisture despite watering (Herb Garden at 12%)
+
+**Prerequisites:**
+- Test user must exist (run `./scripts/setup_test_user.sh` first)
+
+**Duration:** ~3-5 seconds
+
 ### 1. Full Test Suite: `test_irrigation_api.sh`
 
 Comprehensive test covering all irrigation system endpoints.
