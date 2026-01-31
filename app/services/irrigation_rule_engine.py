@@ -225,7 +225,7 @@ class IrrigationRuleEngine:
 
             # Get recent samples (last 30 days)
             recent_samples = [s for s in garden_samples
-                            if (datetime.utcnow() - s.date_collected).days <= 30]
+                            if (datetime.utcnow().date() - s.date_collected).days <= 30]
 
             # If multiple samples show consistently low moisture
             low_moisture_count = sum(1 for s in recent_samples

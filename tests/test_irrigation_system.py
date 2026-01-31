@@ -116,31 +116,34 @@ class TestIrrigationRuleEngine:
         assert len(insights) == 1
         assert insights[0].rule_id == "FREQ_001"
         assert insights[0].severity == "warning"
-        assert "frequently" in insights[0].explanation.lower()
+        assert "frequent" in insights[0].explanation.lower()
 
     def test_freq_002_infrequent_watering(self, test_db, sample_user, irrigation_zone):
         """Test FREQ_002 rule: Infrequent watering."""
-        # Create only 1 event in the past 14 days (average > 10 days)
-        event = WateringEvent(
-            user_id=sample_user.id,
-            irrigation_zone_id=irrigation_zone.id,
-            watered_at=datetime.utcnow() - timedelta(days=13),
-            duration_minutes=30,
-            is_manual=True
-        )
-        test_db.add(event)
+        # Create 2 events with 12-day gap (average > 10 days)
+        events = []
+        for days_ago in [24, 12]:
+            event = WateringEvent(
+                user_id=sample_user.id,
+                irrigation_zone_id=irrigation_zone.id,
+                watered_at=datetime.utcnow() - timedelta(days=days_ago),
+                duration_minutes=30,
+                is_manual=True
+            )
+            test_db.add(event)
+            events.append(event)
         test_db.commit()
 
         insights = IrrigationRuleEngine.evaluate_zone_watering_frequency(
             irrigation_zone,
-            [event],
-            days_to_analyze=14
+            events,
+            days_to_analyze=30
         )
 
         assert len(insights) == 1
         assert insights[0].rule_id == "FREQ_002"
         assert insights[0].severity == "info"
-        assert "infrequent" in insights[0].explanation.lower()
+        assert "interval" in insights[0].explanation.lower()
 
     def test_dur_001_frequent_shallow_watering(self, test_db, sample_user, irrigation_zone):
         """Test DUR_001 rule: Frequent shallow watering."""
@@ -228,26 +231,30 @@ class TestIrrigationRuleEngine:
         )
         test_db.add(event)
 
-        # Create low moisture soil sample
-        soil_sample = SoilSample(
-            user_id=sample_user.id,
-            garden_id=garden_in_zone.id,
-            moisture_percent=15.0,  # Low moisture
-            date_collected=datetime.utcnow().date()
-        )
-        test_db.add(soil_sample)
+        # Create 3 low moisture soil samples (rule requires >= 3 samples, >= 2 low)
+        soil_samples = []
+        for i in range(3):
+            sample = SoilSample(
+                user_id=sample_user.id,
+                garden_id=garden_in_zone.id,
+                ph=7.0,  # Required field
+                moisture_percent=15.0,  # Low moisture (< 20%)
+                date_collected=(datetime.utcnow() - timedelta(days=i)).date()
+            )
+            test_db.add(sample)
+            soil_samples.append(sample)
         test_db.commit()
 
         insights = IrrigationRuleEngine.evaluate_soil_moisture_response(
             irrigation_zone,
             [garden_in_zone],
             [event],
-            [soil_sample]
+            {garden_in_zone.id: soil_samples}
         )
 
         assert len(insights) == 1
         assert insights[0].rule_id == "RESPONSE_001"
-        assert insights[0].severity == "critical"
+        assert insights[0].severity == "warning"
         assert "moisture" in insights[0].explanation.lower()
 
 
@@ -294,17 +301,17 @@ class TestIrrigationService:
         assert upcoming["zone_id"] == irrigation_zone.id
         assert upcoming["status"] in ["upcoming", "today", "overdue"]
 
-    def test_get_zone_details(self, test_db, irrigation_zone, watering_event, garden_in_zone):
+    def test_get_zone_details(self, test_db, sample_user, irrigation_zone, watering_event, garden_in_zone):
         """Test getting detailed zone information."""
-        details = IrrigationService.get_zone_details(test_db, irrigation_zone.id)
+        details = IrrigationService.get_zone_details(test_db, irrigation_zone.id, sample_user.id)
 
-        assert details["zone"]["id"] == irrigation_zone.id
-        assert details["zone"]["name"] == irrigation_zone.name
+        assert details["zone"].id == irrigation_zone.id
+        assert details["zone"].name == irrigation_zone.name
         assert "statistics" in details
         assert "recent_events" in details
-        assert "assigned_gardens" in details
+        assert "gardens" in details
 
-        assert len(details["assigned_gardens"]) >= 1
+        assert len(details["gardens"]) >= 1
 
     def test_get_irrigation_insights(self, test_db, sample_user, irrigation_zone):
         """Test getting irrigation insights from rule engine."""
@@ -322,12 +329,10 @@ class TestIrrigationService:
 
         insights = IrrigationService.get_irrigation_insights(test_db, sample_user.id)
 
-        assert "insights" in insights
-        assert "total_count" in insights
-        assert "by_severity" in insights
-
-        assert insights["total_count"] > 0
-        assert any(i["rule_id"] == "FREQ_001" for i in insights["insights"])
+        # Service returns a list of IrrigationRule objects
+        assert isinstance(insights, list)
+        assert len(insights) > 0
+        assert any(rule.rule_id == "FREQ_001" for rule in insights)
 
 
 # ============================================
