@@ -99,7 +99,7 @@ class TestGardenModel:
         assert outdoor_garden.id is not None
         assert outdoor_garden.name == "Main Garden"
         assert outdoor_garden.garden_type == GardenType.OUTDOOR
-        assert outdoor_garden.is_hydroponic == 0
+        assert outdoor_garden.is_hydroponic == False
 
     def test_create_indoor_garden(self, test_db, indoor_garden):
         """Test creating an indoor garden"""
@@ -107,12 +107,12 @@ class TestGardenModel:
         assert indoor_garden.garden_type == GardenType.INDOOR
         assert indoor_garden.light_source_type == LightSourceType.LED
         assert indoor_garden.light_hours_per_day == 16.0
-        assert indoor_garden.is_hydroponic == 0
+        assert indoor_garden.is_hydroponic == False
 
     def test_create_hydroponic_garden(self, test_db, hydroponic_garden):
         """Test creating a hydroponic garden"""
         assert hydroponic_garden.id is not None
-        assert hydroponic_garden.is_hydroponic == 1
+        assert hydroponic_garden.is_hydroponic == True
         assert hydroponic_garden.hydro_system_type == HydroSystemType.NFT
         assert hydroponic_garden.reservoir_size_liters == 100.0
         assert hydroponic_garden.ph_min == 5.5
