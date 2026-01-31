@@ -229,7 +229,8 @@ class IrrigationService:
         """
         from app.repositories.garden_repository import GardenRepository
 
-        garden = GardenRepository.get_by_id(db, garden_id)
+        garden_repo = GardenRepository(db)
+        garden = garden_repo.get_by_id(garden_id)
         if not garden or garden.user_id != user_id:
             return False
 
