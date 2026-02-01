@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { api } from '../services/api';
 import type { Tree, TreeCreate, TreeUpdate, LandWithGardens } from '../types';
+import { useUnitSystem } from '../contexts/UnitSystemContext';
+import { convertDistance, convertToMeters, getUnitLabels } from '../utils/units';
 import './TreeManager.css';
 
 interface TreeManagerProps {
@@ -10,6 +12,9 @@ interface TreeManagerProps {
 }
 
 export function TreeManager({ land, trees, onUpdate }: TreeManagerProps) {
+  const { unitSystem } = useUnitSystem();
+  const unitLabels = getUnitLabels(unitSystem);
+
   const [isAdding, setIsAdding] = useState(false);
   const [editingTree, setEditingTree] = useState<Tree | null>(null);
   const [errorMessage, setErrorMessage] = useState('');
@@ -18,8 +23,8 @@ export function TreeManager({ land, trees, onUpdate }: TreeManagerProps) {
     name: '',
     x: 0,
     y: 0,
-    canopy_radius: 3,
-    height: 10,
+    canopy_radius: convertDistance(3, unitSystem), // Default in user's units
+    height: convertDistance(10, unitSystem),
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -27,12 +32,23 @@ export function TreeManager({ land, trees, onUpdate }: TreeManagerProps) {
     setErrorMessage('');
 
     try {
+      // Convert form data from display units to meters for API
+      const apiData = {
+        ...formData,
+        canopy_radius: formData.canopy_radius !== undefined
+          ? convertToMeters(formData.canopy_radius, unitSystem)
+          : undefined,
+        height: formData.height !== undefined
+          ? convertToMeters(formData.height, unitSystem)
+          : undefined,
+      };
+
       if (editingTree) {
         // Update existing tree
-        await api.updateTree(editingTree.id, formData as TreeUpdate);
+        await api.updateTree(editingTree.id, apiData as TreeUpdate);
       } else {
         // Create new tree
-        await api.createTree(formData as TreeCreate);
+        await api.createTree(apiData as TreeCreate);
       }
 
       setIsAdding(false);
@@ -42,8 +58,8 @@ export function TreeManager({ land, trees, onUpdate }: TreeManagerProps) {
         name: '',
         x: 0,
         y: 0,
-        canopy_radius: 3,
-        height: 10,
+        canopy_radius: convertDistance(3, unitSystem),
+        height: convertDistance(10, unitSystem),
       });
       onUpdate();
     } catch (error) {
@@ -64,12 +80,13 @@ export function TreeManager({ land, trees, onUpdate }: TreeManagerProps) {
 
   const handleEdit = (tree: Tree) => {
     setEditingTree(tree);
+    // Convert tree's meter values to display units
     setFormData({
       name: tree.name,
       x: tree.x,
       y: tree.y,
-      canopy_radius: tree.canopy_radius,
-      height: tree.height,
+      canopy_radius: convertDistance(tree.canopy_radius, unitSystem),
+      height: tree.height ? convertDistance(tree.height, unitSystem) : undefined,
     });
     setIsAdding(true);
   };
@@ -82,8 +99,8 @@ export function TreeManager({ land, trees, onUpdate }: TreeManagerProps) {
       name: '',
       x: 0,
       y: 0,
-      canopy_radius: 3,
-      height: 10,
+      canopy_radius: convertDistance(3, unitSystem),
+      height: convertDistance(10, unitSystem),
     });
     setErrorMessage('');
   };
@@ -151,12 +168,12 @@ export function TreeManager({ land, trees, onUpdate }: TreeManagerProps) {
 
           <div className="form-row">
             <div className="form-group">
-              <label htmlFor="tree-radius">Canopy Radius * (units)</label>
+              <label htmlFor="tree-radius">Canopy Radius * ({unitLabels.distanceShort})</label>
               <input
                 id="tree-radius"
                 type="number"
-                step="0.5"
-                min="0.5"
+                step={unitSystem === 'imperial' ? '1' : '0.5'}
+                min={unitSystem === 'imperial' ? '1' : '0.5'}
                 value={formData.canopy_radius}
                 onChange={(e) => setFormData({ ...formData, canopy_radius: parseFloat(e.target.value) })}
                 required
@@ -165,16 +182,16 @@ export function TreeManager({ land, trees, onUpdate }: TreeManagerProps) {
             </div>
 
             <div className="form-group">
-              <label htmlFor="tree-height">Height (units)</label>
+              <label htmlFor="tree-height">Height ({unitLabels.distanceShort})</label>
               <input
                 id="tree-height"
                 type="number"
-                step="1"
-                min="1"
+                step={unitSystem === 'imperial' ? '1' : '1'}
+                min={unitSystem === 'imperial' ? '1' : '1'}
                 value={formData.height || ''}
                 onChange={(e) => setFormData({ ...formData, height: e.target.value ? parseFloat(e.target.value) : undefined })}
               />
-              <small>Optional: Tree height for future calculations</small>
+              <small>Optional: Tree height for shadow calculations</small>
             </div>
           </div>
 
@@ -202,8 +219,8 @@ export function TreeManager({ land, trees, onUpdate }: TreeManagerProps) {
                   <h4>{tree.name}</h4>
                   <div className="tree-details">
                     <span>Position: ({tree.x.toFixed(1)}, {tree.y.toFixed(1)})</span>
-                    <span>Canopy: {tree.canopy_radius} units</span>
-                    {tree.height && <span>Height: {tree.height} units</span>}
+                    <span>Canopy: {convertDistance(tree.canopy_radius, unitSystem).toFixed(1)} {unitLabels.distanceShort}</span>
+                    {tree.height && <span>Height: {convertDistance(tree.height, unitSystem).toFixed(1)} {unitLabels.distanceShort}</span>}
                     {tree.species_common_name && (
                       <span className="species">{tree.species_common_name}</span>
                     )}

@@ -4,6 +4,7 @@ import { Dashboard } from './components/Dashboard';
 import { ForgotPassword } from './components/ForgotPassword';
 import { ResetPassword } from './components/ResetPassword';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { UnitSystemProvider } from './contexts/UnitSystemContext';
 import { api } from './services/api';
 import type { User } from './types';
 import './App.css';
@@ -87,7 +88,9 @@ function App() {
 
   return (
     <ErrorBoundary>
-      <Dashboard user={user} onLogout={handleLogout} />
+      <UnitSystemProvider unitSystem={user.unit_system}>
+        <Dashboard user={user} onLogout={handleLogout} />
+      </UnitSystemProvider>
     </ErrorBoundary>
   );
 }
