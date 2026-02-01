@@ -151,6 +151,8 @@ export interface PlantingInGarden {
   expected_harvest_date?: string;
   days_to_harvest?: number;
   status: string; // 'pending', 'growing', 'ready_to_harvest', 'harvested'
+  x?: number;
+  y?: number;
 }
 
 export interface TaskSummary {

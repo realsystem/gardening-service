@@ -3,6 +3,7 @@ import { api } from '../services/api';
 import type { GardenDetails as GardenDetailsType, GardenShadingInfo } from '../types';
 import { GardenSensorReadings } from './GardenSensorReadings';
 import { CompanionPlantingInsights } from './CompanionPlantingInsights';
+import { GardenMap } from './GardenMap';
 
 interface GardenDetailsProps {
   gardenId: number;
@@ -200,6 +201,15 @@ export function GardenDetails({ gardenId, onBack }: GardenDetailsProps) {
       {/* Companion Planting Insights */}
       {stats.active_plantings > 0 && (
         <CompanionPlantingInsights gardenId={gardenId} />
+      )}
+
+      {/* Garden Map */}
+      {plantings.length > 0 && (
+        <GardenMap
+          plantings={plantings}
+          gardenWidth={garden.width || 10}
+          gardenHeight={garden.height || 8}
+        />
       )}
 
       {/* Plantings */}

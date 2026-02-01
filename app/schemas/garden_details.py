@@ -21,6 +21,8 @@ class PlantingInGardenResponse(BaseModel):
     expected_harvest_date: Optional[date] = None
     days_to_harvest: Optional[int] = None
     status: str  # 'pending', 'growing', 'ready_to_harvest', 'harvested'
+    x: Optional[float] = None
+    y: Optional[float] = None
 
     class Config:
         from_attributes = True
