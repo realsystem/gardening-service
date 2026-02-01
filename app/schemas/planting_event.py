@@ -17,6 +17,8 @@ class PlantingEventCreate(BaseModel):
     location_in_garden: Optional[str] = None
     health_status: Optional[PlantHealth] = None
     plant_notes: Optional[str] = None
+    x: Optional[float] = None
+    y: Optional[float] = None
     notes: Optional[str] = None
 
 
@@ -26,6 +28,8 @@ class PlantingEventUpdate(BaseModel):
     location_in_garden: Optional[str] = None
     health_status: Optional[PlantHealth] = None
     plant_notes: Optional[str] = None
+    x: Optional[float] = None
+    y: Optional[float] = None
     notes: Optional[str] = None
 
 
@@ -43,6 +47,8 @@ class PlantingEventResponse(BaseModel):
     location_in_garden: Optional[str] = None
     health_status: Optional[PlantHealth] = None
     plant_notes: Optional[str] = None
+    x: Optional[float] = None
+    y: Optional[float] = None
     notes: Optional[str] = None
     created_at: datetime
 

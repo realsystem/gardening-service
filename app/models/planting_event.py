@@ -1,5 +1,5 @@
 """PlantingEvent model"""
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Date, Text, Enum as SQLEnum
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Date, Text, Float, Enum as SQLEnum
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.database import Base
@@ -42,6 +42,10 @@ class PlantingEvent(Base):
     # Plant tracking (NEW)
     health_status = Column(SQLEnum(PlantHealth, values_callable=lambda x: [e.value for e in x]), nullable=True)
     plant_notes = Column(Text, nullable=True)
+
+    # Spatial position for companion planting analysis
+    x = Column(Float, nullable=True)
+    y = Column(Float, nullable=True)
 
     notes = Column(Text, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
