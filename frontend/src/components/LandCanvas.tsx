@@ -505,7 +505,7 @@ export function LandCanvas({ land, gardens, trees = [], onUpdate }: LandCanvasPr
                 top: 0,
                 left: 0,
                 pointerEvents: 'none',
-                zIndex: 100
+                zIndex: 9999
               }}
             >
               {Array.from(treeShadows.entries()).map(([treeId, shadowExtent]) => {
