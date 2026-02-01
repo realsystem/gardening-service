@@ -22,13 +22,15 @@ class LightSourceType(str, enum.Enum):
 
 
 class HydroSystemType(str, enum.Enum):
-    """Hydroponic system types"""
+    """Hydroponic and nutrient system types"""
     NFT = "nft"  # Nutrient Film Technique
     DWC = "dwc"  # Deep Water Culture
     EBB_FLOW = "ebb_flow"  # Ebb and Flow
     AEROPONICS = "aeroponics"
     DRIP = "drip"
     WICK = "wick"
+    FERTIGATION = "fertigation"  # Soil + nutrient solution irrigation
+    CONTAINER = "container"  # Container growing with nutrients
 
 
 class Garden(Base):

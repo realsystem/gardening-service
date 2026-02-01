@@ -51,7 +51,7 @@ export interface Garden {
   grow_medium?: string;
   // Hydroponics-specific fields
   is_hydroponic: boolean;
-  hydro_system_type?: 'nft' | 'dwc' | 'ebb_flow' | 'aeroponics' | 'drip' | 'wick';
+  hydro_system_type?: 'nft' | 'dwc' | 'ebb_flow' | 'aeroponics' | 'drip' | 'wick' | 'fertigation' | 'container';
   reservoir_size_liters?: number;
   nutrient_schedule?: string;
   ph_min?: number;
@@ -867,4 +867,50 @@ export interface CompanionAnalysisResponse {
     suggestion_count: number;
   };
   message?: string;
+}
+
+// ============================================================================
+// NUTRIENT OPTIMIZATION TYPES
+// ============================================================================
+
+export interface ECRecommendation {
+  min_ms_cm: number;
+  max_ms_cm: number;
+  rationale: string;
+}
+
+export interface PHRecommendation {
+  min_ph: number;
+  max_ph: number;
+  rationale: string;
+}
+
+export interface ReplacementSchedule {
+  topoff_interval_days: number;
+  full_replacement_days: number;
+  rationale: string;
+}
+
+export interface NutrientWarning {
+  warning_id: string;
+  severity: 'info' | 'warning' | 'critical';
+  message: string;
+  mitigation: string;
+}
+
+export interface ActivePlanting {
+  plant_name: string;
+  growth_stage: string;
+}
+
+export interface NutrientOptimization {
+  garden_id: number;
+  garden_name: string;
+  system_type: string;
+  ec_recommendation: ECRecommendation;
+  ph_recommendation: PHRecommendation;
+  replacement_schedule: ReplacementSchedule;
+  warnings: NutrientWarning[];
+  active_plantings: ActivePlanting[];
+  generated_at: string;
 }

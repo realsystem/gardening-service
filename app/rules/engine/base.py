@@ -77,6 +77,15 @@ class RuleContext:
     frost_risk_next_7d: bool = False
     last_frost_date: Optional[datetime] = None
 
+    # Hydroponics-specific fields
+    current_ph: Optional[float] = None  # Current pH level
+    optimal_ph_min: Optional[float] = None
+    optimal_ph_max: Optional[float] = None
+    current_ec_ms_cm: Optional[float] = None  # Electrical conductivity (mS/cm)
+    recommended_ec_max: Optional[float] = None
+    days_since_solution_change: Optional[int] = None
+    recommended_change_days: Optional[int] = None
+
     # Additional metadata
     user_id: Optional[int] = None
     garden_id: Optional[int] = None

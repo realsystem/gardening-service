@@ -3,6 +3,7 @@ import { api } from '../services/api';
 import type { GardenDetails as GardenDetailsType, GardenShadingInfo } from '../types';
 import { GardenSensorReadings } from './GardenSensorReadings';
 import { CompanionPlantingInsights } from './CompanionPlantingInsights';
+import { NutrientOptimizationPanel } from './NutrientOptimizationPanel';
 
 interface GardenDetailsProps {
   gardenId: number;
@@ -202,6 +203,11 @@ export function GardenDetails({ gardenId, onBack }: GardenDetailsProps) {
         <CompanionPlantingInsights gardenId={gardenId} />
       )}
 
+      {/* Nutrient Optimization (Hydroponic Gardens Only) */}
+      {garden.is_hydroponic && (
+        <NutrientOptimizationPanel gardenId={gardenId} />
+      )}
+
       {/* Plants in this Garden - Combined List */}
       <div style={{ marginBottom: '30px' }}>
         <h2>Plants in this Garden</h2>
@@ -230,7 +236,7 @@ export function GardenDetails({ gardenId, onBack }: GardenDetailsProps) {
                       {planting.plant_count && ` • ${planting.plant_count} plants`}
                       {planting.location_in_garden && ` • ${planting.location_in_garden}`}
                     </div>
-                    {(planting.x !== undefined && planting.y !== undefined) && (
+                    {(planting.x != null && planting.y != null) && (
                       <div style={{ fontSize: '0.9em', color: '#4caf50', marginTop: '5px', fontWeight: '500' }}>
                         🗺️ Position: ({planting.x.toFixed(1)}m, {planting.y.toFixed(1)}m)
                       </div>
