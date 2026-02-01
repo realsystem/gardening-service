@@ -41,7 +41,11 @@ import type {
   Tree,
   TreeCreate,
   TreeUpdate,
-  GardenShadingInfo
+  GardenShadingInfo,
+  ExportData,
+  ImportPreview,
+  ImportRequest,
+  ImportResult
 } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
@@ -669,6 +673,32 @@ class ApiClient {
   // Garden shading
   async getGardenShading(gardenId: number): Promise<GardenShadingInfo> {
     return this.request<GardenShadingInfo>(`/gardens/${gardenId}/shading`);
+  }
+
+  // ========================================================================
+  // DATA EXPORT/IMPORT
+  // ========================================================================
+
+  async exportData(includeSensorReadings: boolean = false): Promise<ExportData> {
+    const params = includeSensorReadings ? '?include_sensor_readings=true' : '';
+    return this.request<ExportData>(`/export-import/export${params}`);
+  }
+
+  async previewImport(data: ExportData, mode: 'dry_run' | 'merge' | 'overwrite' = 'dry_run'): Promise<ImportPreview> {
+    return this.request<ImportPreview>('/export-import/import/preview', {
+      method: 'POST',
+      body: JSON.stringify(data),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+  }
+
+  async importData(request: ImportRequest): Promise<ImportResult> {
+    return this.request<ImportResult>('/export-import/import', {
+      method: 'POST',
+      body: JSON.stringify(request),
+    });
   }
 }
 

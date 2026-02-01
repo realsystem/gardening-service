@@ -22,6 +22,7 @@ from app.api import (
     dashboard_router,
     rule_insights_router,
     trees_router,
+    export_import_router,
 )
 from app.error_handlers import (
     http_exception_handler,
@@ -71,6 +72,7 @@ app.include_router(irrigation_system_router)
 app.include_router(dashboard_router)
 app.include_router(rule_insights_router)
 app.include_router(trees_router)
+app.include_router(export_import_router)
 
 
 @app.get("/")

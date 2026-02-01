@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { api } from '../services/api';
 import type { User } from '../types';
+import { DataManagement } from './DataManagement';
 
 interface ProfileProps {
   user: User;
@@ -16,7 +17,7 @@ export function Profile({ user, onUpdate, onClose }: ProfileProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
-  const [activeTab, setActiveTab] = useState<'profile' | 'security'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'security' | 'data'>('profile');
 
   // Password change state
   const [currentPassword, setCurrentPassword] = useState('');
@@ -141,6 +142,21 @@ export function Profile({ user, onUpdate, onClose }: ProfileProps) {
             }}
           >
             Security
+          </button>
+          <button
+            onClick={() => setActiveTab('data')}
+            style={{
+              flex: 1,
+              padding: '10px',
+              border: 'none',
+              background: activeTab === 'data' ? '#4CAF50' : 'transparent',
+              color: activeTab === 'data' ? 'white' : '#666',
+              fontWeight: activeTab === 'data' ? 'bold' : 'normal',
+              cursor: 'pointer',
+              borderRadius: '4px 4px 0 0',
+            }}
+          >
+            Data
           </button>
         </div>
 
@@ -305,6 +321,18 @@ export function Profile({ user, onUpdate, onClose }: ProfileProps) {
               </button>
             </div>
 
+            <div className="form-actions" style={{ marginTop: '20px' }}>
+              <button type="button" onClick={onClose} className="btn btn-secondary">
+                Close
+              </button>
+            </div>
+          </>
+        )}
+
+        {/* Data Tab */}
+        {activeTab === 'data' && (
+          <>
+            <DataManagement />
             <div className="form-actions" style={{ marginTop: '20px' }}>
               <button type="button" onClick={onClose} className="btn btn-secondary">
                 Close
