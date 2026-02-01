@@ -166,21 +166,91 @@ export function GardenPlantPlacer({
     ctx.lineWidth = 2;
     ctx.strokeRect(0, 0, canvasDisplayWidth, canvasDisplayHeight);
 
-    // Draw existing plants
+    // Helper function to check if two label rectangles overlap
+    const labelsOverlap = (rect1: { x: number; y: number; width: number; height: number },
+                          rect2: { x: number; y: number; width: number; height: number }): boolean => {
+      return !(rect1.x + rect1.width < rect2.x ||
+               rect2.x + rect2.width < rect1.x ||
+               rect1.y + rect1.height < rect2.y ||
+               rect2.y + rect2.height < rect1.y);
+    };
+
+    // Calculate smart label positions for all plants
+    ctx.font = '10px sans-serif';
+    const labelPositions: Array<{ x: number; y: number; width: number; height: number }> = [];
+    const plantLabelData: Array<{ px: number; py: number; text: string; labelX: number; labelY: number }> = [];
+
     existingPlants.forEach((plant) => {
       const px = plant.x * scale;
       const py = plant.y * scale;
+      const text = plant.name;
+      const textMetrics = ctx.measureText(text);
+      const textWidth = textMetrics.width;
+      const textHeight = 12; // Approximate height for 10px font
 
+      // Try different positions: right, left, top, bottom
+      const positions = [
+        { x: px + 12, y: py + 4 },           // right (default)
+        { x: px - textWidth - 12, y: py + 4 }, // left
+        { x: px - textWidth / 2, y: py - 12 }, // top
+        { x: px - textWidth / 2, y: py + 16 }  // bottom
+      ];
+
+      let bestPosition = positions[0];
+      let foundNonOverlapping = false;
+
+      for (const pos of positions) {
+        const candidateRect = {
+          x: pos.x,
+          y: pos.y - textHeight / 2,
+          width: textWidth,
+          height: textHeight
+        };
+
+        // Check if this position overlaps with any existing labels
+        const hasOverlap = labelPositions.some(existingRect =>
+          labelsOverlap(candidateRect, existingRect)
+        );
+
+        if (!hasOverlap) {
+          bestPosition = pos;
+          foundNonOverlapping = true;
+          labelPositions.push(candidateRect);
+          break;
+        }
+      }
+
+      // If all positions overlap, use the default (right) position anyway
+      if (!foundNonOverlapping) {
+        labelPositions.push({
+          x: bestPosition.x,
+          y: bestPosition.y - textHeight / 2,
+          width: textWidth,
+          height: textHeight
+        });
+      }
+
+      plantLabelData.push({
+        px,
+        py,
+        text,
+        labelX: bestPosition.x,
+        labelY: bestPosition.y
+      });
+    });
+
+    // Draw existing plants with smart label positioning
+    plantLabelData.forEach((data) => {
       // Plant marker (circle)
       ctx.fillStyle = '#8bc34a';
       ctx.beginPath();
-      ctx.arc(px, py, 8, 0, Math.PI * 2);
+      ctx.arc(data.px, data.py, 8, 0, Math.PI * 2);
       ctx.fill();
 
-      // Plant label
+      // Plant label at calculated position
       ctx.fillStyle = '#333';
       ctx.font = '10px sans-serif';
-      ctx.fillText(plant.name, px + 12, py + 4);
+      ctx.fillText(data.text, data.labelX, data.labelY);
     });
 
     // Draw hovered position
