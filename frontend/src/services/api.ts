@@ -52,7 +52,8 @@ import type {
   ImportPreview,
   ImportRequest,
   ImportResult,
-  SystemStats
+  SystemStats,
+  CompanionAnalysisResponse
 } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
@@ -773,6 +774,14 @@ class ApiClient {
 
   async getSystemStats(): Promise<SystemStats> {
     return this.request<SystemStats>('/system/stats');
+  }
+
+  // ========================================================================
+  // COMPANION PLANTING
+  // ========================================================================
+
+  async getCompanionAnalysis(gardenId: number): Promise<CompanionAnalysisResponse> {
+    return this.request<CompanionAnalysisResponse>(`/gardens/${gardenId}/companions`);
   }
 }
 

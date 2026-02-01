@@ -790,3 +790,75 @@ export interface SystemStats {
   total_lands: number;
   timestamp: string;
 }
+
+// ============================================================================
+// COMPANION PLANTING TYPES
+// ============================================================================
+
+export interface CompanionPlantInfo {
+  planting_id: number;
+  variety_id: number;
+  common_name: string;
+  position: {
+    x: number;
+    y: number;
+  };
+}
+
+export interface CompanionBeneficialPair {
+  plant_a: CompanionPlantInfo;
+  plant_b: CompanionPlantInfo;
+  distance_m: number;
+  status: 'optimal' | 'active';
+  relationship_type: 'beneficial';
+  confidence_level: 'high' | 'medium' | 'low';
+  mechanism: string;
+  source_reference: string;
+  notes: string;
+  effective_distance_m: number;
+  optimal_distance_m: number | null;
+  benefit_description: string;
+}
+
+export interface CompanionConflict {
+  plant_a: CompanionPlantInfo;
+  plant_b: CompanionPlantInfo;
+  distance_m: number;
+  status: 'conflict';
+  relationship_type: 'antagonistic';
+  confidence_level: 'high' | 'medium' | 'low';
+  mechanism: string;
+  source_reference: string;
+  notes: string;
+  effective_distance_m: number;
+  optimal_distance_m: number | null;
+  recommended_separation_m: number;
+  problem_description: string;
+}
+
+export interface CompanionSuggestion {
+  type: 'move_closer' | 'move_apart';
+  plant_a: string;
+  plant_b: string;
+  current_distance_m: number;
+  recommended_distance_m: number;
+  reason: string;
+  confidence: 'high' | 'medium' | 'low';
+}
+
+export interface CompanionAnalysisResponse {
+  garden_id: number;
+  garden_name: string;
+  analysis_time: string;
+  planting_count: number;
+  relationships_analyzed: number;
+  beneficial_pairs: CompanionBeneficialPair[];
+  conflicts: CompanionConflict[];
+  suggestions: CompanionSuggestion[];
+  summary: {
+    beneficial_count: number;
+    conflict_count: number;
+    suggestion_count: number;
+  };
+  message?: string;
+}
