@@ -1,17 +1,18 @@
 import { useState, useRef, useEffect } from 'react';
 import { api } from '../services/api';
-import type { LandWithGardens, Garden, GardenSpatialInfo, Tree, TreeShadowExtent, GardenSunExposure } from '../types';
+import type { LandWithGardens, Garden, GardenSpatialInfo, Tree, Structure, TreeShadowExtent, StructureShadowExtent, GardenSunExposure } from '../types';
 import './LandCanvas.css';
 
 interface LandCanvasProps {
   land: LandWithGardens;
   gardens: Garden[];
   trees?: Tree[];
+  structures?: Structure[];
   onUpdate: () => void;
 }
 
 interface DragState {
-  type: 'garden' | 'tree';
+  type: 'garden' | 'tree' | 'structure';
   id: number;
   offsetX: number;
   offsetY: number;
@@ -31,7 +32,7 @@ const snapToGrid = (value: number, resolution: number): number => {
   return Math.round(value / resolution) * resolution;
 };
 
-export function LandCanvas({ land, gardens, trees = [], onUpdate }: LandCanvasProps) {
+export function LandCanvas({ land, gardens, trees = [], structures = [], onUpdate }: LandCanvasProps) {
   const [dragState, setDragState] = useState<DragState | null>(null);
   const [selectedGarden, setSelectedGarden] = useState<number | null>(null);
   const [errorMessage, setErrorMessage] = useState<string>('');
@@ -42,6 +43,7 @@ export function LandCanvas({ land, gardens, trees = [], onUpdate }: LandCanvasPr
   const [selectedSeason, setSelectedSeason] = useState<'winter' | 'equinox' | 'summer'>('summer');
   const [gardenSunExposure, setGardenSunExposure] = useState<Map<number, GardenSunExposure>>(new Map());
   const [treeShadows, setTreeShadows] = useState<Map<number, TreeShadowExtent>>(new Map());
+  const [structureShadows, setStructureShadows] = useState<Map<number, StructureShadowExtent>>(new Map());
   const canvasRef = useRef<HTMLDivElement>(null);
 
   // Calculate canvas dimensions
@@ -269,12 +271,26 @@ export function LandCanvas({ land, gardens, trees = [], onUpdate }: LandCanvasPr
         }
       }
       setTreeShadows(treeShadowMap);
+
+      // Fetch structure shadow extents
+      const structureShadowMap = new Map<number, StructureShadowExtent>();
+      for (const structure of structures) {
+        if (structure.x != null && structure.y != null && structure.height != null) {
+          try {
+            const shadowExtent = await api.getStructureShadowExtent(structure.id, 40.0);
+            structureShadowMap.set(structure.id, shadowExtent);
+          } catch (error) {
+            console.error(`Failed to fetch shadow extent for structure ${structure.id}:`, error);
+          }
+        }
+      }
+      setStructureShadows(structureShadowMap);
     };
 
     if (showSeasonalShadows) {
       fetchSunExposureData();
     }
-  }, [land.gardens, trees, showSeasonalShadows]);
+  }, [land.gardens, trees, structures, showSeasonalShadows]);
 
   const findFreePosition = (width: number, height: number): { x: number; y: number } | null => {
     const tolerance = 0.01; // Small tolerance for floating-point precision

@@ -519,6 +519,52 @@ export interface GardenShadingInfo {
 }
 
 // ============================================================================
+// STRUCTURE TYPES (Buildings, fences, walls that cast shadows)
+// ============================================================================
+
+export interface Structure {
+  id: number;
+  user_id: number;
+  land_id: number;
+  name: string;
+  x: number;
+  y: number;
+  width: number;
+  depth: number;
+  height: number;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface StructureCreate {
+  land_id: number;
+  name: string;
+  x: number;
+  y: number;
+  width: number;
+  depth: number;
+  height: number;
+}
+
+export interface StructureUpdate {
+  name?: string;
+  x?: number;
+  y?: number;
+  width?: number;
+  depth?: number;
+  height?: number;
+}
+
+export interface StructureShadowExtent {
+  seasonal_shadows: {
+    winter?: ShadowRectangle;
+    equinox?: ShadowRectangle;
+    summer?: ShadowRectangle;
+  } | null;
+  max_shadow_length: number | null;
+}
+
+// ============================================================================
 // IRRIGATION SYSTEM TYPES
 // ============================================================================
 

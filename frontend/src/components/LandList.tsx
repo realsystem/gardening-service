@@ -3,13 +3,15 @@ import { api } from '../services/api';
 import { LandCanvas } from './LandCanvas';
 import { CreateLand } from './CreateLand';
 import { TreeManager } from './TreeManager';
-import type { Land, LandWithGardens, Garden, Tree } from '../types';
+import { StructureManager } from './StructureManager';
+import type { Land, LandWithGardens, Garden, Tree, Structure } from '../types';
 import './LandList.css';
 
 export function LandList() {
   const [lands, setLands] = useState<Land[]>([]);
   const [gardens, setGardens] = useState<Garden[]>([]);
   const [landTrees, setLandTrees] = useState<Tree[]>([]);
+  const [landStructures, setLandStructures] = useState<Structure[]>([]);
   const [selectedLand, setSelectedLand] = useState<LandWithGardens | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -42,12 +44,14 @@ export function LandList() {
 
   const handleSelectLand = async (landId: number) => {
     try {
-      const [landDetails, treesOnLand] = await Promise.all([
+      const [landDetails, treesOnLand, structuresOnLand] = await Promise.all([
         api.getLand(landId),
         api.getTreesOnLand(landId),
+        api.getStructuresOnLand(landId),
       ]);
       setSelectedLand(landDetails);
       setLandTrees(treesOnLand);
+      setLandStructures(structuresOnLand);
     } catch (err) {
       setError((err as Error).message || 'Failed to load land details');
     }
@@ -157,10 +161,16 @@ export function LandList() {
             trees={landTrees}
             onUpdate={handleLandUpdate}
           />
+          <StructureManager
+            land={selectedLand}
+            structures={landStructures}
+            onUpdate={handleLandUpdate}
+          />
           <LandCanvas
             land={selectedLand}
             gardens={gardens}
             trees={landTrees}
+            structures={landStructures}
             onUpdate={handleLandUpdate}
           />
         </div>
