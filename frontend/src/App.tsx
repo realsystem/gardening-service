@@ -89,7 +89,11 @@ function App() {
   return (
     <ErrorBoundary>
       <UnitSystemProvider unitSystem={user.unit_system}>
-        <Dashboard user={user} onLogout={handleLogout} />
+        <Dashboard
+          user={user}
+          onLogout={handleLogout}
+          onUserUpdate={setUser}
+        />
       </UnitSystemProvider>
     </ErrorBoundary>
   );

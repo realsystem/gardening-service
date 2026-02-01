@@ -47,8 +47,6 @@ export function Profile({ user, onUpdate, onClose }: ProfileProps) {
       setSuccess(true);
       setTimeout(() => {
         onClose();
-        // Reload page to apply unit changes throughout the app
-        window.location.reload();
       }, 1500);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update profile');
