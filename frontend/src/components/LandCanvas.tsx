@@ -501,13 +501,6 @@ export function LandCanvas({ land, gardens, trees = [], onUpdate }: LandCanvasPr
               className="shadow-overlay"
               width={canvasWidth}
               height={canvasHeight}
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                pointerEvents: 'none',
-                zIndex: 9999
-              }}
             >
               {Array.from(treeShadows.entries()).map(([treeId, shadowExtent]) => {
                 if (!shadowExtent.seasonal_shadows) return null;
