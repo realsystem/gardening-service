@@ -56,10 +56,16 @@ export function GardenPlantPlacer({
   const canvasDisplayWidth = gardenWidth * scale;
   const canvasDisplayHeight = gardenHeight * scale;
 
-  // Helper function to snap position to grid
+  // Helper function to snap position to cell centers (not grid lines)
   const snapToGrid = (x: number, y: number): PlantPosition => {
-    const gridX = Math.round(x / GRID_CELL_SIZE) * GRID_CELL_SIZE;
-    const gridY = Math.round(y / GRID_CELL_SIZE) * GRID_CELL_SIZE;
+    // Find which cell we're in
+    const cellX = Math.floor(x / GRID_CELL_SIZE);
+    const cellY = Math.floor(y / GRID_CELL_SIZE);
+
+    // Snap to the center of that cell
+    const gridX = cellX * GRID_CELL_SIZE + GRID_CELL_SIZE / 2;
+    const gridY = cellY * GRID_CELL_SIZE + GRID_CELL_SIZE / 2;
+
     return { x: gridX, y: gridY };
   };
 
@@ -117,6 +123,18 @@ export function GardenPlantPlacer({
       ctx.moveTo(0, py);
       ctx.lineTo(canvasDisplayWidth, py);
       ctx.stroke();
+    }
+
+    // Draw cell center dots to show where plants can be placed
+    ctx.fillStyle = '#d0d0d0';
+    for (let x = GRID_CELL_SIZE / 2; x < gardenWidth; x += GRID_CELL_SIZE) {
+      for (let y = GRID_CELL_SIZE / 2; y < gardenHeight; y += GRID_CELL_SIZE) {
+        const px = x * scale;
+        const py = y * scale;
+        ctx.beginPath();
+        ctx.arc(px, py, 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
     }
 
     // Draw blocked cells (where existing plants and their spacing radii are)
@@ -329,9 +347,9 @@ export function GardenPlantPlacer({
       <div className="placer-instructions">
         <p><strong>🌱 How to use:</strong></p>
         <ul>
-          <li>Click on grid cells to place your plant (snaps to 1-foot grid)</li>
+          <li>Click anywhere to snap plant to nearest cell center (gray dots)</li>
+          <li>Grid cells are 1 foot (12 inches) apart - plants placed at cell centers only</li>
           <li>Green dots show existing plants with red spacing zones</li>
-          <li>Grid cells are 1 foot (12 inches) apart</li>
           <li>Cannot place plants too close - proper spacing prevents overcrowding!</li>
           {currentPlantSpacing && (
             <li><strong>Current plant needs {currentPlantSpacing}" spacing minimum</strong></li>
