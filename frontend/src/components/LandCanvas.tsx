@@ -210,17 +210,19 @@ export function LandCanvas({ land, gardens, trees = [], onUpdate }: LandCanvasPr
   }, [land.gardens, trees, showSeasonalShadows]);
 
   const findFreePosition = (width: number, height: number): { x: number; y: number } | null => {
+    const tolerance = 0.01; // Small tolerance for floating-point precision
+
     // Helper to check if a position overlaps with any existing garden
     const checkOverlap = (x: number, y: number, w: number, h: number): boolean => {
       for (const g of land.gardens) {
         if (g.x == null || g.y == null || g.width == null || g.height == null) continue;
 
-        // AABB overlap detection
+        // AABB overlap detection with tolerance for floating-point precision
         const noOverlap = (
-          x + w <= g.x ||
-          g.x + g.width <= x ||
-          y + h <= g.y ||
-          g.y + g.height <= y
+          x + w <= g.x + tolerance ||
+          g.x + g.width <= x + tolerance ||
+          y + h <= g.y + tolerance ||
+          g.y + g.height <= y + tolerance
         );
 
         if (!noOverlap) return true; // Overlap found
@@ -228,13 +230,18 @@ export function LandCanvas({ land, gardens, trees = [], onUpdate }: LandCanvasPr
       return false; // No overlap
     };
 
-    const stepSize = snapEnabled ? GRID_RESOLUTION : 0.1;
+    // Use grid resolution for snapping, ensuring positions align with backend
+    const stepSize = GRID_RESOLUTION;
 
     // Try positions from top-left, moving right then down
     for (let y = 0; y <= land.height - height; y += stepSize) {
       for (let x = 0; x <= land.width - width; x += stepSize) {
-        if (!checkOverlap(x, y, width, height)) {
-          return { x, y };
+        // Snap position to grid to ensure exact alignment
+        const snappedX = snapToGrid(x, GRID_RESOLUTION);
+        const snappedY = snapToGrid(y, GRID_RESOLUTION);
+
+        if (!checkOverlap(snappedX, snappedY, width, height)) {
+          return { x: snappedX, y: snappedY };
         }
       }
     }
