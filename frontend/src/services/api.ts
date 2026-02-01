@@ -687,9 +687,12 @@ class ApiClient {
     return this.request<GardenSunExposure>(`/gardens/${gardenId}/sun-exposure`);
   }
 
-  async getTreeShadowExtent(treeId: number, latitude?: number): Promise<TreeShadowExtent> {
-    const params = latitude !== undefined ? `?latitude=${latitude}` : '';
-    return this.request<TreeShadowExtent>(`/trees/${treeId}/shadow-extent${params}`);
+  async getTreeShadowExtent(treeId: number, latitude?: number, hour?: number): Promise<TreeShadowExtent> {
+    const params = new URLSearchParams();
+    if (latitude !== undefined) params.append('latitude', latitude.toString());
+    if (hour !== undefined) params.append('hour', hour.toString());
+    const queryString = params.toString() ? `?${params.toString()}` : '';
+    return this.request<TreeShadowExtent>(`/trees/${treeId}/shadow-extent${queryString}`);
   }
 
   // Structures
@@ -728,9 +731,12 @@ class ApiClient {
     });
   }
 
-  async getStructureShadowExtent(structureId: number, latitude?: number): Promise<StructureShadowExtent> {
-    const params = latitude !== undefined ? `?latitude=${latitude}` : '';
-    return this.request<StructureShadowExtent>(`/structures/${structureId}/shadow-extent${params}`);
+  async getStructureShadowExtent(structureId: number, latitude?: number, hour?: number): Promise<StructureShadowExtent> {
+    const params = new URLSearchParams();
+    if (latitude !== undefined) params.append('latitude', latitude.toString());
+    if (hour !== undefined) params.append('hour', hour.toString());
+    const queryString = params.toString() ? `?${params.toString()}` : '';
+    return this.request<StructureShadowExtent>(`/structures/${structureId}/shadow-extent${queryString}`);
   }
 
   // ========================================================================
