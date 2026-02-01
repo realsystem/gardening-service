@@ -19,9 +19,11 @@ export function LandList() {
     loadData();
   }, []);
 
-  const loadData = async () => {
+  const loadData = async (showLoading = true) => {
     try {
-      setLoading(true);
+      if (showLoading) {
+        setLoading(true);
+      }
       const [landsData, gardensData] = await Promise.all([
         api.getLands(),
         api.getGardens(),
@@ -32,7 +34,9 @@ export function LandList() {
     } catch (err) {
       setError((err as Error).message || 'Failed to load data');
     } finally {
-      setLoading(false);
+      if (showLoading) {
+        setLoading(false);
+      }
     }
   };
 
@@ -75,8 +79,8 @@ export function LandList() {
     const scrollY = window.scrollY;
     const scrollX = window.scrollX;
 
-    // Reload all data (gardens and lands)
-    await loadData();
+    // Reload all data (gardens and lands) without showing loading state
+    await loadData(false);
     // Refresh the selected land details
     if (selectedLand) {
       await handleSelectLand(selectedLand.id);
