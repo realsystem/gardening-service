@@ -21,9 +21,10 @@ import { IrrigationZoneManager } from './IrrigationZoneManager';
 interface DashboardProps {
   user: User;
   onLogout: () => void;
+  onUserUpdate?: (user: User) => void;
 }
 
-export function Dashboard({ user: initialUser, onLogout }: DashboardProps) {
+export function Dashboard({ user: initialUser, onLogout, onUserUpdate }: DashboardProps) {
   const [user, setUser] = useState(initialUser);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [seedBatches, setSeedBatches] = useState<SeedBatch[]>([]);
@@ -575,7 +576,10 @@ export function Dashboard({ user: initialUser, onLogout }: DashboardProps) {
       {activeModal === 'profile' && (
         <Profile
           user={user}
-          onUpdate={setUser}
+          onUpdate={(updatedUser) => {
+            setUser(updatedUser);
+            onUserUpdate?.(updatedUser);
+          }}
           onClose={() => setActiveModal(null)}
         />
       )}
