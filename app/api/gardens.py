@@ -124,7 +124,9 @@ def get_garden(
             health_status=planting.health_status,
             expected_harvest_date=expected_harvest_date,
             days_to_harvest=variety.days_to_harvest if variety else None,
-            status=status_text
+            status=status_text,
+            x=planting.x,
+            y=planting.y
         ))
 
     # Get tasks for this garden (via planting events)
@@ -234,7 +236,9 @@ def get_garden_plantings(
             health_status=planting.health_status,
             expected_harvest_date=expected_harvest_date,
             days_to_harvest=variety.days_to_harvest if variety else None,
-            status=status_text
+            status=status_text,
+            x=planting.x,
+            y=planting.y
         ))
 
     return plantings
