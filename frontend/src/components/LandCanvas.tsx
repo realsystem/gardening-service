@@ -209,6 +209,40 @@ export function LandCanvas({ land, gardens, trees = [], onUpdate }: LandCanvasPr
     }
   }, [land.gardens, trees, showSeasonalShadows]);
 
+  const findFreePosition = (width: number, height: number): { x: number; y: number } | null => {
+    // Helper to check if a position overlaps with any existing garden
+    const checkOverlap = (x: number, y: number, w: number, h: number): boolean => {
+      for (const g of land.gardens) {
+        if (g.x == null || g.y == null || g.width == null || g.height == null) continue;
+
+        // AABB overlap detection
+        const noOverlap = (
+          x + w <= g.x ||
+          g.x + g.width <= x ||
+          y + h <= g.y ||
+          g.y + g.height <= y
+        );
+
+        if (!noOverlap) return true; // Overlap found
+      }
+      return false; // No overlap
+    };
+
+    const stepSize = snapEnabled ? GRID_RESOLUTION : 0.1;
+
+    // Try positions from top-left, moving right then down
+    for (let y = 0; y <= land.height - height; y += stepSize) {
+      for (let x = 0; x <= land.width - width; x += stepSize) {
+        if (!checkOverlap(x, y, width, height)) {
+          return { x, y };
+        }
+      }
+    }
+
+    // No free space found
+    return null;
+  };
+
   const handlePlaceGarden = async (garden: Garden) => {
     // Prevent double-click placement
     if (placingGarden) {
@@ -224,29 +258,36 @@ export function LandCanvas({ land, gardens, trees = [], onUpdate }: LandCanvasPr
     });
     setPlacingGarden(garden.id);
 
-    // Place in center with default size
+    // Default size
     let defaultWidth = 2;
     let defaultHeight = 2;
-    let centerX = Math.max(0, (land.width - defaultWidth) / 2);
-    let centerY = Math.max(0, (land.height - defaultHeight) / 2);
 
-    // Apply snap if enabled
+    // Apply snap to default size if enabled
     if (snapEnabled) {
-      centerX = snapToGrid(centerX, GRID_RESOLUTION);
-      centerY = snapToGrid(centerY, GRID_RESOLUTION);
       defaultWidth = snapToGrid(defaultWidth, GRID_RESOLUTION);
       defaultHeight = snapToGrid(defaultHeight, GRID_RESOLUTION);
     }
 
-    console.log('Position:', { centerX, centerY, defaultWidth, defaultHeight });
+    // Find first available position starting from top-left
+    const position = findFreePosition(defaultWidth, defaultHeight);
+
+    if (!position) {
+      setErrorMessage('No space available on this land for a new garden');
+      setPlacingGarden(null);
+      return;
+    }
+
+    let { x: posX, y: posY } = position;
+
+    console.log('Position:', { posX, posY, defaultWidth, defaultHeight });
 
     try {
       console.log('Calling API with:', {
         gardenId: garden.id,
         payload: {
           land_id: land.id,
-          x: centerX,
-          y: centerY,
+          x: posX,
+          y: posY,
           width: defaultWidth,
           height: defaultHeight,
           snap_to_grid: snapEnabled,
@@ -254,8 +295,8 @@ export function LandCanvas({ land, gardens, trees = [], onUpdate }: LandCanvasPr
       });
       const result = await api.updateGardenLayout(garden.id, {
         land_id: land.id,
-        x: centerX,
-        y: centerY,
+        x: posX,
+        y: posY,
         width: defaultWidth,
         height: defaultHeight,
         snap_to_grid: snapEnabled,
