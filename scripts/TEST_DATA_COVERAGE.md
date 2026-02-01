@@ -150,7 +150,7 @@ These features are NOT included in the automated test data (require manual testi
 - ❌ **Care Tasks**: Would need planting event IDs from API response
 - ❌ **Sensor Readings**: Indoor gardens don't auto-generate readings
 - ❌ **Harvests**: No harvest tracking in automated setup
-- ❌ **Tree Species**: Uses fallback IDs if species endpoint unavailable
+- ❌ **Tree Species**: Trees created without species data (species_id is nullable)
 - ❌ **Admin Features**: Admin role testing requires separate user
 - ❌ **Export/Import**: Requires manual trigger via UI
 
