@@ -29,7 +29,7 @@ def apply_snap_to_grid(
     return x, y, width, height
 
 
-def check_overlap(garden1: Dict[str, float], garden2: Dict[str, float]) -> bool:
+def check_overlap(garden1: Dict[str, float], garden2: Dict[str, float], tolerance: float = 0.01) -> bool:
     """
     Check if two rectangular gardens overlap using AABB (Axis-Aligned Bounding Box) algorithm.
 
@@ -42,18 +42,21 @@ def check_overlap(garden1: Dict[str, float], garden2: Dict[str, float]) -> bool:
     Args:
         garden1: dict with keys 'x', 'y', 'width', 'height'
         garden2: dict with keys 'x', 'y', 'width', 'height'
+        tolerance: Small epsilon value to handle floating-point precision errors (default: 0.01 units)
 
     Returns:
         True if gardens overlap, False otherwise
 
-    Note: Gardens touching at edges/corners do NOT count as overlapping (using <=, not <)
+    Note: Gardens touching at edges/corners do NOT count as overlapping.
+          A small tolerance is used to handle floating-point precision issues with snap-to-grid.
     """
     # Check if gardens do NOT overlap (negation gives us overlap)
+    # Add tolerance to account for floating-point precision errors
     no_overlap = (
-        garden1['x'] + garden1['width'] <= garden2['x'] or   # g1 left of g2
-        garden2['x'] + garden2['width'] <= garden1['x'] or   # g1 right of g2
-        garden1['y'] + garden1['height'] <= garden2['y'] or  # g1 above g2
-        garden2['y'] + garden2['height'] <= garden1['y']     # g1 below g2
+        garden1['x'] + garden1['width'] <= garden2['x'] + tolerance or   # g1 left of g2
+        garden2['x'] + garden2['width'] <= garden1['x'] + tolerance or   # g1 right of g2
+        garden1['y'] + garden1['height'] <= garden2['y'] + tolerance or  # g1 above g2
+        garden2['y'] + garden2['height'] <= garden1['y'] + tolerance     # g1 below g2
     )
     return not no_overlap
 
