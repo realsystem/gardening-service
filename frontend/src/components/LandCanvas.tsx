@@ -94,6 +94,26 @@ export function LandCanvas({ land, gardens, trees = [], structures = [], onUpdat
     setErrorMessage('');
   };
 
+  const handleStructureMouseDown = (e: React.MouseEvent, structure: Structure) => {
+    if (structure.x == null || structure.y == null) return;
+
+    const rect = canvasRef.current?.getBoundingClientRect();
+    if (!rect) return;
+
+    const offsetX = e.clientX - rect.left - structure.x * GRID_SIZE;
+    const offsetY = e.clientY - rect.top - structure.y * GRID_SIZE;
+
+    setDragState({
+      type: 'structure',
+      id: structure.id,
+      offsetX,
+      offsetY,
+      initialX: structure.x,
+      initialY: structure.y,
+    });
+    setErrorMessage('');
+  };
+
   const handleMouseMove = (e: MouseEvent) => {
     if (!dragState || !canvasRef.current) return;
 
@@ -110,6 +130,13 @@ export function LandCanvas({ land, gardens, trees = [], structures = [], onUpdat
       y = Math.max(0, Math.min(y, land.height - garden.height));
     } else if (dragState.type === 'tree') {
       // Constrain tree trunk to land boundaries (canopy can extend beyond)
+      x = Math.max(0, Math.min(x, land.width));
+      y = Math.max(0, Math.min(y, land.height));
+    } else if (dragState.type === 'structure') {
+      const structure = structures.find(s => s.id === dragState.id);
+      if (!structure || structure.width == null || structure.depth == null) return;
+
+      // Constrain to land boundaries (structure can extend partially beyond)
       x = Math.max(0, Math.min(x, land.width));
       y = Math.max(0, Math.min(y, land.height));
     }
@@ -201,6 +228,43 @@ export function LandCanvas({ land, gardens, trees = [], structures = [], onUpdat
         tree.x = dragState.initialX;
         tree.y = dragState.initialY;
         setErrorMessage((error as Error).message || 'Failed to update tree position');
+      } finally {
+        setDragState(null);
+      }
+    } else if (dragState.type === 'structure') {
+      const structure = structures.find(s => s.id === dragState.id);
+      if (!structure || structure.width == null || structure.depth == null) {
+        setDragState(null);
+        return;
+      }
+
+      // Constrain to land boundaries (structure can extend partially beyond)
+      newX = Math.max(0, Math.min(newX, land.width));
+      newY = Math.max(0, Math.min(newY, land.height));
+
+      // Apply snap-to-grid if enabled and Alt key not pressed
+      const shouldSnap = snapEnabled && !altKeyPressed;
+      const snappedX = shouldSnap ? snapToGrid(newX, GRID_RESOLUTION) : newX;
+      const snappedY = shouldSnap ? snapToGrid(newY, GRID_RESOLUTION) : newY;
+
+      try {
+        await api.updateStructure(dragState.id, {
+          x: snappedX,
+          y: snappedY,
+        });
+        // Update local state optimistically
+        structure.x = snappedX;
+        structure.y = snappedY;
+        setErrorMessage('');
+        // Reload shadow data if seasonal shadows are enabled
+        if (showSeasonalShadows) {
+          await onUpdate();
+        }
+      } catch (error) {
+        // Revert to original position on error
+        structure.x = dragState.initialX;
+        structure.y = dragState.initialY;
+        setErrorMessage((error as Error).message || 'Failed to update structure position');
       } finally {
         setDragState(null);
       }
@@ -545,7 +609,32 @@ export function LandCanvas({ land, gardens, trees = [], structures = [], onUpdat
             <rect width="100%" height="100%" fill="url(#major-grid)" />
           </svg>
 
-          {/* Trees (render first, so they appear behind gardens) */}
+          {/* Structures (render first, appear behind trees and gardens) */}
+          {structures.map((structure) => {
+            // Use drag position if this structure is being dragged
+            const isDragging = dragState?.type === 'structure' && dragState?.id === structure.id;
+            const displayX = isDragging && dragState.currentX !== undefined ? dragState.currentX : structure.x;
+            const displayY = isDragging && dragState.currentY !== undefined ? dragState.currentY : structure.y;
+
+            return (
+              <div
+                key={`structure-${structure.id}`}
+                className={`structure-rect ${isDragging ? 'dragging' : ''}`}
+                style={{
+                  left: `${displayX * GRID_SIZE}px`,
+                  top: `${displayY * GRID_SIZE}px`,
+                  width: `${structure.width * GRID_SIZE}px`,
+                  height: `${structure.depth * GRID_SIZE}px`,
+                }}
+                onMouseDown={(e) => handleStructureMouseDown(e, structure)}
+                title={`${structure.name} (${structure.width}×${structure.depth}×${structure.height} units)`}
+              >
+                <span className="structure-label">{structure.name}</span>
+              </div>
+            );
+          })}
+
+          {/* Trees (render after structures, so they appear in front) */}
           {trees.map((tree) => {
             // Use drag position if this tree is being dragged
             const isDragging = dragState?.type === 'tree' && dragState?.id === tree.id;
@@ -643,13 +732,14 @@ export function LandCanvas({ land, gardens, trees = [], structures = [], onUpdat
           })}
 
           {/* Seasonal shadows overlay (on top of gardens) */}
-          {showSeasonalShadows && treeShadows.size > 0 && (
+          {showSeasonalShadows && (treeShadows.size > 0 || structureShadows.size > 0) && (
             <div className="shadow-overlay">
               <svg
                 width={canvasWidth}
                 height={canvasHeight}
                 style={{ display: 'block' }}
               >
+                {/* Tree shadows */}
                 {Array.from(treeShadows.entries()).map(([treeId, shadowExtent]) => {
                   if (!shadowExtent.seasonal_shadows) return null;
                   const shadowRect = shadowExtent.seasonal_shadows[selectedSeason];
@@ -657,7 +747,7 @@ export function LandCanvas({ land, gardens, trees = [], structures = [], onUpdat
 
                   return (
                     <rect
-                      key={`shadow-${treeId}-${selectedSeason}`}
+                      key={`shadow-tree-${treeId}-${selectedSeason}`}
                       x={shadowRect.x * GRID_SIZE}
                       y={shadowRect.y * GRID_SIZE}
                       width={shadowRect.width * GRID_SIZE}
@@ -668,6 +758,28 @@ export function LandCanvas({ land, gardens, trees = [], structures = [], onUpdat
                       strokeDasharray="4 2"
                     >
                       <title>{`Shadow from tree ${treeId} in ${selectedSeason}`}</title>
+                    </rect>
+                  );
+                })}
+                {/* Structure shadows */}
+                {Array.from(structureShadows.entries()).map(([structureId, shadowExtent]) => {
+                  if (!shadowExtent.seasonal_shadows) return null;
+                  const shadowRect = shadowExtent.seasonal_shadows[selectedSeason];
+                  if (!shadowRect) return null;
+
+                  return (
+                    <rect
+                      key={`shadow-structure-${structureId}-${selectedSeason}`}
+                      x={shadowRect.x * GRID_SIZE}
+                      y={shadowRect.y * GRID_SIZE}
+                      width={shadowRect.width * GRID_SIZE}
+                      height={shadowRect.height * GRID_SIZE}
+                      fill="rgba(139, 69, 19, 0.25)"
+                      stroke="rgba(139, 69, 19, 0.5)"
+                      strokeWidth="1"
+                      strokeDasharray="2 2"
+                    >
+                      <title>{`Shadow from structure ${structureId} in ${selectedSeason}`}</title>
                     </rect>
                   );
                 })}
