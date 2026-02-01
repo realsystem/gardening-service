@@ -14,6 +14,7 @@ from app.schemas.garden_details import (
 )
 from app.schemas.garden_layout import GardenLayoutUpdate
 from app.schemas.sensor_reading import SensorReadingResponse
+from app.schemas.tree import GardenShadingInfo
 from app.repositories.garden_repository import GardenRepository
 from app.repositories.sensor_reading_repository import SensorReadingRepository
 from app.repositories.land_repository import LandRepository
@@ -427,3 +428,89 @@ def update_garden_layout(
     db.refresh(garden)
 
     return garden
+
+
+@router.get("/{garden_id}/shading", response_model=GardenShadingInfo)
+def get_garden_shading(
+    garden_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Calculate tree shading impact on a garden.
+
+    Returns sun exposure score (0.0 to 1.0), categorical level (full_sun/partial_sun/shade),
+    and details of all contributing trees.
+
+    Requires garden to have spatial layout (x, y, width, height) on a land plot.
+    """
+    from app.repositories.tree_repository import TreeRepository
+    from app.services.shading_service import calculate_garden_shading
+
+    repo = GardenRepository(db)
+    garden = repo.get_by_id(garden_id)
+
+    if not garden:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Garden not found"
+        )
+
+    if garden.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to access this garden"
+        )
+
+    # Check if garden has spatial layout
+    if garden.land_id is None or garden.x is None or garden.y is None \
+       or garden.width is None or garden.height is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Garden must have spatial layout (land_id, x, y, width, height) to calculate shading"
+        )
+
+    # Get all trees on the same land
+    tree_repo = TreeRepository(db)
+    trees = tree_repo.get_land_trees(garden.land_id)
+
+    # Convert trees to dicts for shading calculation
+    tree_dicts = [
+        {
+            'id': t.id,
+            'name': t.name,
+            'x': t.x,
+            'y': t.y,
+            'canopy_radius': t.canopy_radius,
+            'garden_id': garden_id  # for response
+        }
+        for t in trees
+    ]
+
+    # Calculate shading impact
+    shading_impact = calculate_garden_shading(
+        garden_x=garden.x,
+        garden_y=garden.y,
+        garden_width=garden.width,
+        garden_height=garden.height,
+        trees=tree_dicts if tree_dicts else [],  # Handle no trees case
+        baseline_sun_exposure=1.0  # Assume full sun baseline
+    )
+
+    return GardenShadingInfo(
+        garden_id=garden_id,
+        sun_exposure_score=shading_impact.sun_exposure_score,
+        sun_exposure_category=shading_impact.sun_exposure_category,
+        total_shade_factor=shading_impact.total_shade_factor,
+        contributing_trees=[
+            {
+                "tree_id": t['tree_id'],
+                "tree_name": t['tree_name'],
+                "shade_contribution": t['shade_contribution'],
+                "intersection_area": t['intersection_area'],
+                "average_intensity": t['average_intensity']
+            }
+            for t in shading_impact.contributing_trees
+        ],
+        baseline_sun_exposure=1.0
+    )

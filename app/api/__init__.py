@@ -14,6 +14,7 @@ from app.api.irrigation_system import router as irrigation_system_router
 from app.api.password_reset import router as password_reset_router, password_router
 from app.api.dashboard import router as dashboard_router
 from app.api.rule_insights import router as rule_insights_router
+from app.api.trees import router as trees_router
 
 __all__ = [
     "users_router",
@@ -32,4 +33,5 @@ __all__ = [
     "password_router",
     "dashboard_router",
     "rule_insights_router",
+    "trees_router",
 ]
