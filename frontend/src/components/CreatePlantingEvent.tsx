@@ -75,6 +75,9 @@ export function CreatePlantingEvent({ onClose, onSuccess }: CreatePlantingEventP
     loadPlantings();
   }, [gardenId]);
 
+  // Get the currently selected plant variety
+  const selectedVariety = varieties.find(v => v.id === parseInt(plantVarietyId));
+
   const handleCreateGarden = async () => {
     if (!newGardenName.trim()) return;
 
@@ -261,11 +264,13 @@ export function CreatePlantingEvent({ onClose, onSuccess }: CreatePlantingEventP
                     id: p.id,
                     name: p.plant_variety?.common_name || 'Plant',
                     x: p.x || 0,
-                    y: p.y || 0
+                    y: p.y || 0,
+                    spacing: p.plant_variety?.spacing_inches
                   }))}
+                  currentPlantSpacing={selectedVariety?.spacing_inches}
                   onPositionChange={(position) => {
-                    setPositionX(position.x.toFixed(1));
-                    setPositionY(position.y.toFixed(1));
+                    setPositionX(position.x.toFixed(2));
+                    setPositionY(position.y.toFixed(2));
                   }}
                   currentPosition={positionX && positionY ? {
                     x: parseFloat(positionX),

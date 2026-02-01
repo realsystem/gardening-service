@@ -13,6 +13,7 @@ interface ExistingPlant {
   name: string;
   x: number;
   y: number;
+  spacing?: number; // spacing in inches
 }
 
 interface GardenPlantPlacerProps {
@@ -20,24 +21,28 @@ interface GardenPlantPlacerProps {
   gardenHeight?: number;
   existingPlants?: ExistingPlant[];
   currentPosition?: PlantPosition;
+  currentPlantSpacing?: number; // spacing in inches for the plant being placed
   onPositionChange: (position: PlantPosition) => void;
 }
 
 const CANVAS_WIDTH = 500;
 const CANVAS_HEIGHT = 400;
 const GRID_SIZE = 50; // pixels per meter
+const GRID_CELL_SIZE = 0.3048; // 1 foot in meters (12 inches = 0.3048m)
 
 export function GardenPlantPlacer({
   gardenWidth = 10,
   gardenHeight = 8,
   existingPlants = [],
   currentPosition,
+  currentPlantSpacing,
   onPositionChange
 }: GardenPlantPlacerProps) {
   const { unitSystem } = useUnitSystem();
   const unitLabels = getUnitLabels(unitSystem);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [hoveredPosition, setHoveredPosition] = useState<PlantPosition | null>(null);
+  const [isValidPosition, setIsValidPosition] = useState(true);
 
   // Convert garden dimensions for display
   const displayWidth = convertDistance(gardenWidth, unitSystem);
@@ -51,6 +56,37 @@ export function GardenPlantPlacer({
   const canvasDisplayWidth = gardenWidth * scale;
   const canvasDisplayHeight = gardenHeight * scale;
 
+  // Helper function to snap position to grid
+  const snapToGrid = (x: number, y: number): PlantPosition => {
+    const gridX = Math.round(x / GRID_CELL_SIZE) * GRID_CELL_SIZE;
+    const gridY = Math.round(y / GRID_CELL_SIZE) * GRID_CELL_SIZE;
+    return { x: gridX, y: gridY };
+  };
+
+  // Helper function to check if a position is valid (not too close to existing plants)
+  const isPositionValid = (position: PlantPosition, plantSpacing?: number): boolean => {
+    if (!plantSpacing) return true;
+
+    const minDistanceMeters = (plantSpacing * 0.0254); // Convert inches to meters
+
+    for (const plant of existingPlants) {
+      const distance = Math.sqrt(
+        Math.pow(position.x - plant.x, 2) + Math.pow(position.y - plant.y, 2)
+      );
+
+      // Check against the larger of the two plant spacings
+      const requiredDistance = plant.spacing
+        ? Math.max(minDistanceMeters, plant.spacing * 0.0254)
+        : minDistanceMeters;
+
+      if (distance < requiredDistance) {
+        return false;
+      }
+    }
+
+    return true;
+  };
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -61,12 +97,12 @@ export function GardenPlantPlacer({
     // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Draw grid
+    // Draw grid (1 foot = 0.3048m grid cells)
     ctx.strokeStyle = '#e0e0e0';
     ctx.lineWidth = 1;
 
-    // Vertical lines (every 0.5m)
-    for (let x = 0; x <= gardenWidth; x += 0.5) {
+    // Vertical lines (every 1 foot)
+    for (let x = 0; x <= gardenWidth; x += GRID_CELL_SIZE) {
       const px = x * scale;
       ctx.beginPath();
       ctx.moveTo(px, 0);
@@ -74,14 +110,36 @@ export function GardenPlantPlacer({
       ctx.stroke();
     }
 
-    // Horizontal lines (every 0.5m)
-    for (let y = 0; y <= gardenHeight; y += 0.5) {
+    // Horizontal lines (every 1 foot)
+    for (let y = 0; y <= gardenHeight; y += GRID_CELL_SIZE) {
       const py = y * scale;
       ctx.beginPath();
       ctx.moveTo(0, py);
       ctx.lineTo(canvasDisplayWidth, py);
       ctx.stroke();
     }
+
+    // Draw blocked cells (where existing plants and their spacing radii are)
+    existingPlants.forEach((plant) => {
+      if (plant.spacing) {
+        const radiusMeters = plant.spacing * 0.0254; // Convert inches to meters
+        const px = plant.x * scale;
+        const py = plant.y * scale;
+        const radiusPx = radiusMeters * scale;
+
+        // Draw spacing radius
+        ctx.fillStyle = 'rgba(244, 67, 54, 0.1)';
+        ctx.beginPath();
+        ctx.arc(px, py, radiusPx, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.strokeStyle = 'rgba(244, 67, 54, 0.2)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.arc(px, py, radiusPx, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+    });
 
     // Draw garden border
     ctx.strokeStyle = '#4caf50';
@@ -109,13 +167,22 @@ export function GardenPlantPlacer({
     if (hoveredPosition) {
       const px = hoveredPosition.x * scale;
       const py = hoveredPosition.y * scale;
+      const valid = isPositionValid(hoveredPosition, currentPlantSpacing);
 
-      ctx.fillStyle = 'rgba(76, 175, 80, 0.2)';
+      // Draw grid cell highlight
+      const cellX = Math.floor(hoveredPosition.x / GRID_CELL_SIZE) * GRID_CELL_SIZE * scale;
+      const cellY = Math.floor(hoveredPosition.y / GRID_CELL_SIZE) * GRID_CELL_SIZE * scale;
+      const cellSize = GRID_CELL_SIZE * scale;
+
+      ctx.fillStyle = valid ? 'rgba(76, 175, 80, 0.15)' : 'rgba(244, 67, 54, 0.15)';
+      ctx.fillRect(cellX, cellY, cellSize, cellSize);
+
+      ctx.fillStyle = valid ? 'rgba(76, 175, 80, 0.3)' : 'rgba(244, 67, 54, 0.3)';
       ctx.beginPath();
       ctx.arc(px, py, 10, 0, Math.PI * 2);
       ctx.fill();
 
-      ctx.strokeStyle = '#4caf50';
+      ctx.strokeStyle = valid ? '#4caf50' : '#f44336';
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.arc(px, py, 10, 0, Math.PI * 2);
@@ -150,7 +217,7 @@ export function GardenPlantPlacer({
       ctx.font = 'bold 12px sans-serif';
       ctx.fillText('New Plant', px + 18, py + 4);
     }
-  }, [gardenWidth, gardenHeight, scale, canvasDisplayWidth, canvasDisplayHeight, existingPlants, currentPosition, hoveredPosition]);
+  }, [gardenWidth, gardenHeight, scale, canvasDisplayWidth, canvasDisplayHeight, existingPlants, currentPosition, hoveredPosition, currentPlantSpacing]);
 
   const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
@@ -161,14 +228,26 @@ export function GardenPlantPlacer({
     const y = e.clientY - rect.top;
 
     // Convert to garden coordinates
-    const gardenX = Math.round((x / scale) * 10) / 10; // Round to 0.1m
-    const gardenY = Math.round((y / scale) * 10) / 10;
+    const gardenX = x / scale;
+    const gardenY = y / scale;
+
+    // Snap to grid
+    const snappedPosition = snapToGrid(gardenX, gardenY);
 
     // Clamp to garden bounds
-    const clampedX = Math.max(0, Math.min(gardenWidth, gardenX));
-    const clampedY = Math.max(0, Math.min(gardenHeight, gardenY));
+    const clampedX = Math.max(0, Math.min(gardenWidth, snappedPosition.x));
+    const clampedY = Math.max(0, Math.min(gardenHeight, snappedPosition.y));
 
-    onPositionChange({ x: clampedX, y: clampedY });
+    const finalPosition = { x: clampedX, y: clampedY };
+
+    // Check if position is valid
+    const valid = isPositionValid(finalPosition, currentPlantSpacing);
+    setIsValidPosition(valid);
+
+    // Only update if valid
+    if (valid) {
+      onPositionChange(finalPosition);
+    }
   };
 
   const handleCanvasMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -179,11 +258,14 @@ export function GardenPlantPlacer({
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
-    const gardenX = Math.round((x / scale) * 10) / 10;
-    const gardenY = Math.round((y / scale) * 10) / 10;
+    const gardenX = x / scale;
+    const gardenY = y / scale;
 
-    const clampedX = Math.max(0, Math.min(gardenWidth, gardenX));
-    const clampedY = Math.max(0, Math.min(gardenHeight, gardenY));
+    // Snap to grid
+    const snappedPosition = snapToGrid(gardenX, gardenY);
+
+    const clampedX = Math.max(0, Math.min(gardenWidth, snappedPosition.x));
+    const clampedY = Math.max(0, Math.min(gardenHeight, snappedPosition.y));
 
     setHoveredPosition({ x: clampedX, y: clampedY });
   };
@@ -218,25 +300,42 @@ export function GardenPlantPlacer({
         />
       </div>
 
+      {!isValidPosition && (
+        <div className="error" style={{ marginTop: '10px' }}>
+          ⚠️ Cannot place plant here - too close to existing plants. Plants need proper spacing to grow healthy!
+        </div>
+      )}
+
       {currentPosition && (
         <div className="position-display">
-          <strong>Selected Position:</strong> ({currentPosition.x.toFixed(1)}m, {currentPosition.y.toFixed(1)}m)
+          <strong>Selected Position:</strong> ({currentPosition.x.toFixed(2)}m, {currentPosition.y.toFixed(2)}m)
+          {currentPlantSpacing && (
+            <span style={{ marginLeft: '10px', color: '#666', fontSize: '0.9em' }}>
+              (Requires {currentPlantSpacing}" spacing)
+            </span>
+          )}
         </div>
       )}
 
       {hoveredPosition && !currentPosition && (
-        <div className="position-preview">
-          Preview: ({hoveredPosition.x.toFixed(1)}m, {hoveredPosition.y.toFixed(1)}m)
+        <div className="position-preview" style={{
+          color: isPositionValid(hoveredPosition, currentPlantSpacing) ? '#666' : '#f44336'
+        }}>
+          Preview: ({hoveredPosition.x.toFixed(2)}m, {hoveredPosition.y.toFixed(2)}m)
+          {!isPositionValid(hoveredPosition, currentPlantSpacing) && ' - Too close!'}
         </div>
       )}
 
       <div className="placer-instructions">
         <p><strong>🌱 How to use:</strong></p>
         <ul>
-          <li>Click anywhere in the garden to place your plant</li>
-          <li>Green dots show existing plants</li>
-          <li>Grid lines are 0.5m apart</li>
-          <li>Place plants close together for companion benefits!</li>
+          <li>Click on grid cells to place your plant (snaps to 1-foot grid)</li>
+          <li>Green dots show existing plants with red spacing zones</li>
+          <li>Grid cells are 1 foot (12 inches) apart</li>
+          <li>Cannot place plants too close - proper spacing prevents overcrowding!</li>
+          {currentPlantSpacing && (
+            <li><strong>Current plant needs {currentPlantSpacing}" spacing minimum</strong></li>
+          )}
         </ul>
       </div>
     </div>

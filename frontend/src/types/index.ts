@@ -27,6 +27,8 @@ export interface PlantVariety {
   scientific_name?: string;
   variety_name?: string;
   days_to_harvest?: number;
+  spacing_inches?: number;
+  row_spacing_inches?: number;
   water_requirement?: 'low' | 'medium' | 'high';
   photo_url?: string;
   tags?: string;
