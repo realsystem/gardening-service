@@ -107,12 +107,9 @@ export function LandCanvas({ land, gardens, trees = [], onUpdate }: LandCanvasPr
       x = Math.max(0, Math.min(x, land.width - garden.width));
       y = Math.max(0, Math.min(y, land.height - garden.height));
     } else if (dragState.type === 'tree') {
-      const tree = trees.find(t => t.id === dragState.id);
-      if (!tree || tree.canopy_radius == null) return;
-
-      // Constrain to land boundaries (tree center point)
-      x = Math.max(tree.canopy_radius, Math.min(x, land.width - tree.canopy_radius));
-      y = Math.max(tree.canopy_radius, Math.min(y, land.height - tree.canopy_radius));
+      // Constrain tree trunk to land boundaries (canopy can extend beyond)
+      x = Math.max(0, Math.min(x, land.width));
+      y = Math.max(0, Math.min(y, land.height));
     }
 
     // Update drag state to trigger re-render with current position
@@ -175,9 +172,9 @@ export function LandCanvas({ land, gardens, trees = [], onUpdate }: LandCanvasPr
         return;
       }
 
-      // Constrain to land boundaries (tree center point)
-      newX = Math.max(tree.canopy_radius, Math.min(newX, land.width - tree.canopy_radius));
-      newY = Math.max(tree.canopy_radius, Math.min(newY, land.height - tree.canopy_radius));
+      // Constrain tree trunk to land boundaries (canopy can extend beyond)
+      newX = Math.max(0, Math.min(newX, land.width));
+      newY = Math.max(0, Math.min(newY, land.height));
 
       // Apply snap-to-grid if enabled and Alt key not pressed
       const shouldSnap = snapEnabled && !altKeyPressed;
