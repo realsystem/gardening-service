@@ -49,23 +49,49 @@ TEST_EMAIL="custom@test.com" TEST_PASSWORD="custom123" ./scripts/setup_test_user
 
 Creates a complete test environment with gardens, land layout, irrigation system, and soil samples designed to trigger alerts.
 
+**Idempotent:** This script can be run multiple times safely. It automatically cleans up existing resources before creating new ones.
+
 **Usage:**
 ```bash
 ./scripts/setup_test_data.sh
 ```
 
+**Custom land size:**
+```bash
+# Default: 32x25 ft (very compact, screen-friendly)
+LAND_WIDTH=32 LAND_HEIGHT=25 ./scripts/setup_test_data.sh
+
+# Medium: 45x35 ft (comfortable margins)
+LAND_WIDTH=45 LAND_HEIGHT=35 ./scripts/setup_test_data.sh
+
+# Larger: 60x45 ft (spacious layout)
+LAND_WIDTH=60 LAND_HEIGHT=45 ./scripts/setup_test_data.sh
+```
+
 **What it creates:**
-- 1 Land parcel (100x80 ft) with positioned gardens
+- 1 Land parcel (default 32x25 ft, configurable) with positioned gardens
 - 5 Gardens:
-  - Vegetable Garden (Outdoor, Loam soil)
-  - Herb Garden (Outdoor, Sandy soil) - **triggers alerts**
-  - Flower Garden (Outdoor, Clay soil)
-  - Indoor Herb Garden
-  - Hydroponic Greens (NFT system)
+  - Vegetable Garden (Outdoor, Loam soil) - 14x10 ft
+  - Herb Garden (Outdoor, Sandy soil) - 14x10 ft - **triggers alerts**
+  - Flower Garden (Outdoor, Clay soil) - 30x11 ft
+  - Indoor Herb Garden (not positioned on land)
+  - Hydroponic Greens (NFT system, not positioned on land)
 - 2 Water sources (City water + Rain barrel)
 - 2 Irrigation zones with assigned gardens
-- 8 Watering events (designed to trigger frequency/duration alerts)
+- 17 Planting events with diverse varieties:
+  - Vegetable Garden: Cherry Tomatoes, Bell Peppers, Romaine Lettuce, Slicing Cucumbers
+  - Herb Garden: Basil (stressed), Cilantro, Mint
+  - Flower Garden: Marigolds, Zinnias, Sunflowers
+  - Indoor Herb Garden: Basil, Parsley
+  - Hydroponic Greens: Romaine, Butterhead Lettuce, Microgreens
+- 22 Watering/irrigation events (zone-based + manual + hydroponic maintenance)
 - 5 Soil samples (including low moisture samples)
+
+**Garden layout:**
+- Compact arrangement filling most of the land area
+- 2 gardens in top row: Vegetable (1,1) and Herb (17,1)
+- 1 wide garden in bottom row: Flower (1,13) spanning full width
+- Default 32x25 land fits well on typical screens
 
 **Alerts triggered:**
 - ⚠️ FREQ_001: Watering too frequently (daily watering on Herb & Flower Zone)
@@ -74,8 +100,9 @@ Creates a complete test environment with gardens, land layout, irrigation system
 
 **Prerequisites:**
 - Test user must exist (run `./scripts/setup_test_user.sh` first)
+- Plant varieties must be loaded in database (auto-loaded if missing)
 
-**Duration:** ~3-5 seconds
+**Duration:** ~5-8 seconds
 
 ### 1. Full Test Suite: `test_irrigation_api.sh`
 

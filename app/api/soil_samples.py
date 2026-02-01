@@ -1,6 +1,6 @@
 """Soil sample tracking endpoints."""
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import date
@@ -270,7 +270,7 @@ def update_soil_sample(
     return response
 
 
-@router.delete("/{sample_id}")
+@router.delete("/{sample_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_soil_sample(
     sample_id: int,
     db: Session = Depends(get_db),
@@ -280,7 +280,6 @@ def delete_soil_sample(
     Delete a soil sample.
 
     Only the owner can delete their own samples.
-    Returns confirmation with deleted sample ID.
     """
     sample = db.query(SoilSample).filter(
         SoilSample.id == sample_id,
@@ -290,16 +289,7 @@ def delete_soil_sample(
     if not sample:
         raise HTTPException(status_code=404, detail="Soil sample not found")
 
-    sample_data = {
-        "id": sample.id,
-        "garden_id": sample.garden_id,
-        "date_collected": sample.date_collected.isoformat()
-    }
-
     db.delete(sample)
     db.commit()
 
-    return {
-        "message": "Soil sample deleted successfully",
-        "deleted_sample": sample_data
-    }
+    return None

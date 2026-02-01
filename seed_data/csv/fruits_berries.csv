@@ -1,0 +1,4 @@
+common_name,scientific_name,variety_name,days_to_germination_min,days_to_germination_max,days_to_harvest,spacing_inches,row_spacing_inches,sun_requirement,water_requirement,description,growing_notes,photo_url,tags
+Strawberry - June-Bearing,Fragaria × ananassa,Chandler,21,42,365,12,36,full_sun,medium,"Large, sweet strawberries in spring","Perennial. Plant crowns. Runner production. Mature spread: 12-18"" wide.",,"fruit,berry,perennial,cold_hardy"
+Strawberry - Everbearing,Fragaria × ananassa,Quinault,21,42,180,12,36,full_sun,medium,Produces fruit spring and fall,Perennial. Multiple harvests per year.,,"fruit,berry,perennial,cold_hardy"
+Strawberry - Alpine,Fragaria vesca,Mignonette,14,28,120,8,24,partial_sun,medium,"Tiny, intensely flavored strawberries",Perennial. No runners. Continuous production summer-fall.,,"fruit,berry,perennial,cold_hardy,heirloom"
