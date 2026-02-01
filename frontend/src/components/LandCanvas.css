@@ -36,6 +36,46 @@
   background: #f8f9fa;
   margin-bottom: 20px;
   max-height: 600px;
+  position: relative;
+}
+
+/* Compass Indicator */
+.compass-indicator {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(255, 255, 255, 0.95);
+  border: 2px solid #34495e;
+  border-radius: 6px;
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  z-index: 100;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.compass-arrow {
+  font-size: 16px;
+  line-height: 1;
+  color: #e74c3c;
+  font-weight: bold;
+}
+
+.compass-label {
+  font-size: 13px;
+  font-weight: bold;
+  color: #2c3e50;
+  line-height: 1;
+}
+
+.compass-divider {
+  font-size: 12px;
+  color: #95a5a6;
+  line-height: 1;
+  margin: 2px 0;
 }
 
 .land-canvas {
