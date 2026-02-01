@@ -10,11 +10,13 @@ from sqlalchemy.orm import Session
 from app.models.garden import Garden
 from app.models.land import Land
 from app.models.tree import Tree
+from app.models.structure import Structure
 from app.services.shadow_service import (
     calculate_seasonal_garden_shading,
     get_exposure_category,
     calculate_seasonal_exposure_score,
-    project_tree_shadow
+    project_tree_shadow,
+    project_structure_shadow
 )
 from app.utils.sun_model import Season, DEFAULT_LATITUDE
 
@@ -194,6 +196,54 @@ class SunExposureService:
                 tree_y=tree.y,
                 tree_height=tree.height,
                 canopy_radius=tree.canopy_radius,
+                latitude=latitude,
+                season=season
+            )
+
+            shadow_dict = shadow.to_dict()
+            seasonal_shadows[season.value] = shadow_dict
+
+            # Track maximum shadow length
+            shadow_length = max(shadow.width, shadow.height)
+            max_shadow_length = max(max_shadow_length, shadow_length)
+
+        return {
+            "seasonal_shadows": seasonal_shadows,
+            "max_shadow_length": round(max_shadow_length, 2)
+        }
+
+    @staticmethod
+    def get_structure_shadow_extent(structure: Structure, latitude: Optional[float] = None) -> Dict:
+        """
+        Calculate seasonal shadow extent for a structure.
+
+        Args:
+            structure: Structure model instance
+            latitude: Optional latitude override
+
+        Returns:
+            Dictionary with seasonal shadow projections
+        """
+        if structure.x is None or structure.y is None or structure.height is None or \
+           structure.width is None or structure.depth is None:
+            return {
+                "seasonal_shadows": None,
+                "max_shadow_length": None
+            }
+
+        if latitude is None:
+            latitude = DEFAULT_LATITUDE
+
+        seasonal_shadows = {}
+        max_shadow_length = 0.0
+
+        for season in Season:
+            shadow = project_structure_shadow(
+                structure_x=structure.x,
+                structure_y=structure.y,
+                structure_width=structure.width,
+                structure_depth=structure.depth,
+                structure_height=structure.height,
                 latitude=latitude,
                 season=season
             )

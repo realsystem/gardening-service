@@ -147,6 +147,62 @@ def project_tree_shadow(
     return shadow_rect
 
 
+def project_structure_shadow(
+    structure_x: float,
+    structure_y: float,
+    structure_width: float,
+    structure_depth: float,
+    structure_height: float,
+    latitude: float,
+    season: Season
+) -> ShadowRectangle:
+    """
+    Project shadow from a rectangular structure for given season and latitude.
+
+    Args:
+        structure_x: Structure top-left x-coordinate
+        structure_y: Structure top-left y-coordinate
+        structure_width: Structure width
+        structure_depth: Structure depth/length
+        structure_height: Structure height in meters
+        latitude: Land latitude
+        season: Season for sun calculation
+
+    Returns:
+        ShadowRectangle representing the shadow projection
+    """
+    # Get sun parameters
+    hemisphere = get_hemisphere(latitude)
+    sun_altitude = get_sun_altitude(latitude, season)
+
+    # Calculate shadow length from structure height
+    shadow_length = calculate_shadow_length(structure_height, sun_altitude)
+
+    # Shadow extends from the structure in the north/south direction
+    # Width matches structure width
+
+    if hemisphere.value == "northern":
+        # Shadow extends north (positive Y)
+        # Shadow starts at the structure's north edge
+        shadow_rect = ShadowRectangle(
+            x=structure_x,
+            y=structure_y + structure_depth,
+            width=structure_width,
+            height=shadow_length
+        )
+    else:
+        # Shadow extends south (negative Y)
+        # Shadow starts at the structure's top edge
+        shadow_rect = ShadowRectangle(
+            x=structure_x,
+            y=structure_y - shadow_length,
+            width=structure_width,
+            height=shadow_length
+        )
+
+    return shadow_rect
+
+
 def calculate_garden_shading(
     garden_x: float,
     garden_y: float,

@@ -56,3 +56,4 @@ class User(Base):
 
     # Tree shading relationships
     trees = relationship("Tree", back_populates="user", cascade="all, delete-orphan")
+    structures = relationship("Structure", back_populates="user", cascade="all, delete-orphan")
