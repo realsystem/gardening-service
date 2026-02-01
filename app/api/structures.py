@@ -175,6 +175,7 @@ def delete_structure(
 def get_structure_shadow_extent(
     structure_id: int,
     latitude: float = 40.0,
+    hour: float | None = None,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -186,6 +187,7 @@ def get_structure_shadow_extent(
 
     Query parameters:
     - latitude: Latitude for sun angle calculation (default: 40.0 for temperate zone)
+    - hour: Hour of day for shadow calculation (0-24, default: None for seasonal midday shadows)
     """
     from app.services.sun_exposure_service import SunExposureService
 
@@ -205,6 +207,6 @@ def get_structure_shadow_extent(
         )
 
     # Get shadow extent data using the service
-    shadow_data = SunExposureService.get_structure_shadow_extent(structure, latitude)
+    shadow_data = SunExposureService.get_structure_shadow_extent(structure, latitude, hour)
 
     return shadow_data

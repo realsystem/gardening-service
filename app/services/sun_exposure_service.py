@@ -167,17 +167,20 @@ class SunExposureService:
         }
 
     @staticmethod
-    def get_tree_shadow_extent(tree: Tree, latitude: Optional[float] = None) -> Dict:
+    def get_tree_shadow_extent(tree: Tree, latitude: Optional[float] = None, hour: Optional[float] = None) -> Dict:
         """
         Calculate seasonal shadow extent for a tree.
 
         Args:
             tree: Tree model instance
             latitude: Optional latitude override
+            hour: Optional hour of day (0-24) for time-specific shadow. If None, returns seasonal midday shadows.
 
         Returns:
             Dictionary with seasonal shadow projections
         """
+        from app.services.shadow_service import project_tree_shadow_at_time
+
         if tree.x is None or tree.y is None or tree.height is None or tree.canopy_radius is None:
             return {
                 "seasonal_shadows": None,
@@ -191,14 +194,27 @@ class SunExposureService:
         max_shadow_length = 0.0
 
         for season in Season:
-            shadow = project_tree_shadow(
-                tree_x=tree.x,
-                tree_y=tree.y,
-                tree_height=tree.height,
-                canopy_radius=tree.canopy_radius,
-                latitude=latitude,
-                season=season
-            )
+            if hour is not None:
+                # Time-specific shadow calculation
+                shadow = project_tree_shadow_at_time(
+                    tree_x=tree.x,
+                    tree_y=tree.y,
+                    tree_height=tree.height,
+                    canopy_radius=tree.canopy_radius,
+                    latitude=latitude,
+                    season=season,
+                    hour=hour
+                )
+            else:
+                # Midday seasonal shadow calculation
+                shadow = project_tree_shadow(
+                    tree_x=tree.x,
+                    tree_y=tree.y,
+                    tree_height=tree.height,
+                    canopy_radius=tree.canopy_radius,
+                    latitude=latitude,
+                    season=season
+                )
 
             shadow_dict = shadow.to_dict()
             seasonal_shadows[season.value] = shadow_dict
@@ -213,17 +229,20 @@ class SunExposureService:
         }
 
     @staticmethod
-    def get_structure_shadow_extent(structure: Structure, latitude: Optional[float] = None) -> Dict:
+    def get_structure_shadow_extent(structure: Structure, latitude: Optional[float] = None, hour: Optional[float] = None) -> Dict:
         """
         Calculate seasonal shadow extent for a structure.
 
         Args:
             structure: Structure model instance
             latitude: Optional latitude override
+            hour: Optional hour of day (0-24) for time-specific shadow. If None, returns seasonal midday shadows.
 
         Returns:
             Dictionary with seasonal shadow projections
         """
+        from app.services.shadow_service import project_structure_shadow_at_time
+
         if structure.x is None or structure.y is None or structure.height is None or \
            structure.width is None or structure.depth is None:
             return {
@@ -238,15 +257,29 @@ class SunExposureService:
         max_shadow_length = 0.0
 
         for season in Season:
-            shadow = project_structure_shadow(
-                structure_x=structure.x,
-                structure_y=structure.y,
-                structure_width=structure.width,
-                structure_depth=structure.depth,
-                structure_height=structure.height,
-                latitude=latitude,
-                season=season
-            )
+            if hour is not None:
+                # Time-specific shadow calculation
+                shadow = project_structure_shadow_at_time(
+                    structure_x=structure.x,
+                    structure_y=structure.y,
+                    structure_width=structure.width,
+                    structure_depth=structure.depth,
+                    structure_height=structure.height,
+                    latitude=latitude,
+                    season=season,
+                    hour=hour
+                )
+            else:
+                # Midday seasonal shadow calculation
+                shadow = project_structure_shadow(
+                    structure_x=structure.x,
+                    structure_y=structure.y,
+                    structure_width=structure.width,
+                    structure_depth=structure.depth,
+                    structure_height=structure.height,
+                    latitude=latitude,
+                    season=season
+                )
 
             shadow_dict = shadow.to_dict()
             seasonal_shadows[season.value] = shadow_dict
