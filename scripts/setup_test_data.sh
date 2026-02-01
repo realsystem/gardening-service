@@ -82,6 +82,17 @@ if [ ! -z "$LANDS" ]; then
   echo "✓ Deleted $(echo $LANDS | wc -w | tr -d ' ') land(s)"
 fi
 
+# Get and delete all trees
+TREES=$(curl -s -X GET "${API_URL}/trees" \
+  -H "Authorization: Bearer ${TOKEN}" | python3 -c "import sys, json; data=json.load(sys.stdin); print(' '.join([str(t['id']) for t in data]))" 2>/dev/null || echo "")
+if [ ! -z "$TREES" ]; then
+  for TREE_ID in $TREES; do
+    curl -s -X DELETE "${API_URL}/trees/${TREE_ID}" \
+      -H "Authorization: Bearer ${TOKEN}" > /dev/null 2>&1
+  done
+  echo "✓ Deleted $(echo $TREES | wc -w | tr -d ' ') tree(s)"
+fi
+
 echo "✓ Cleanup complete - ready for fresh setup"
 echo ""
 
