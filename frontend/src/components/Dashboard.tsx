@@ -225,7 +225,7 @@ export function Dashboard({ user: initialUser, onLogout, onUserUpdate }: Dashboa
         <div className="dashboard">
           {error && <div className="error">{error}</div>}
 
-          <div className="card">
+          <div className="card" style={{ maxWidth: '1200px' }}>
             <h2>Quick Actions</h2>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '10px', marginTop: '15px' }}>
               <button className="btn" onClick={() => setActiveModal('garden')}>

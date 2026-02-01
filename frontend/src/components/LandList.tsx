@@ -21,7 +21,6 @@ export function LandList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showCreateForm, setShowCreateForm] = useState(false);
-
   useEffect(() => {
     loadData();
   }, []);
