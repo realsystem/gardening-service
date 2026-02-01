@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { api } from '../services/api';
+import { useUnitSystem } from '../contexts/UnitSystemContext';
+import { convertDistance, getUnitLabels } from '../utils/units';
 import type { LandWithGardens, Garden, GardenSpatialInfo, Tree, Structure, TreeShadowExtent, StructureShadowExtent, GardenSunExposure } from '../types';
 import './LandCanvas.css';
 
@@ -33,6 +35,9 @@ const snapToGrid = (value: number, resolution: number): number => {
 };
 
 export function LandCanvas({ land, gardens, trees = [], structures = [], onUpdate }: LandCanvasProps) {
+  const { unitSystem } = useUnitSystem();
+  const unitLabels = getUnitLabels(unitSystem);
+
   const [dragState, setDragState] = useState<DragState | null>(null);
   const [selectedGarden, setSelectedGarden] = useState<number | null>(null);
   const [errorMessage, setErrorMessage] = useState<string>('');
@@ -492,7 +497,7 @@ export function LandCanvas({ land, gardens, trees = [], structures = [], onUpdat
       <div className="land-header">
         <h3>{land.name}</h3>
         <p className="land-dimensions">
-          {land.width} × {land.height} units
+          {convertDistance(land.width, unitSystem).toFixed(1)} × {convertDistance(land.height, unitSystem).toFixed(1)} {unitLabels.distanceShort}
         </p>
       </div>
 
@@ -648,7 +653,7 @@ export function LandCanvas({ land, gardens, trees = [], structures = [], onUpdat
                   height: `${structure.depth * GRID_SIZE}px`,
                 }}
                 onMouseDown={(e) => handleStructureMouseDown(e, structure)}
-                title={`${structure.name} (${structure.width}×${structure.depth}×${structure.height} units)`}
+                title={`${structure.name} (${convertDistance(structure.width, unitSystem).toFixed(1)}×${convertDistance(structure.depth, unitSystem).toFixed(1)}×${convertDistance(structure.height, unitSystem).toFixed(1)} ${unitLabels.distanceShort})`}
               >
                 <span className="structure-label">{structure.name}</span>
               </div>
@@ -677,7 +682,7 @@ export function LandCanvas({ land, gardens, trees = [], structures = [], onUpdat
                     width: `${canopyDiameter}px`,
                     height: `${canopyDiameter}px`,
                   }}
-                  title={`${tree.name} (canopy: ${tree.canopy_radius} units)`}
+                  title={`${tree.name} (canopy: ${convertDistance(tree.canopy_radius, unitSystem).toFixed(1)} ${unitLabels.distanceShort})`}
                 >
                   <span className="tree-label">{tree.name}</span>
                 </div>
@@ -966,7 +971,7 @@ export function LandCanvas({ land, gardens, trees = [], structures = [], onUpdat
           <li>Drag gardens to reposition them</li>
           <li>Click × to remove a garden from the land</li>
           <li>Gardens cannot overlap</li>
-          <li>Grid: Minor lines = 0.1 units, Major lines = 1 unit</li>
+          <li>Grid: Minor lines = {convertDistance(0.1, unitSystem).toFixed(unitSystem === 'imperial' ? 2 : 1)} {unitLabels.distanceShort}, Major lines = {convertDistance(1, unitSystem).toFixed(unitSystem === 'imperial' ? 1 : 0)} {unitLabels.distanceShort}</li>
           {showSeasonalShadows && (
             <>
               <li style={{ marginTop: '8px', color: '#1976d2' }}>
