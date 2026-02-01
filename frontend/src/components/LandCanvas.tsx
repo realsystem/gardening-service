@@ -474,6 +474,15 @@ export function LandCanvas({ land, gardens, trees = [], onUpdate }: LandCanvasPr
       </div>
 
       <div className="canvas-wrapper">
+        {/* Compass indicator */}
+        <div className="compass-indicator">
+          <div className="compass-arrow">↑</div>
+          <div className="compass-label">N</div>
+          <div className="compass-divider">|</div>
+          <div className="compass-label">S</div>
+          <div className="compass-arrow">↓</div>
+        </div>
+
         <div
           ref={canvasRef}
           className="land-canvas"
