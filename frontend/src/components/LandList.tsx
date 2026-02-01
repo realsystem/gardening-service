@@ -71,12 +71,21 @@ export function LandList() {
   };
 
   const handleLandUpdate = async () => {
+    // Save current scroll position
+    const scrollY = window.scrollY;
+    const scrollX = window.scrollX;
+
     // Reload all data (gardens and lands)
     await loadData();
     // Refresh the selected land details
     if (selectedLand) {
       await handleSelectLand(selectedLand.id);
     }
+
+    // Restore scroll position after a brief delay to ensure render is complete
+    setTimeout(() => {
+      window.scrollTo(scrollX, scrollY);
+    }, 0);
   };
 
   if (loading) {
