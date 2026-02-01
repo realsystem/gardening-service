@@ -1,8 +1,15 @@
 """User model"""
-from sqlalchemy import Column, Integer, String, DateTime, Float, Text, Boolean
+from sqlalchemy import Column, Integer, String, DateTime, Float, Text, Boolean, Enum
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.database import Base
+import enum
+
+
+class UnitSystem(str, enum.Enum):
+    """Unit system preference"""
+    METRIC = "metric"  # meters, celsius
+    IMPERIAL = "imperial"  # feet, fahrenheit
 
 
 class User(Base):
@@ -32,6 +39,9 @@ class User(Base):
     latitude = Column(Float, nullable=True)
     longitude = Column(Float, nullable=True)
     usda_zone = Column(String(10), nullable=True)  # e.g., "7a", "9b"
+
+    # Unit preferences
+    unit_system = Column(Enum(UnitSystem), nullable=False, server_default='metric')
 
     # Timestamps stored in UTC
     created_at = Column(DateTime(timezone=True), server_default=func.now())

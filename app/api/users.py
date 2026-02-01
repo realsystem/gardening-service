@@ -7,6 +7,7 @@ from app.schemas.user import UserCreate, UserResponse, UserLogin, Token, UserPro
 from app.repositories.user_repository import UserRepository
 from app.services.auth_service import AuthService
 from app.services.climate_zone_service import ClimateZoneService
+from app.services.location_service import LocationService
 from app.api.dependencies import get_current_user
 from app.models.user import User
 
@@ -32,23 +33,29 @@ def create_user(user_data: UserCreate, db: Session = Depends(get_db)):
     # Hash password
     hashed_password = AuthService.hash_password(user_data.password)
 
+    # Process ZIP code to determine unit system and coordinates
+    unit_system, geocoded_lat, geocoded_lon = LocationService.process_user_zip_code(user_data.zip_code)
+
+    # Use geocoded coordinates if available, otherwise use provided coordinates
+    latitude = geocoded_lat if geocoded_lat is not None else user_data.latitude
+    longitude = geocoded_lon if geocoded_lon is not None else user_data.longitude
+
     # Determine USDA zone
     usda_zone = None
     if user_data.zip_code:
         usda_zone = ClimateZoneService.get_zone_from_zip(user_data.zip_code)
-    elif user_data.latitude and user_data.longitude:
-        usda_zone = ClimateZoneService.get_zone_from_coordinates(
-            user_data.latitude, user_data.longitude
-        )
+    elif latitude and longitude:
+        usda_zone = ClimateZoneService.get_zone_from_coordinates(latitude, longitude)
 
     # Create user
     user = repo.create(
         email=user_data.email,
         hashed_password=hashed_password,
         zip_code=user_data.zip_code,
-        latitude=user_data.latitude,
-        longitude=user_data.longitude,
-        usda_zone=usda_zone
+        latitude=latitude,
+        longitude=longitude,
+        usda_zone=usda_zone,
+        unit_system=unit_system
     )
 
     return user
@@ -89,11 +96,32 @@ def update_user_profile(
 ):
     """
     Update current user's profile information.
+    If ZIP code is updated, re-geocode and update coordinates if available.
     """
     repo = UserRepository(db)
 
-    # Update only provided fields
+    # Get update data
     update_data = profile_data.model_dump(exclude_unset=True)
+
+    # If ZIP code is being updated, process it
+    if 'zip_code' in update_data and update_data['zip_code']:
+        new_zip = update_data['zip_code']
+
+        # Re-geocode if ZIP code changed
+        if new_zip != current_user.zip_code:
+            unit_system, geocoded_lat, geocoded_lon = LocationService.process_user_zip_code(new_zip)
+
+            # Update coordinates if geocoding succeeded
+            if geocoded_lat is not None and geocoded_lon is not None:
+                update_data['latitude'] = geocoded_lat
+                update_data['longitude'] = geocoded_lon
+
+            # Update unit system based on new ZIP
+            # Only update if user hasn't explicitly set a different unit system
+            if 'unit_system' not in update_data:
+                update_data['unit_system'] = unit_system
+
+    # Update user
     user = repo.update(current_user, **update_data)
 
     return user
