@@ -17,6 +17,7 @@ import { RuleInsightsCard } from './RuleInsightsCard';
 import { LandList } from './LandList';
 import { IrrigationDashboard } from './IrrigationDashboard';
 import { IrrigationZoneManager } from './IrrigationZoneManager';
+import { GardenDetails } from './GardenDetails';
 
 interface DashboardProps {
   user: User;
@@ -36,7 +37,7 @@ export function Dashboard({ user: initialUser, onLogout, onUserUpdate }: Dashboa
   const [priorityFilter, setPriorityFilter] = useState<'all' | 'high' | 'medium' | 'low'>('all');
   const [deletingGardenId, setDeletingGardenId] = useState<number | null>(null);
   const [confirmDeleteGardenId, setConfirmDeleteGardenId] = useState<number | null>(null);
-  const [viewMode, setViewMode] = useState<'dashboard' | 'plantings' | 'land-layout' | 'irrigation-system'>('dashboard');
+  const [viewMode, setViewMode] = useState<'dashboard' | 'plantings' | 'land-layout' | 'irrigation-system' | 'garden-details'>('dashboard');
   const [selectedGardenId, setSelectedGardenId] = useState<number | undefined>(undefined);
   const [systemStats, setSystemStats] = useState<SystemStats | null>(null);
 
@@ -260,6 +261,15 @@ export function Dashboard({ user: initialUser, onLogout, onUserUpdate }: Dashboa
               >
                 {viewMode === 'irrigation-system' ? 'Back to Dashboard' : 'Irrigation System'}
               </button>
+              {selectedGardenId && (
+                <button
+                  className="btn"
+                  style={{ backgroundColor: viewMode === 'garden-details' ? '#4a90e2' : undefined }}
+                  onClick={() => setViewMode(viewMode === 'garden-details' ? 'dashboard' : 'garden-details')}
+                >
+                  {viewMode === 'garden-details' ? 'Back to Dashboard' : 'Garden Details'}
+                </button>
+              )}
             </div>
           </div>
 
@@ -287,6 +297,11 @@ export function Dashboard({ user: initialUser, onLogout, onUserUpdate }: Dashboa
 
           {loading ? (
             <div className="loading">Loading...</div>
+          ) : viewMode === 'garden-details' && selectedGardenId ? (
+            <GardenDetails
+              gardenId={selectedGardenId}
+              onBack={() => setViewMode('dashboard')}
+            />
           ) : viewMode === 'plantings' ? (
             <PlantingsList />
           ) : viewMode === 'land-layout' ? (
