@@ -514,7 +514,7 @@ export function LandCanvas({ land, gardens, trees = [], structures = [], onUpdat
             onChange={(e) => setSnapEnabled(e.target.checked)}
             style={{ marginRight: '8px', cursor: 'pointer' }}
           />
-          <span>Snap to grid (0.1 unit precision)</span>
+          <span>Snap to grid ({convertDistance(GRID_RESOLUTION, unitSystem).toFixed(unitSystem === 'imperial' ? 2 : 1)} {unitLabels.distanceShort} precision)</span>
         </label>
         <p style={{ margin: '5px 0 0 24px', fontSize: '0.8em', color: '#666' }}>
           Hold Alt key to temporarily disable snapping while dragging
