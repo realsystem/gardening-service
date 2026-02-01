@@ -243,7 +243,7 @@ export function GardenDetails({ gardenId, onBack }: GardenDetailsProps) {
                     )}
                     {planting.health_status && (
                       <div style={{ fontSize: '0.9em', color: '#666', marginTop: '5px' }}>
-                        Health: {planting.health_status}
+                        Status: {planting.health_status}
                       </div>
                     )}
                   </div>
