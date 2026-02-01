@@ -1,3 +1,0 @@
-export/import all data per user
-counters for registered and authenticated users at the bottom of the main screen
-smaller grid for land layout
