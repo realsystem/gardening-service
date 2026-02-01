@@ -62,10 +62,9 @@ def get_companion_analysis(
     if not garden:
         raise HTTPException(status_code=404, detail="Garden not found")
 
-    # Get all active planting events in this garden with their varieties
+    # Get all planting events in this garden with positions
     plantings = db.query(PlantingEvent).join(PlantVariety).filter(
         PlantingEvent.garden_id == garden_id,
-        PlantingEvent.harvest_date.is_(None),  # Not yet harvested
         PlantingEvent.x.isnot(None),  # Has position
         PlantingEvent.y.isnot(None)
     ).all()
