@@ -170,6 +170,19 @@ def cleanup_irrigation_sources(authenticated_client: httpx.Client) -> Generator[
 
 
 @pytest.fixture(scope="function")
+def cleanup_plantings(authenticated_client: httpx.Client) -> Generator[list, None, None]:
+    """Track and cleanup planting events created during test"""
+    planting_ids = []
+    yield planting_ids
+
+    for planting_id in planting_ids:
+        try:
+            authenticated_client.delete(f"/planting-events/{planting_id}")
+        except Exception:
+            pass
+
+
+@pytest.fixture(scope="function")
 def test_land(authenticated_client: httpx.Client) -> dict:
     """Create a test land plot for tree and garden placement tests"""
     land_data = {

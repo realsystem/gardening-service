@@ -19,6 +19,7 @@ from app.api.structures import router as structures_router
 from app.api.export_import import router as export_import_router
 from app.api.system import router as system_router
 from app.api.admin import router as admin_router
+from app.api.companion_analysis import router as companion_analysis_router
 
 __all__ = [
     "users_router",
@@ -42,4 +43,5 @@ __all__ = [
     "export_import_router",
     "system_router",
     "admin_router",
+    "companion_analysis_router",
 ]
