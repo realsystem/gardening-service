@@ -190,7 +190,7 @@
 .tree-canopy-group {
   position: absolute;
   pointer-events: none; /* Trees don't interfere with garden dragging */
-  z-index: 5; /* Behind gardens but above grid */
+  z-index: 20; /* Above gardens to show tree coverage */
 }
 
 .tree-canopy {
@@ -204,7 +204,7 @@
   pointer-events: all;
   cursor: help;
   transition: background-color 0.2s, border-color 0.2s;
-  z-index: 5; /* Behind gardens */
+  z-index: 20; /* Above gardens to show tree coverage */
 }
 
 .tree-canopy:hover {
