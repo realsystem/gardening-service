@@ -25,8 +25,10 @@ from app.api.dependencies import get_current_user
 from app.models.user import User
 from app.services.layout_service import (
     validate_spatial_data_complete,
-    validate_garden_placement
+    validate_garden_placement,
+    apply_snap_to_grid
 )
+from app.utils.grid_config import GRID_RESOLUTION
 
 router = APIRouter(prefix="/gardens", tags=["gardens"])
 
@@ -364,6 +366,7 @@ def update_garden_layout(
     y = layout_data.y
     width = layout_data.width
     height = layout_data.height
+    snap_enabled = layout_data.snap_to_grid
 
     # Validate spatial data completeness (all-or-nothing)
     validation_error = validate_spatial_data_complete(land_id, x, y, width, height)
@@ -400,7 +403,10 @@ def update_garden_layout(
             detail="Not authorized to place gardens on this land"
         )
 
-    # Validate placement (bounds and overlap)
+    # Apply snap-to-grid if enabled
+    x, y, width, height = apply_snap_to_grid(x, y, width, height, snap_enabled)
+
+    # Validate placement (bounds and overlap) with snapped coordinates
     placement_error = validate_garden_placement(
         garden_id=garden_id,
         land=land,

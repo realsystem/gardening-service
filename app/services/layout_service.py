@@ -1,8 +1,32 @@
 """Layout validation service for garden spatial placement"""
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Tuple
 from app.models.garden import Garden
 from app.models.land import Land
 from app.schemas.garden_layout import LayoutValidationError
+from app.utils.grid_config import snap_to_grid, snap_rectangle_to_grid, validate_grid_aligned, GRID_RESOLUTION
+
+
+def apply_snap_to_grid(
+    x: float,
+    y: float,
+    width: float,
+    height: float,
+    snap_enabled: bool = True
+) -> Tuple[float, float, float, float]:
+    """
+    Apply snap-to-grid to coordinates if enabled.
+
+    Args:
+        x, y: Top-left corner coordinates
+        width, height: Rectangle dimensions
+        snap_enabled: Whether to apply snapping (default: True)
+
+    Returns:
+        Tuple of (x, y, width, height), snapped if enabled
+    """
+    if snap_enabled:
+        return snap_rectangle_to_grid(x, y, width, height)
+    return x, y, width, height
 
 
 def check_overlap(garden1: Dict[str, float], garden2: Dict[str, float]) -> bool:

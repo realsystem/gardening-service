@@ -20,13 +20,23 @@ interface DragState {
   currentY?: number;
 }
 
-const GRID_SIZE = 50; // 50px per unit
+// Grid configuration
+const GRID_SIZE = 50; // 50px per unit (for visualization)
+const GRID_RESOLUTION = 0.1; // 0.1 units per grid cell (10× finer than 1 unit)
+const GRID_CELLS_PER_UNIT = 10; // Number of minor grid cells per major unit
+
+// Snap helper function
+const snapToGrid = (value: number, resolution: number): number => {
+  return Math.round(value / resolution) * resolution;
+};
 
 export function LandCanvas({ land, gardens, trees = [], onUpdate }: LandCanvasProps) {
   const [dragState, setDragState] = useState<DragState | null>(null);
   const [selectedGarden, setSelectedGarden] = useState<number | null>(null);
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [placingGarden, setPlacingGarden] = useState<number | null>(null);
+  const [snapEnabled, setSnapEnabled] = useState<boolean>(true); // Snap enabled by default
+  const [altKeyPressed, setAltKeyPressed] = useState<boolean>(false); // Track Alt key
   const canvasRef = useRef<HTMLDivElement>(null);
 
   // Calculate canvas dimensions
@@ -95,9 +105,10 @@ export function LandCanvas({ land, gardens, trees = [], onUpdate }: LandCanvasPr
     newX = Math.max(0, Math.min(newX, land.width - garden.width));
     newY = Math.max(0, Math.min(newY, land.height - garden.height));
 
-    // Snap to grid (optional)
-    const snappedX = Math.round(newX * 2) / 2; // Snap to 0.5 units
-    const snappedY = Math.round(newY * 2) / 2;
+    // Apply snap-to-grid if enabled and Alt key not pressed
+    const shouldSnap = snapEnabled && !altKeyPressed;
+    const snappedX = shouldSnap ? snapToGrid(newX, GRID_RESOLUTION) : newX;
+    const snappedY = shouldSnap ? snapToGrid(newY, GRID_RESOLUTION) : newY;
 
     try {
       await api.updateGardenLayout(dragState.gardenId, {
@@ -106,6 +117,7 @@ export function LandCanvas({ land, gardens, trees = [], onUpdate }: LandCanvasPr
         y: snappedY,
         width: garden.width,
         height: garden.height,
+        snap_to_grid: shouldSnap,
       });
       // Update local state optimistically
       garden.x = snappedX;
@@ -133,6 +145,29 @@ export function LandCanvas({ land, gardens, trees = [], onUpdate }: LandCanvasPr
     }
   }, [dragState]);
 
+  // Keyboard event listeners for Alt key (temporary snap disable)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.altKey) {
+        setAltKeyPressed(true);
+      }
+    };
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (!e.altKey) {
+        setAltKeyPressed(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, []);
+
   const handlePlaceGarden = async (garden: Garden) => {
     // Prevent double-click placement
     if (placingGarden) {
@@ -149,10 +184,18 @@ export function LandCanvas({ land, gardens, trees = [], onUpdate }: LandCanvasPr
     setPlacingGarden(garden.id);
 
     // Place in center with default size
-    const defaultWidth = 2;
-    const defaultHeight = 2;
-    const centerX = Math.max(0, (land.width - defaultWidth) / 2);
-    const centerY = Math.max(0, (land.height - defaultHeight) / 2);
+    let defaultWidth = 2;
+    let defaultHeight = 2;
+    let centerX = Math.max(0, (land.width - defaultWidth) / 2);
+    let centerY = Math.max(0, (land.height - defaultHeight) / 2);
+
+    // Apply snap if enabled
+    if (snapEnabled) {
+      centerX = snapToGrid(centerX, GRID_RESOLUTION);
+      centerY = snapToGrid(centerY, GRID_RESOLUTION);
+      defaultWidth = snapToGrid(defaultWidth, GRID_RESOLUTION);
+      defaultHeight = snapToGrid(defaultHeight, GRID_RESOLUTION);
+    }
 
     console.log('Position:', { centerX, centerY, defaultWidth, defaultHeight });
 
@@ -165,6 +208,7 @@ export function LandCanvas({ land, gardens, trees = [], onUpdate }: LandCanvasPr
           y: centerY,
           width: defaultWidth,
           height: defaultHeight,
+          snap_to_grid: snapEnabled,
         }
       });
       const result = await api.updateGardenLayout(garden.id, {
@@ -173,6 +217,7 @@ export function LandCanvas({ land, gardens, trees = [], onUpdate }: LandCanvasPr
         y: centerY,
         width: defaultWidth,
         height: defaultHeight,
+        snap_to_grid: snapEnabled,
       });
       console.log('Garden placed successfully:', result);
       setErrorMessage('');
@@ -218,6 +263,22 @@ export function LandCanvas({ land, gardens, trees = [], onUpdate }: LandCanvasPr
         <div className="error-message">{errorMessage}</div>
       )}
 
+      {/* Grid controls */}
+      <div style={{ padding: '10px', backgroundColor: '#f9f9f9', borderRadius: '4px', marginBottom: '10px' }}>
+        <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', fontSize: '0.9em' }}>
+          <input
+            type="checkbox"
+            checked={snapEnabled}
+            onChange={(e) => setSnapEnabled(e.target.checked)}
+            style={{ marginRight: '8px', cursor: 'pointer' }}
+          />
+          <span>Snap to grid (0.1 unit precision)</span>
+        </label>
+        <p style={{ margin: '5px 0 0 24px', fontSize: '0.8em', color: '#666' }}>
+          Hold Alt key to temporarily disable snapping while dragging
+        </p>
+      </div>
+
       <div className="canvas-wrapper">
         <div
           ref={canvasRef}
@@ -227,11 +288,26 @@ export function LandCanvas({ land, gardens, trees = [], onUpdate }: LandCanvasPr
             height: `${canvasHeight}px`,
           }}
         >
-          {/* Grid lines */}
+          {/* Grid lines - Minor and Major */}
           <svg className="grid-overlay" width={canvasWidth} height={canvasHeight}>
             <defs>
+              {/* Minor grid (0.1 unit cells) - subtle */}
               <pattern
-                id="grid"
+                id="minor-grid"
+                width={GRID_SIZE / GRID_CELLS_PER_UNIT}
+                height={GRID_SIZE / GRID_CELLS_PER_UNIT}
+                patternUnits="userSpaceOnUse"
+              >
+                <path
+                  d={`M ${GRID_SIZE / GRID_CELLS_PER_UNIT} 0 L 0 0 0 ${GRID_SIZE / GRID_CELLS_PER_UNIT}`}
+                  fill="none"
+                  stroke="#f0f0f0"
+                  strokeWidth="0.5"
+                />
+              </pattern>
+              {/* Major grid (1 unit cells) - more visible */}
+              <pattern
+                id="major-grid"
                 width={GRID_SIZE}
                 height={GRID_SIZE}
                 patternUnits="userSpaceOnUse"
@@ -239,12 +315,14 @@ export function LandCanvas({ land, gardens, trees = [], onUpdate }: LandCanvasPr
                 <path
                   d={`M ${GRID_SIZE} 0 L 0 0 0 ${GRID_SIZE}`}
                   fill="none"
-                  stroke="#e0e0e0"
+                  stroke="#d0d0d0"
                   strokeWidth="1"
                 />
               </pattern>
             </defs>
-            <rect width="100%" height="100%" fill="url(#grid)" />
+            {/* Render both grids */}
+            <rect width="100%" height="100%" fill="url(#minor-grid)" />
+            <rect width="100%" height="100%" fill="url(#major-grid)" />
           </svg>
 
           {/* Trees (render first, so they appear behind gardens) */}
@@ -347,6 +425,7 @@ export function LandCanvas({ land, gardens, trees = [], onUpdate }: LandCanvasPr
           <li>Drag gardens to reposition them</li>
           <li>Click × to remove a garden from the land</li>
           <li>Gardens cannot overlap</li>
+          <li>Grid: Minor lines = 0.1 units, Major lines = 1 unit</li>
         </ul>
       </div>
     </div>

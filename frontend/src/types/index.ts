@@ -424,6 +424,7 @@ export interface GardenLayoutUpdate {
   y?: number;
   width?: number;
   height?: number;
+  snap_to_grid?: boolean;
 }
 
 // ============================================================================

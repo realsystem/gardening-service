@@ -15,6 +15,19 @@ class GardenLayoutUpdate(BaseModel):
     y: Optional[float] = Field(None, ge=0, description="Y-coordinate (top-left origin)")
     width: Optional[float] = Field(None, gt=0, description="Garden width (must be > 0)")
     height: Optional[float] = Field(None, gt=0, description="Garden height (must be > 0)")
+    snap_to_grid: bool = Field(True, description="Whether to snap coordinates to grid (default: True)")
+
+
+class GardenLayoutResponse(BaseModel):
+    """Response schema for garden layout operations"""
+    garden_id: int
+    land_id: Optional[int]
+    x: Optional[float]
+    y: Optional[float]
+    width: Optional[float]
+    height: Optional[float]
+    grid_resolution: float = Field(description="Grid resolution used (units per grid cell)")
+    snapped: bool = Field(description="Whether coordinates were snapped to grid")
 
 
 class LayoutValidationError(BaseModel):
