@@ -42,6 +42,8 @@ import type {
   TreeCreate,
   TreeUpdate,
   GardenShadingInfo,
+  GardenSunExposure,
+  TreeShadowExtent,
   ExportData,
   ImportPreview,
   ImportRequest,
@@ -676,6 +678,16 @@ class ApiClient {
     return this.request<GardenShadingInfo>(`/gardens/${gardenId}/shading`);
   }
 
+  // Sun exposure (seasonal sun path model)
+  async getGardenSunExposure(gardenId: number): Promise<GardenSunExposure> {
+    return this.request<GardenSunExposure>(`/gardens/${gardenId}/sun-exposure`);
+  }
+
+  async getTreeShadowExtent(treeId: number, latitude?: number): Promise<TreeShadowExtent> {
+    const params = latitude !== undefined ? `?latitude=${latitude}` : '';
+    return this.request<TreeShadowExtent>(`/trees/${treeId}/shadow-extent${params}`);
+  }
+
   // ========================================================================
   // DATA EXPORT/IMPORT
   // ========================================================================
@@ -685,7 +697,7 @@ class ApiClient {
     return this.request<ExportData>(`/export-import/export${params}`);
   }
 
-  async previewImport(data: ExportData, mode: 'dry_run' | 'merge' | 'overwrite' = 'dry_run'): Promise<ImportPreview> {
+  async previewImport(data: ExportData, _mode: 'dry_run' | 'merge' | 'overwrite' = 'dry_run'): Promise<ImportPreview> {
     return this.request<ImportPreview>('/export-import/import/preview', {
       method: 'POST',
       body: JSON.stringify(data),

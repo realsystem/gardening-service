@@ -466,6 +466,41 @@ export interface TreeUpdate {
   height?: number;
 }
 
+// Sun exposure types
+export interface SeasonalShading {
+  shaded_percentage: number;
+  exposure_category: string;
+  affected_by_count: number;
+}
+
+export interface GardenSunExposure {
+  seasonal_exposure_score: number | null;
+  seasonal_shading: {
+    winter?: SeasonalShading;
+    equinox?: SeasonalShading;
+    summer?: SeasonalShading;
+  } | null;
+  exposure_category: string | null;
+  shading_sources: number[];
+  warnings: string[];
+}
+
+export interface ShadowRectangle {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+export interface TreeShadowExtent {
+  seasonal_shadows: {
+    winter?: ShadowRectangle;
+    equinox?: ShadowRectangle;
+    summer?: ShadowRectangle;
+  } | null;
+  max_shadow_length: number | null;
+}
+
 export interface ShadingContribution {
   tree_id: number;
   tree_name: string;

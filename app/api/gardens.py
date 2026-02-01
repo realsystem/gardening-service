@@ -520,3 +520,40 @@ def get_garden_shading(
         ],
         baseline_sun_exposure=1.0
     )
+
+
+@router.get("/{garden_id}/sun-exposure")
+def get_garden_sun_exposure(
+    garden_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Calculate seasonal sun exposure for a garden based on tree shadow projections.
+
+    Uses sun-path model with seasonal sun angles to predict shading throughout the year.
+    Returns exposure score, seasonal shading percentages, and warnings.
+
+    Requires garden to have spatial layout (x, y, width, height) on a land plot.
+    """
+    from app.services.sun_exposure_service import SunExposureService
+
+    repo = GardenRepository(db)
+    garden = repo.get_by_id(garden_id)
+
+    if not garden:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Garden not found"
+        )
+
+    if garden.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to access this garden"
+        )
+
+    # Get sun exposure data using the service
+    exposure_data = SunExposureService.get_garden_sun_exposure(garden, db)
+
+    return exposure_data

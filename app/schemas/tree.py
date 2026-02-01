@@ -1,6 +1,6 @@
 """Tree schemas for API"""
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, Dict
 from datetime import datetime
 
 
@@ -69,3 +69,24 @@ class GardenShadingInfo(BaseModel):
     total_shade_factor: float = Field(..., ge=0.0, le=1.0, description="Overall shade reduction factor")
     contributing_trees: list[ShadingContribution] = Field(default_factory=list, description="Trees casting shade on this garden")
     baseline_sun_exposure: float = Field(1.0, description="Baseline sun exposure without trees")
+
+
+class TreeResponseWithShadowExtent(TreeResponse):
+    """
+    Extended tree response with computed seasonal shadow data.
+
+    These fields are computed from sun-path model based on:
+    - Tree height
+    - Seasonal sun angles
+    - Latitude
+
+    Not stored in database - calculated at request time.
+    """
+    seasonal_shadows: Optional[Dict[str, dict]] = Field(
+        None,
+        description="Shadow projections for each season (winter, equinox, summer)"
+    )
+    max_shadow_length: Optional[float] = Field(
+        None,
+        description="Maximum shadow length across all seasons (in land units)"
+    )
