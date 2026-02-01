@@ -365,6 +365,7 @@ export function LandCanvas({ land, gardens, trees = [], onUpdate }: LandCanvasPr
           style={{
             width: `${canvasWidth}px`,
             height: `${canvasHeight}px`,
+            position: 'relative',
           }}
         >
           {/* Grid lines - Minor and Major */}
