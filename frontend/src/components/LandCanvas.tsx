@@ -11,7 +11,8 @@ interface LandCanvasProps {
 }
 
 interface DragState {
-  gardenId: number;
+  type: 'garden' | 'tree';
+  id: number;
   offsetX: number;
   offsetY: number;
   initialX: number;
@@ -60,7 +61,8 @@ export function LandCanvas({ land, gardens, trees = [], onUpdate }: LandCanvasPr
     const offsetY = e.clientY - rect.top - garden.y * GRID_SIZE;
 
     setDragState({
-      gardenId: garden.id,
+      type: 'garden',
+      id: garden.id,
       offsetX,
       offsetY,
       initialX: garden.x,
@@ -70,19 +72,48 @@ export function LandCanvas({ land, gardens, trees = [], onUpdate }: LandCanvasPr
     setErrorMessage('');
   };
 
+  const handleTreeMouseDown = (e: React.MouseEvent, tree: Tree) => {
+    if (tree.x == null || tree.y == null) return;
+
+    const rect = canvasRef.current?.getBoundingClientRect();
+    if (!rect) return;
+
+    const offsetX = e.clientX - rect.left - tree.x * GRID_SIZE;
+    const offsetY = e.clientY - rect.top - tree.y * GRID_SIZE;
+
+    setDragState({
+      type: 'tree',
+      id: tree.id,
+      offsetX,
+      offsetY,
+      initialX: tree.x,
+      initialY: tree.y,
+    });
+    setErrorMessage('');
+  };
+
   const handleMouseMove = (e: MouseEvent) => {
     if (!dragState || !canvasRef.current) return;
-
-    const garden = land.gardens.find(g => g.id === dragState.gardenId);
-    if (!garden || garden.width == null || garden.height == null) return;
 
     const rect = canvasRef.current.getBoundingClientRect();
     let x = (e.clientX - rect.left - dragState.offsetX) / GRID_SIZE;
     let y = (e.clientY - rect.top - dragState.offsetY) / GRID_SIZE;
 
-    // Constrain to land boundaries
-    x = Math.max(0, Math.min(x, land.width - garden.width));
-    y = Math.max(0, Math.min(y, land.height - garden.height));
+    if (dragState.type === 'garden') {
+      const garden = land.gardens.find(g => g.id === dragState.id);
+      if (!garden || garden.width == null || garden.height == null) return;
+
+      // Constrain to land boundaries
+      x = Math.max(0, Math.min(x, land.width - garden.width));
+      y = Math.max(0, Math.min(y, land.height - garden.height));
+    } else if (dragState.type === 'tree') {
+      const tree = trees.find(t => t.id === dragState.id);
+      if (!tree || tree.canopy_radius == null) return;
+
+      // Constrain to land boundaries (tree center point)
+      x = Math.max(tree.canopy_radius, Math.min(x, land.width - tree.canopy_radius));
+      y = Math.max(tree.canopy_radius, Math.min(y, land.height - tree.canopy_radius));
+    }
 
     // Update drag state to trigger re-render with current position
     setDragState({
@@ -95,46 +126,85 @@ export function LandCanvas({ land, gardens, trees = [], onUpdate }: LandCanvasPr
   const handleMouseUp = async (e: MouseEvent) => {
     if (!dragState || !canvasRef.current) return;
 
-    const garden = land.gardens.find(g => g.id === dragState.gardenId);
-    if (!garden || garden.width == null || garden.height == null) {
-      setDragState(null);
-      return;
-    }
-
     const rect = canvasRef.current.getBoundingClientRect();
     let newX = (e.clientX - rect.left - dragState.offsetX) / GRID_SIZE;
     let newY = (e.clientY - rect.top - dragState.offsetY) / GRID_SIZE;
 
-    // Constrain to land boundaries
-    newX = Math.max(0, Math.min(newX, land.width - garden.width));
-    newY = Math.max(0, Math.min(newY, land.height - garden.height));
+    if (dragState.type === 'garden') {
+      const garden = land.gardens.find(g => g.id === dragState.id);
+      if (!garden || garden.width == null || garden.height == null) {
+        setDragState(null);
+        return;
+      }
 
-    // Apply snap-to-grid if enabled and Alt key not pressed
-    const shouldSnap = snapEnabled && !altKeyPressed;
-    const snappedX = shouldSnap ? snapToGrid(newX, GRID_RESOLUTION) : newX;
-    const snappedY = shouldSnap ? snapToGrid(newY, GRID_RESOLUTION) : newY;
+      // Constrain to land boundaries
+      newX = Math.max(0, Math.min(newX, land.width - garden.width));
+      newY = Math.max(0, Math.min(newY, land.height - garden.height));
 
-    try {
-      await api.updateGardenLayout(dragState.gardenId, {
-        land_id: land.id,
-        x: snappedX,
-        y: snappedY,
-        width: garden.width,
-        height: garden.height,
-        snap_to_grid: shouldSnap,
-      });
-      // Update local state optimistically
-      garden.x = snappedX;
-      garden.y = snappedY;
-      setErrorMessage('');
-      // Don't reload - position is already updated locally
-    } catch (error) {
-      // Revert to original position on error
-      garden.x = dragState.initialX;
-      garden.y = dragState.initialY;
-      setErrorMessage((error as Error).message || 'Failed to update garden position');
-    } finally {
-      setDragState(null);
+      // Apply snap-to-grid if enabled and Alt key not pressed
+      const shouldSnap = snapEnabled && !altKeyPressed;
+      const snappedX = shouldSnap ? snapToGrid(newX, GRID_RESOLUTION) : newX;
+      const snappedY = shouldSnap ? snapToGrid(newY, GRID_RESOLUTION) : newY;
+
+      try {
+        await api.updateGardenLayout(dragState.id, {
+          land_id: land.id,
+          x: snappedX,
+          y: snappedY,
+          width: garden.width,
+          height: garden.height,
+          snap_to_grid: shouldSnap,
+        });
+        // Update local state optimistically
+        garden.x = snappedX;
+        garden.y = snappedY;
+        setErrorMessage('');
+        // Don't reload - position is already updated locally
+      } catch (error) {
+        // Revert to original position on error
+        garden.x = dragState.initialX;
+        garden.y = dragState.initialY;
+        setErrorMessage((error as Error).message || 'Failed to update garden position');
+      } finally {
+        setDragState(null);
+      }
+    } else if (dragState.type === 'tree') {
+      const tree = trees.find(t => t.id === dragState.id);
+      if (!tree || tree.canopy_radius == null) {
+        setDragState(null);
+        return;
+      }
+
+      // Constrain to land boundaries (tree center point)
+      newX = Math.max(tree.canopy_radius, Math.min(newX, land.width - tree.canopy_radius));
+      newY = Math.max(tree.canopy_radius, Math.min(newY, land.height - tree.canopy_radius));
+
+      // Apply snap-to-grid if enabled and Alt key not pressed
+      const shouldSnap = snapEnabled && !altKeyPressed;
+      const snappedX = shouldSnap ? snapToGrid(newX, GRID_RESOLUTION) : newX;
+      const snappedY = shouldSnap ? snapToGrid(newY, GRID_RESOLUTION) : newY;
+
+      try {
+        await api.updateTree(dragState.id, {
+          x: snappedX,
+          y: snappedY,
+        });
+        // Update local state optimistically
+        tree.x = snappedX;
+        tree.y = snappedY;
+        setErrorMessage('');
+        // Reload shadow data if seasonal shadows are enabled
+        if (showSeasonalShadows) {
+          await onUpdate();
+        }
+      } catch (error) {
+        // Revert to original position on error
+        tree.x = dragState.initialX;
+        tree.y = dragState.initialY;
+        setErrorMessage((error as Error).message || 'Failed to update tree position');
+      } finally {
+        setDragState(null);
+      }
     }
   };
 
@@ -455,12 +525,17 @@ export function LandCanvas({ land, gardens, trees = [], onUpdate }: LandCanvasPr
 
           {/* Trees (render first, so they appear behind gardens) */}
           {trees.map((tree) => {
+            // Use drag position if this tree is being dragged
+            const isDragging = dragState?.type === 'tree' && dragState?.id === tree.id;
+            const displayX = isDragging && dragState.currentX !== undefined ? dragState.currentX : tree.x;
+            const displayY = isDragging && dragState.currentY !== undefined ? dragState.currentY : tree.y;
+
             const canopyDiameter = tree.canopy_radius * 2 * GRID_SIZE;
-            const centerX = tree.x * GRID_SIZE;
-            const centerY = tree.y * GRID_SIZE;
+            const centerX = displayX * GRID_SIZE;
+            const centerY = displayY * GRID_SIZE;
 
             return (
-              <div key={`tree-${tree.id}`} className="tree-canopy-group">
+              <div key={`tree-${tree.id}`} className={`tree-canopy-group ${isDragging ? 'dragging' : ''}`}>
                 {/* Tree canopy (shade area) */}
                 <div
                   className="tree-canopy"
@@ -481,6 +556,8 @@ export function LandCanvas({ land, gardens, trees = [], onUpdate }: LandCanvasPr
                     left: `${centerX - 6}px`,
                     top: `${centerY - 6}px`,
                   }}
+                  onMouseDown={(e) => handleTreeMouseDown(e, tree)}
+                  title={`Drag to move ${tree.name}`}
                 />
               </div>
             );
@@ -491,7 +568,7 @@ export function LandCanvas({ land, gardens, trees = [], onUpdate }: LandCanvasPr
             if (garden.x == null || garden.y == null || garden.width == null || garden.height == null) return null;
 
             // Use drag position if this garden is being dragged
-            const isDragging = dragState?.gardenId === garden.id;
+            const isDragging = dragState?.type === 'garden' && dragState?.id === garden.id;
             const displayX = isDragging && dragState.currentX !== undefined ? dragState.currentX : garden.x;
             const displayY = isDragging && dragState.currentY !== undefined ? dragState.currentY : garden.y;
 
