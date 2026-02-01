@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
 import { api } from '../services/api';
-import type { LandWithGardens, Garden, GardenSpatialInfo } from '../types';
+import type { LandWithGardens, Garden, GardenSpatialInfo, Tree } from '../types';
 import './LandCanvas.css';
 
 interface LandCanvasProps {
   land: LandWithGardens;
   gardens: Garden[];
+  trees?: Tree[];
   onUpdate: () => void;
 }
 
@@ -21,7 +22,7 @@ interface DragState {
 
 const GRID_SIZE = 50; // 50px per unit
 
-export function LandCanvas({ land, gardens, onUpdate }: LandCanvasProps) {
+export function LandCanvas({ land, gardens, trees = [], onUpdate }: LandCanvasProps) {
   const [dragState, setDragState] = useState<DragState | null>(null);
   const [selectedGarden, setSelectedGarden] = useState<number | null>(null);
   const [errorMessage, setErrorMessage] = useState<string>('');
@@ -245,6 +246,39 @@ export function LandCanvas({ land, gardens, onUpdate }: LandCanvasProps) {
             </defs>
             <rect width="100%" height="100%" fill="url(#grid)" />
           </svg>
+
+          {/* Trees (render first, so they appear behind gardens) */}
+          {trees.map((tree) => {
+            const canopyDiameter = tree.canopy_radius * 2 * GRID_SIZE;
+            const centerX = tree.x * GRID_SIZE;
+            const centerY = tree.y * GRID_SIZE;
+
+            return (
+              <div key={`tree-${tree.id}`} className="tree-canopy-group">
+                {/* Tree canopy (shade area) */}
+                <div
+                  className="tree-canopy"
+                  style={{
+                    left: `${centerX - tree.canopy_radius * GRID_SIZE}px`,
+                    top: `${centerY - tree.canopy_radius * GRID_SIZE}px`,
+                    width: `${canopyDiameter}px`,
+                    height: `${canopyDiameter}px`,
+                  }}
+                  title={`${tree.name} (canopy: ${tree.canopy_radius} units)`}
+                >
+                  <span className="tree-label">{tree.name}</span>
+                </div>
+                {/* Tree trunk marker */}
+                <div
+                  className="tree-trunk"
+                  style={{
+                    left: `${centerX - 6}px`,
+                    top: `${centerY - 6}px`,
+                  }}
+                />
+              </div>
+            );
+          })}
 
           {/* Placed gardens */}
           {land.gardens.map((garden) => {

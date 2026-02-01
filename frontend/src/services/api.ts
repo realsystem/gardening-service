@@ -37,7 +37,11 @@ import type {
   WateringEventCreate,
   WateringEventUpdate,
   IrrigationOverview,
-  IrrigationInsightsResponse
+  IrrigationInsightsResponse,
+  Tree,
+  TreeCreate,
+  TreeUpdate,
+  GardenShadingInfo
 } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
@@ -620,6 +624,51 @@ class ApiClient {
     return this.request<{ message: string }>(`/irrigation-system/gardens/${gardenId}/assign-zone${params}`, {
       method: 'POST',
     });
+  }
+
+  // ========================================================================
+  // TREE SHADING
+  // ========================================================================
+
+  // Trees
+  async createTree(data: TreeCreate): Promise<Tree> {
+    return this.request<Tree>('/trees', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getTrees(): Promise<Tree[]> {
+    return this.request<Tree[]>('/trees');
+  }
+
+  async getTree(treeId: number): Promise<Tree> {
+    return this.request<Tree>(`/trees/${treeId}`);
+  }
+
+  async getTreesOnLand(landId: number): Promise<Tree[]> {
+    return this.request<Tree[]>(`/trees/land/${landId}`);
+  }
+
+  async updateTree(treeId: number, data: TreeUpdate): Promise<Tree> {
+    return this.request<Tree>(`/trees/${treeId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteTree(treeId: number): Promise<void> {
+    await fetch(`${API_BASE_URL}/trees/${treeId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${this.token}`,
+      },
+    });
+  }
+
+  // Garden shading
+  async getGardenShading(gardenId: number): Promise<GardenShadingInfo> {
+    return this.request<GardenShadingInfo>(`/gardens/${gardenId}/shading`);
   }
 }
 
