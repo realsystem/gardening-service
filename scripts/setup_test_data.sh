@@ -215,7 +215,133 @@ if echo "$PATCH3_RESPONSE" | grep -q "error"; then
 fi
 echo ""
 
-# Step 6: Create Irrigation Sources
+# Step 6: Create Trees for Sun-Path Visualization
+echo "Step 6: Creating trees for seasonal shadow analysis..."
+
+# Get tree species IDs
+SPECIES=$(curl -s -X GET "${API_URL}/tree-species" \
+  -H "Authorization: Bearer ${TOKEN}" 2>/dev/null || echo "[]")
+
+# Extract species IDs (fallback to generic IDs if endpoint doesn't exist yet)
+OAK_ID=$(echo "$SPECIES" | python3 -c "import sys, json; data=json.load(sys.stdin); print(next((s['id'] for s in data if 'Oak' in s.get('common_name', '')), 1))" 2>/dev/null || echo "1")
+MAPLE_ID=$(echo "$SPECIES" | python3 -c "import sys, json; data=json.load(sys.stdin); print(next((s['id'] for s in data if 'Maple' in s.get('common_name', '')), 2))" 2>/dev/null || echo "2")
+PINE_ID=$(echo "$SPECIES" | python3 -c "import sys, json; data=json.load(sys.stdin); print(next((s['id'] for s in data if 'Pine' in s.get('common_name', '')), 3))" 2>/dev/null || echo "3")
+
+# Tree 1: Large Oak south of Vegetable Garden (creates significant shading)
+# Garden is at (1,1) with size 14x10, so placing tree at x=8, y=-5 (south of garden)
+TREE1_RESPONSE=$(curl -s -X POST "${API_URL}/trees" \
+  -H "Authorization: Bearer ${TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"land_id\": ${LAND_ID},
+    \"name\": \"Mature Oak\",
+    \"species_id\": ${OAK_ID},
+    \"x\": 8.0,
+    \"y\": -5.0,
+    \"height\": 18.0,
+    \"canopy_radius\": 4.5,
+    \"notes\": \"Large shade tree south of vegetable garden - demonstrates winter shadow impact\"
+  }" 2>/dev/null)
+TREE1_ID=$(echo "$TREE1_RESPONSE" | grep -o '"id":[0-9]*' | head -1 | cut -d':' -f2)
+if [ ! -z "$TREE1_ID" ] && [ "$TREE1_ID" != "" ]; then
+  echo "✓ Mature Oak created (ID: $TREE1_ID) - 18ft tall, 4.5ft radius"
+  echo "  Position: (8, -5) - South of Vegetable Garden (demonstrates significant shading)"
+else
+  echo "✗ Failed to create Mature Oak - trees feature may not be enabled"
+fi
+
+# Tree 2: Medium Maple east of Herb Garden (partial shading)
+# Garden is at (17,1) with size 14x10, so placing tree at x=33, y=6 (east side)
+TREE2_RESPONSE=$(curl -s -X POST "${API_URL}/trees" \
+  -H "Authorization: Bearer ${TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"land_id\": ${LAND_ID},
+    \"name\": \"Red Maple\",
+    \"species_id\": ${MAPLE_ID},
+    \"x\": 33.0,
+    \"y\": 6.0,
+    \"height\": 12.0,
+    \"canopy_radius\": 3.0,
+    \"notes\": \"Medium tree east of herb garden - minimal shadow impact\"
+  }" 2>/dev/null)
+TREE2_ID=$(echo "$TREE2_RESPONSE" | grep -o '"id":[0-9]*' | head -1 | cut -d':' -f2)
+if [ ! -z "$TREE2_ID" ] && [ "$TREE2_ID" != "" ]; then
+  echo "✓ Red Maple created (ID: $TREE2_ID) - 12ft tall, 3ft radius"
+  echo "  Position: (33, 6) - East of Herb Garden (minimal shading)"
+fi
+
+# Tree 3: Tall Pine north of Flower Garden (no shading - shadows cast away)
+# Garden is at (1,13) with size 30x11, so placing tree at x=16, y=26 (north of garden)
+TREE3_RESPONSE=$(curl -s -X POST "${API_URL}/trees" \
+  -H "Authorization: Bearer ${TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"land_id\": ${LAND_ID},
+    \"name\": \"White Pine\",
+    \"species_id\": ${PINE_ID},
+    \"x\": 16.0,
+    \"y\": 26.0,
+    \"height\": 22.0,
+    \"canopy_radius\": 3.5,
+    \"notes\": \"Tall evergreen north of flower garden - shadows cast away from garden\"
+  }" 2>/dev/null)
+TREE3_ID=$(echo "$TREE3_RESPONSE" | grep -o '"id":[0-9]*' | head -1 | cut -d':' -f2)
+if [ ! -z "$TREE3_ID" ] && [ "$TREE3_ID" != "" ]; then
+  echo "✓ White Pine created (ID: $TREE3_ID) - 22ft tall, 3.5ft radius"
+  echo "  Position: (16, 26) - North of Flower Garden (demonstrates zero shading)"
+fi
+
+# Tree 4: Small decorative tree in corner (minimal impact)
+TREE4_RESPONSE=$(curl -s -X POST "${API_URL}/trees" \
+  -H "Authorization: Bearer ${TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"land_id\": ${LAND_ID},
+    \"name\": \"Ornamental Cherry\",
+    \"species_id\": ${OAK_ID},
+    \"x\": 31.0,
+    \"y\": 23.0,
+    \"height\": 8.0,
+    \"canopy_radius\": 2.0,
+    \"notes\": \"Small decorative tree - short shadows\"
+  }" 2>/dev/null)
+TREE4_ID=$(echo "$TREE4_RESPONSE" | grep -o '"id":[0-9]*' | head -1 | cut -d':' -f2)
+if [ ! -z "$TREE4_ID" ] && [ "$TREE4_ID" != "" ]; then
+  echo "✓ Ornamental Cherry created (ID: $TREE4_ID) - 8ft tall, 2ft radius"
+  echo "  Position: (31, 23) - Southeast corner (small shadows)"
+fi
+
+# Tree 5: Medium tree south-southwest of Flower Garden (moderate shading)
+TREE5_RESPONSE=$(curl -s -X POST "${API_URL}/trees" \
+  -H "Authorization: Bearer ${TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"land_id\": ${LAND_ID},
+    \"name\": \"Sugar Maple\",
+    \"species_id\": ${MAPLE_ID},
+    \"x\": 10.0,
+    \"y\": 9.0,
+    \"height\": 15.0,
+    \"canopy_radius\": 3.5,
+    \"notes\": \"Medium shade tree - demonstrates moderate seasonal shading\"
+  }" 2>/dev/null)
+TREE5_ID=$(echo "$TREE5_RESPONSE" | grep -o '"id":[0-9]*' | head -1 | cut -d':' -f2)
+if [ ! -z "$TREE5_ID" ] && [ "$TREE5_ID" != "" ]; then
+  echo "✓ Sugar Maple created (ID: $TREE5_ID) - 15ft tall, 3.5ft radius"
+  echo "  Position: (10, 9) - Between gardens (moderate shading on Flower Garden)"
+fi
+
+echo ""
+echo "Sun-Path Visualization Tips:"
+echo "  • Mature Oak (south of Vegetable Garden): Demonstrates heavy winter shading"
+echo "  • Red Maple (east): Shows minimal shading (east-west position)"
+echo "  • White Pine (north): Demonstrates zero shading in Northern Hemisphere"
+echo "  • Toggle 'Show Seasonal Shadows' to see Winter/Equinox/Summer projections"
+echo "  • Gardens will be color-coded: Green (Full Sun), Orange (Partial), Gray (Shade)"
+echo ""
+
+# Step 7: Create Irrigation Sources
 echo "Step 6: Creating irrigation sources..."
 
 SOURCE1_RESPONSE=$(curl -s -X POST "${API_URL}/irrigation-system/sources" \
@@ -715,6 +841,12 @@ echo "================================================"
 echo ""
 echo "Created Resources:"
 echo "  • 1 Land: Main Property (${LAND_WIDTH}x${LAND_HEIGHT} ft)"
+echo "  • 5 Trees for Sun-Path Visualization:"
+echo "    - Mature Oak (18ft, south of Vegetable Garden) - Heavy shading demo"
+echo "    - Red Maple (12ft, east of Herb Garden) - Minimal shading"
+echo "    - White Pine (22ft, north of Flower Garden) - Zero shading (NH)"
+echo "    - Ornamental Cherry (8ft, southeast corner) - Small shadows"
+echo "    - Sugar Maple (15ft, between gardens) - Moderate shading"
 echo "  • 5 Gardens:"
 echo "    - Vegetable Garden (Outdoor, Loam) - ID: $GARDEN1_ID"
 echo "    - Herb Garden (Outdoor, Sandy) - ID: $GARDEN2_ID"
@@ -740,6 +872,13 @@ echo "Expected Irrigation Alerts:"
 echo "  ⚠️  FREQ_001: Watering too frequently (Herb & Flower Zone - daily watering)"
 echo "  ⚠️  DUR_001: Short duration watering (Herb & Flower Zone - 8 min)"
 echo "  🔴 RESPONSE_001: Low moisture despite watering (Herb Garden - 12% moisture)"
+echo ""
+echo "Sun-Path Features to Test:"
+echo "  ☀️  Go to Layout view and enable 'Show Seasonal Shadows'"
+echo "  🌲 Select Winter/Equinox/Summer to see shadow projections"
+echo "  🎨 Gardens color-coded: Green=Full Sun, Orange=Partial, Gray=Shade"
+echo "  📊 Click gardens to view detailed seasonal sun exposure data"
+echo "  ⚠️  Trees to the south cast shadows northward (Northern Hemisphere)"
 echo ""
 echo "View in app: http://localhost:3000"
 echo ""
