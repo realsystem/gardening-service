@@ -835,10 +835,49 @@ pytest
 # View coverage report: open htmlcov/index.html
 ```
 
-**Note:** Tests use in-memory SQLite databases (see `tests/conftest.py`). No PostgreSQL or Docker required.
+**Note:** Unit tests use in-memory SQLite databases (see `tests/conftest.py`). No PostgreSQL or Docker required.
+
+#### Test Types
+
+This project has **three types of tests**:
+
+| Test Type | Location | Backend | Database | Purpose | Speed |
+|-----------|----------|---------|----------|---------|-------|
+| **Unit Tests** | `tests/*.py` | Mocked/in-memory | SQLite | Logic verification | ⚡ Fast |
+| **Functional Tests** | `tests/functional/*.py` | Real HTTP | PostgreSQL | API validation | 🐢 Slower |
+| **Manual Scripts** | `scripts/*.sh` | Real HTTP | PostgreSQL | Manual testing | 👤 Human |
+
+**Unit Tests (76 tests):**
+- Fast, isolated, no Docker required
+- Test business logic, models, services
+- Use in-memory SQLite
+- Run with: `pytest tests/ --ignore=tests/functional`
+
+**Functional Tests (76 tests):**
+- Real HTTP calls against running API
+- Test end-to-end API behavior
+- Require Docker backend running
+- Run with: `API_BASE_URL=http://localhost:8080 pytest tests/functional/ -v`
+
+**Manual Scripts:**
+- Bash/curl scripts for ad-hoc testing
+- Create realistic test scenarios
+- Kept for developer workflow
+- See `scripts/README.md`
 
 **Run specific test suites:**
 ```bash
+# Unit tests only (fast, no Docker)
+pytest tests/ --ignore=tests/functional
+
+# Functional tests only (requires Docker)
+docker-compose up -d
+API_BASE_URL=http://localhost:8080 pytest tests/functional/ -v
+
+# All tests (unit + functional)
+docker-compose up -d
+pytest tests/ -v
+
 # Model/Database tests
 pytest tests/test_models.py
 

@@ -15,6 +15,7 @@ echo "================================================"
 echo "Setting Up Comprehensive Test Data"
 echo "================================================"
 echo "Email: $EMAIL"
+echo "Land Size: ${LAND_WIDTH:-32}x${LAND_HEIGHT:-25} ft (set LAND_WIDTH/LAND_HEIGHT to customize)"
 echo ""
 
 # Step 1: Login
@@ -34,24 +35,77 @@ fi
 echo "✓ Login successful"
 echo ""
 
-# Step 2: Create Land
-echo "Step 2: Creating land parcel..."
+# Step 2: Cleanup existing resources (idempotent)
+echo "Step 2: Cleaning up existing resources..."
+
+# Get and delete all irrigation zones
+ZONES=$(curl -s -X GET "${API_URL}/irrigation-system/zones" \
+  -H "Authorization: Bearer ${TOKEN}" | python3 -c "import sys, json; data=json.load(sys.stdin); print(' '.join([str(z['id']) for z in data]))" 2>/dev/null || echo "")
+if [ ! -z "$ZONES" ]; then
+  for ZONE_ID in $ZONES; do
+    curl -s -X DELETE "${API_URL}/irrigation-system/zones/${ZONE_ID}" \
+      -H "Authorization: Bearer ${TOKEN}" > /dev/null 2>&1
+  done
+  echo "✓ Deleted $(echo $ZONES | wc -w | tr -d ' ') irrigation zone(s)"
+fi
+
+# Get and delete all irrigation sources
+SOURCES=$(curl -s -X GET "${API_URL}/irrigation-system/sources" \
+  -H "Authorization: Bearer ${TOKEN}" | python3 -c "import sys, json; data=json.load(sys.stdin); print(' '.join([str(s['id']) for s in data]))" 2>/dev/null || echo "")
+if [ ! -z "$SOURCES" ]; then
+  for SOURCE_ID in $SOURCES; do
+    curl -s -X DELETE "${API_URL}/irrigation-system/sources/${SOURCE_ID}" \
+      -H "Authorization: Bearer ${TOKEN}" > /dev/null 2>&1
+  done
+  echo "✓ Deleted $(echo $SOURCES | wc -w | tr -d ' ') irrigation source(s)"
+fi
+
+# Get and delete all gardens
+GARDENS=$(curl -s -X GET "${API_URL}/gardens" \
+  -H "Authorization: Bearer ${TOKEN}" | python3 -c "import sys, json; data=json.load(sys.stdin); print(' '.join([str(g['id']) for g in data]))" 2>/dev/null || echo "")
+if [ ! -z "$GARDENS" ]; then
+  for GARDEN_ID in $GARDENS; do
+    curl -s -X DELETE "${API_URL}/gardens/${GARDEN_ID}" \
+      -H "Authorization: Bearer ${TOKEN}" > /dev/null 2>&1
+  done
+  echo "✓ Deleted $(echo $GARDENS | wc -w | tr -d ' ') garden(s)"
+fi
+
+# Get and delete all lands
+LANDS=$(curl -s -X GET "${API_URL}/lands" \
+  -H "Authorization: Bearer ${TOKEN}" | python3 -c "import sys, json; data=json.load(sys.stdin); print(' '.join([str(l['id']) for l in data]))" 2>/dev/null || echo "")
+if [ ! -z "$LANDS" ]; then
+  for LAND_ID_DEL in $LANDS; do
+    curl -s -X DELETE "${API_URL}/lands/${LAND_ID_DEL}" \
+      -H "Authorization: Bearer ${TOKEN}" > /dev/null 2>&1
+  done
+  echo "✓ Deleted $(echo $LANDS | wc -w | tr -d ' ') land(s)"
+fi
+
+echo "✓ Cleanup complete - ready for fresh setup"
+echo ""
+
+# Step 3: Create Land
+echo "Step 3: Creating land parcel..."
+# Configurable land size (very compact for screen display)
+LAND_WIDTH="${LAND_WIDTH:-32}"
+LAND_HEIGHT="${LAND_HEIGHT:-25}"
+
 LAND_RESPONSE=$(curl -s -X POST "${API_URL}/lands" \
   -H "Authorization: Bearer ${TOKEN}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "name": "Main Property",
-    "width_feet": 100,
-    "length_feet": 80,
-    "notes": "Primary gardening area with indoor and outdoor spaces"
-  }')
+  -d "{
+    \"name\": \"Main Property\",
+    \"width\": ${LAND_WIDTH},
+    \"height\": ${LAND_HEIGHT}
+  }")
 
-LAND_ID=$(echo "$LAND_RESPONSE" | grep -o '"id":[0-9]*' | head -1 | cut -d':' -f2)
-echo "✓ Land created (ID: $LAND_ID)"
+LAND_ID=$(echo "$LAND_RESPONSE" | python3 -c "import sys, json; data=json.load(sys.stdin); print(data.get('id', ''))" 2>/dev/null || echo "$LAND_RESPONSE" | grep -o '"id":[0-9]*' | head -1 | cut -d':' -f2)
+echo "✓ Land created (ID: $LAND_ID) - ${LAND_WIDTH}x${LAND_HEIGHT} ft"
 echo ""
 
-# Step 3: Create Gardens
-echo "Step 3: Creating gardens..."
+# Step 4: Create Gardens
+echo "Step 4: Creating gardens..."
 
 # Garden 1: Vegetable Garden (Outdoor)
 GARDEN1_RESPONSE=$(curl -s -X POST "${API_URL}/gardens" \
@@ -129,30 +183,40 @@ GARDEN5_ID=$(echo "$GARDEN5_RESPONSE" | grep -o '"id":[0-9]*' | head -1 | cut -d
 echo "✓ Hydroponic Greens created (ID: $GARDEN5_ID)"
 echo ""
 
-# Step 4: Place Gardens on Land
-echo "Step 4: Positioning gardens on land..."
+# Step 5: Place Gardens on Land
+echo "Step 5: Positioning gardens on land..."
 
-curl -s -X PATCH "${API_URL}/gardens/${GARDEN1_ID}" \
+# Very compact layout for 32x25 land with better margins
+PATCH1_RESPONSE=$(curl -s -X PUT "${API_URL}/gardens/${GARDEN1_ID}/layout" \
   -H "Authorization: Bearer ${TOKEN}" \
   -H "Content-Type: application/json" \
-  -d "{\"land_id\": ${LAND_ID}, \"position_x_feet\": 10, \"position_y_feet\": 10, \"width_feet\": 30, \"length_feet\": 20}" > /dev/null
-echo "✓ Vegetable Garden positioned (10, 10) - 30x20 ft"
+  -d "{\"land_id\": ${LAND_ID}, \"x\": 1, \"y\": 1, \"width\": 14, \"height\": 10}")
+echo "✓ Vegetable Garden positioned (1, 1) - 14x10 ft"
+if echo "$PATCH1_RESPONSE" | grep -q "error"; then
+  echo "  Warning: $PATCH1_RESPONSE"
+fi
 
-curl -s -X PATCH "${API_URL}/gardens/${GARDEN2_ID}" \
+PATCH2_RESPONSE=$(curl -s -X PUT "${API_URL}/gardens/${GARDEN2_ID}/layout" \
   -H "Authorization: Bearer ${TOKEN}" \
   -H "Content-Type: application/json" \
-  -d "{\"land_id\": ${LAND_ID}, \"position_x_feet\": 45, \"position_y_feet\": 10, \"width_feet\": 15, \"length_feet\": 10}" > /dev/null
-echo "✓ Herb Garden positioned (45, 10) - 15x10 ft"
+  -d "{\"land_id\": ${LAND_ID}, \"x\": 17, \"y\": 1, \"width\": 14, \"height\": 10}")
+echo "✓ Herb Garden positioned (17, 1) - 14x10 ft"
+if echo "$PATCH2_RESPONSE" | grep -q "error"; then
+  echo "  Warning: $PATCH2_RESPONSE"
+fi
 
-curl -s -X PATCH "${API_URL}/gardens/${GARDEN3_ID}" \
+PATCH3_RESPONSE=$(curl -s -X PUT "${API_URL}/gardens/${GARDEN3_ID}/layout" \
   -H "Authorization: Bearer ${TOKEN}" \
   -H "Content-Type: application/json" \
-  -d "{\"land_id\": ${LAND_ID}, \"position_x_feet\": 10, \"position_y_feet\": 35, \"width_feet\": 40, \"length_feet\": 15}" > /dev/null
-echo "✓ Flower Garden positioned (10, 35) - 40x15 ft"
+  -d "{\"land_id\": ${LAND_ID}, \"x\": 1, \"y\": 13, \"width\": 30, \"height\": 11}")
+echo "✓ Flower Garden positioned (1, 13) - 30x11 ft"
+if echo "$PATCH3_RESPONSE" | grep -q "error"; then
+  echo "  Warning: $PATCH3_RESPONSE"
+fi
 echo ""
 
-# Step 5: Create Irrigation Sources
-echo "Step 5: Creating irrigation sources..."
+# Step 6: Create Irrigation Sources
+echo "Step 6: Creating irrigation sources..."
 
 SOURCE1_RESPONSE=$(curl -s -X POST "${API_URL}/irrigation-system/sources" \
   -H "Authorization: Bearer ${TOKEN}" \
@@ -179,8 +243,8 @@ SOURCE2_ID=$(echo "$SOURCE2_RESPONSE" | grep -o '"id":[0-9]*' | head -1 | cut -d
 echo "✓ Rain barrel source created (ID: $SOURCE2_ID, 20 L/min)"
 echo ""
 
-# Step 6: Create Irrigation Zones
-echo "Step 6: Creating irrigation zones..."
+# Step 7: Create Irrigation Zones
+echo "Step 7: Creating irrigation zones..."
 
 ZONE1_RESPONSE=$(curl -s -X POST "${API_URL}/irrigation-system/zones" \
   -H "Authorization: Bearer ${TOKEN}" \
@@ -215,8 +279,8 @@ ZONE2_ID=$(echo "$ZONE2_RESPONSE" | grep -o '"id":[0-9]*' | head -1 | cut -d':' 
 echo "✓ Herb & Flower Zone created (ID: $ZONE2_ID) - Drip, every 2 days, 20 min"
 echo ""
 
-# Step 7: Assign Gardens to Zones
-echo "Step 7: Assigning gardens to irrigation zones..."
+# Step 8: Assign Gardens to Zones
+echo "Step 8: Assigning gardens to irrigation zones..."
 
 curl -s -X POST "${API_URL}/irrigation-system/gardens/${GARDEN1_ID}/assign-zone?zone_id=${ZONE1_ID}" \
   -H "Authorization: Bearer ${TOKEN}" > /dev/null
@@ -231,8 +295,8 @@ curl -s -X POST "${API_URL}/irrigation-system/gardens/${GARDEN3_ID}/assign-zone?
 echo "✓ Flower Garden → Herb & Flower Zone"
 echo ""
 
-# Step 8: Create Watering Events (to trigger frequency alert)
-echo "Step 8: Creating watering history (will trigger FREQ_001 alert)..."
+# Step 9: Create Watering Events (to trigger frequency alert)
+echo "Step 9: Creating watering history (will trigger FREQ_001 alert)..."
 
 # Create daily watering events for the past 7 days on Herb & Flower Zone
 # This will trigger FREQ_001 (watering too frequently)
@@ -263,8 +327,8 @@ curl -s -X POST "${API_URL}/irrigation-system/events" \
 echo "✓ Created proper watering event for Vegetable Zone"
 echo ""
 
-# Step 9: Add Soil Samples (with low moisture to trigger alert)
-echo "Step 9: Creating soil samples (will trigger RESPONSE_001 alert)..."
+# Step 10: Add Soil Samples (with low moisture to trigger alert)
+echo "Step 10: Creating soil samples (will trigger RESPONSE_001 alert)..."
 
 # Create 3 low-moisture samples for Herb Garden to trigger RESPONSE_001
 for i in {0..2}; do
@@ -319,13 +383,338 @@ curl -s -X POST "${API_URL}/soil-samples" \
 echo "✓ Created soil sample for Flower Garden (healthy)"
 echo ""
 
+# Step 11: Create Plantings with Different Varieties
+echo "Step 11: Creating plantings for gardens..."
+
+# Get plant variety IDs (query first few to find IDs)
+VARIETIES=$(curl -s -X GET "${API_URL}/plant-varieties" \
+  -H "Authorization: Bearer ${TOKEN}")
+
+# Extract variety IDs (using grep for simplicity, assuming IDs are in order)
+TOMATO_CHERRY_ID=$(echo "$VARIETIES" | python3 -c "import sys, json; data=json.load(sys.stdin); print(next((v['id'] for v in data if v['common_name']=='Tomato' and v['variety_name']=='Cherry'), 1))" 2>/dev/null || echo "1")
+PEPPER_BELL_ID=$(echo "$VARIETIES" | python3 -c "import sys, json; data=json.load(sys.stdin); print(next((v['id'] for v in data if v['common_name']=='Pepper' and v['variety_name']=='Bell Pepper'), 7))" 2>/dev/null || echo "7")
+LETTUCE_ROMAINE_ID=$(echo "$VARIETIES" | python3 -c "import sys, json; data=json.load(sys.stdin); print(next((v['id'] for v in data if v['common_name']=='Lettuce' and v['variety_name']=='Romaine'), 14))" 2>/dev/null || echo "14")
+CUCUMBER_SLICING_ID=$(echo "$VARIETIES" | python3 -c "import sys, json; data=json.load(sys.stdin); print(next((v['id'] for v in data if v['common_name']=='Cucumber' and v['variety_name']=='Slicing'), 22))" 2>/dev/null || echo "22")
+BASIL_ID=$(echo "$VARIETIES" | python3 -c "import sys, json; data=json.load(sys.stdin); print(next((v['id'] for v in data if v['common_name']=='Basil'), 41))" 2>/dev/null || echo "41")
+CILANTRO_ID=$(echo "$VARIETIES" | python3 -c "import sys, json; data=json.load(sys.stdin); print(next((v['id'] for v in data if v['common_name']=='Cilantro'), 43))" 2>/dev/null || echo "43")
+MINT_ID=$(echo "$VARIETIES" | python3 -c "import sys, json; data=json.load(sys.stdin); print(next((v['id'] for v in data if v['common_name']=='Mint'), 45))" 2>/dev/null || echo "45")
+PARSLEY_ID=$(echo "$VARIETIES" | python3 -c "import sys, json; data=json.load(sys.stdin); print(next((v['id'] for v in data if v['common_name']=='Parsley'), 46))" 2>/dev/null || echo "46")
+MARIGOLD_ID=$(echo "$VARIETIES" | python3 -c "import sys, json; data=json.load(sys.stdin); print(next((v['id'] for v in data if v['common_name']=='Marigold'), 85))" 2>/dev/null || echo "85")
+ZINNIA_ID=$(echo "$VARIETIES" | python3 -c "import sys, json; data=json.load(sys.stdin); print(next((v['id'] for v in data if v['common_name']=='Zinnia'), 86))" 2>/dev/null || echo "86")
+SUNFLOWER_ID=$(echo "$VARIETIES" | python3 -c "import sys, json; data=json.load(sys.stdin); print(next((v['id'] for v in data if v['common_name']=='Sunflower'), 87))" 2>/dev/null || echo "87")
+LETTUCE_BUTTER_ID=$(echo "$VARIETIES" | python3 -c "import sys, json; data=json.load(sys.stdin); print(next((v['id'] for v in data if v['common_name']=='Lettuce' and v['variety_name']=='Butterhead'), 13))" 2>/dev/null || echo "13")
+MICROGREENS_ID=$(echo "$VARIETIES" | python3 -c "import sys, json; data=json.load(sys.stdin); print(next((v['id'] for v in data if v['common_name']=='Microgreens'), 94))" 2>/dev/null || echo "94")
+
+# Plantings for Vegetable Garden
+PLANTING_DATE_30D=$(date -u -v-30d +"%Y-%m-%d" 2>/dev/null || date -u -d '30 days ago' +"%Y-%m-%d")
+PLANTING_DATE_45D=$(date -u -v-45d +"%Y-%m-%d" 2>/dev/null || date -u -d '45 days ago' +"%Y-%m-%d")
+PLANTING_DATE_20D=$(date -u -v-20d +"%Y-%m-%d" 2>/dev/null || date -u -d '20 days ago' +"%Y-%m-%d")
+PLANTING_DATE_15D=$(date -u -v-15d +"%Y-%m-%d" 2>/dev/null || date -u -d '15 days ago' +"%Y-%m-%d")
+
+curl -s -X POST "${API_URL}/planting-events" \
+  -H "Authorization: Bearer ${TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"garden_id\": ${GARDEN1_ID},
+    \"plant_variety_id\": ${TOMATO_CHERRY_ID},
+    \"planting_date\": \"${PLANTING_DATE_45D}\",
+    \"planting_method\": \"transplant\",
+    \"plant_count\": 6,
+    \"location_in_garden\": \"North bed, rows 1-2\",
+    \"health_status\": \"healthy\",
+    \"notes\": \"Cherry tomatoes for summer harvest\"
+  }" > /dev/null
+echo "✓ Planted Cherry Tomatoes in Vegetable Garden (6 plants, 45 days ago)"
+
+curl -s -X POST "${API_URL}/planting-events" \
+  -H "Authorization: Bearer ${TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"garden_id\": ${GARDEN1_ID},
+    \"plant_variety_id\": ${PEPPER_BELL_ID},
+    \"planting_date\": \"${PLANTING_DATE_45D}\",
+    \"planting_method\": \"transplant\",
+    \"plant_count\": 4,
+    \"location_in_garden\": \"North bed, row 3\",
+    \"health_status\": \"healthy\",
+    \"notes\": \"Bell peppers - multiple colors\"
+  }" > /dev/null
+echo "✓ Planted Bell Peppers in Vegetable Garden (4 plants, 45 days ago)"
+
+curl -s -X POST "${API_URL}/planting-events" \
+  -H "Authorization: Bearer ${TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"garden_id\": ${GARDEN1_ID},
+    \"plant_variety_id\": ${LETTUCE_ROMAINE_ID},
+    \"planting_date\": \"${PLANTING_DATE_20D}\",
+    \"planting_method\": \"direct_sow\",
+    \"plant_count\": 12,
+    \"location_in_garden\": \"South bed, succession planting\",
+    \"health_status\": \"healthy\",
+    \"notes\": \"Cut-and-come-again harvesting\"
+  }" > /dev/null
+echo "✓ Planted Romaine Lettuce in Vegetable Garden (12 plants, 20 days ago)"
+
+curl -s -X POST "${API_URL}/planting-events" \
+  -H "Authorization: Bearer ${TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"garden_id\": ${GARDEN1_ID},
+    \"plant_variety_id\": ${CUCUMBER_SLICING_ID},
+    \"planting_date\": \"${PLANTING_DATE_30D}\",
+    \"planting_method\": \"direct_sow\",
+    \"plant_count\": 3,
+    \"location_in_garden\": \"Trellis along east side\",
+    \"health_status\": \"healthy\",
+    \"notes\": \"Vertical growing on trellis\"
+  }" > /dev/null
+echo "✓ Planted Slicing Cucumbers in Vegetable Garden (3 plants, 30 days ago)"
+
+# Plantings for Herb Garden
+curl -s -X POST "${API_URL}/planting-events" \
+  -H "Authorization: Bearer ${TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"garden_id\": ${GARDEN2_ID},
+    \"plant_variety_id\": ${BASIL_ID},
+    \"planting_date\": \"${PLANTING_DATE_30D}\",
+    \"planting_method\": \"transplant\",
+    \"plant_count\": 8,
+    \"location_in_garden\": \"Center rows\",
+    \"health_status\": \"stressed\",
+    \"notes\": \"Showing signs of water stress despite irrigation\"
+  }" > /dev/null
+echo "✓ Planted Basil in Herb Garden (8 plants, showing stress)"
+
+curl -s -X POST "${API_URL}/planting-events" \
+  -H "Authorization: Bearer ${TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"garden_id\": ${GARDEN2_ID},
+    \"plant_variety_id\": ${CILANTRO_ID},
+    \"planting_date\": \"${PLANTING_DATE_20D}\",
+    \"planting_method\": \"direct_sow\",
+    \"plant_count\": 20,
+    \"location_in_garden\": \"North section\",
+    \"health_status\": \"healthy\",
+    \"notes\": \"Succession planting for continuous harvest\"
+  }" > /dev/null
+echo "✓ Planted Cilantro in Herb Garden (20 plants)"
+
+curl -s -X POST "${API_URL}/planting-events" \
+  -H "Authorization: Bearer ${TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"garden_id\": ${GARDEN2_ID},
+    \"plant_variety_id\": ${MINT_ID},
+    \"planting_date\": \"${PLANTING_DATE_45D}\",
+    \"planting_method\": \"transplant\",
+    \"plant_count\": 3,
+    \"location_in_garden\": \"South section (contained)\",
+    \"health_status\": \"healthy\",
+    \"notes\": \"In buried containers to prevent spreading\"
+  }" > /dev/null
+echo "✓ Planted Mint in Herb Garden (3 plants, contained)"
+
+# Plantings for Flower Garden
+curl -s -X POST "${API_URL}/planting-events" \
+  -H "Authorization: Bearer ${TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"garden_id\": ${GARDEN3_ID},
+    \"plant_variety_id\": ${MARIGOLD_ID},
+    \"planting_date\": \"${PLANTING_DATE_30D}\",
+    \"planting_method\": \"transplant\",
+    \"plant_count\": 15,
+    \"location_in_garden\": \"Border rows\",
+    \"health_status\": \"healthy\",
+    \"notes\": \"Pest deterrent and companion planting\"
+  }" > /dev/null
+echo "✓ Planted Marigolds in Flower Garden (15 plants)"
+
+curl -s -X POST "${API_URL}/planting-events" \
+  -H "Authorization: Bearer ${TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"garden_id\": ${GARDEN3_ID},
+    \"plant_variety_id\": ${ZINNIA_ID},
+    \"planting_date\": \"${PLANTING_DATE_30D}\",
+    \"planting_method\": \"direct_sow\",
+    \"plant_count\": 25,
+    \"location_in_garden\": \"Center mass planting\",
+    \"health_status\": \"healthy\",
+    \"notes\": \"Mixed colors for pollinators\"
+  }" > /dev/null
+echo "✓ Planted Zinnias in Flower Garden (25 plants)"
+
+curl -s -X POST "${API_URL}/planting-events" \
+  -H "Authorization: Bearer ${TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"garden_id\": ${GARDEN3_ID},
+    \"plant_variety_id\": ${SUNFLOWER_ID},
+    \"planting_date\": \"${PLANTING_DATE_45D}\",
+    \"planting_method\": \"direct_sow\",
+    \"plant_count\": 6,
+    \"location_in_garden\": \"Back row, north side\",
+    \"health_status\": \"healthy\",
+    \"notes\": \"Tall variety for birds and beauty\"
+  }" > /dev/null
+echo "✓ Planted Sunflowers in Flower Garden (6 plants)"
+
+# Plantings for Indoor Herb Garden
+curl -s -X POST "${API_URL}/planting-events" \
+  -H "Authorization: Bearer ${TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"garden_id\": ${GARDEN4_ID},
+    \"plant_variety_id\": ${BASIL_ID},
+    \"planting_date\": \"${PLANTING_DATE_15D}\",
+    \"planting_method\": \"transplant\",
+    \"plant_count\": 4,
+    \"location_in_garden\": \"South-facing window\",
+    \"health_status\": \"healthy\",
+    \"notes\": \"Fresh basil year-round\"
+  }" > /dev/null
+echo "✓ Planted Basil in Indoor Herb Garden (4 plants)"
+
+curl -s -X POST "${API_URL}/planting-events" \
+  -H "Authorization: Bearer ${TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"garden_id\": ${GARDEN4_ID},
+    \"plant_variety_id\": ${PARSLEY_ID},
+    \"planting_date\": \"${PLANTING_DATE_15D}\",
+    \"planting_method\": \"direct_sow\",
+    \"plant_count\": 6,
+    \"location_in_garden\": \"Kitchen counter\",
+    \"health_status\": \"healthy\",
+    \"notes\": \"Flat-leaf Italian parsley\"
+  }" > /dev/null
+echo "✓ Planted Parsley in Indoor Herb Garden (6 plants)"
+
+# Plantings for Hydroponic Greens
+curl -s -X POST "${API_URL}/planting-events" \
+  -H "Authorization: Bearer ${TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"garden_id\": ${GARDEN5_ID},
+    \"plant_variety_id\": ${LETTUCE_ROMAINE_ID},
+    \"planting_date\": \"${PLANTING_DATE_20D}\",
+    \"planting_method\": \"transplant\",
+    \"plant_count\": 12,
+    \"location_in_garden\": \"NFT channels 1-2\",
+    \"health_status\": \"healthy\",
+    \"notes\": \"Hydroponic romaine for salads\"
+  }" > /dev/null
+echo "✓ Planted Romaine Lettuce in Hydroponic System (12 plants)"
+
+curl -s -X POST "${API_URL}/planting-events" \
+  -H "Authorization: Bearer ${TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"garden_id\": ${GARDEN5_ID},
+    \"plant_variety_id\": ${LETTUCE_BUTTER_ID},
+    \"planting_date\": \"${PLANTING_DATE_20D}\",
+    \"planting_method\": \"transplant\",
+    \"plant_count\": 8,
+    \"location_in_garden\": \"NFT channel 3\",
+    \"health_status\": \"healthy\",
+    \"notes\": \"Butterhead for variety\"
+  }" > /dev/null
+echo "✓ Planted Butterhead Lettuce in Hydroponic System (8 plants)"
+
+curl -s -X POST "${API_URL}/planting-events" \
+  -H "Authorization: Bearer ${TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"garden_id\": ${GARDEN5_ID},
+    \"plant_variety_id\": ${MICROGREENS_ID},
+    \"planting_date\": \"$(date -u -v-5d +"%Y-%m-%d" 2>/dev/null || date -u -d '5 days ago' +"%Y-%m-%d")\",
+    \"planting_method\": \"direct_sow\",
+    \"plant_count\": 100,
+    \"location_in_garden\": \"Tray 1\",
+    \"health_status\": \"healthy\",
+    \"notes\": \"Quick-growing microgreens, ready in 7-14 days\"
+  }" > /dev/null
+echo "✓ Planted Microgreens in Hydroponic System (100+ seeds, almost ready)"
+echo ""
+
+# Step 12: Add More Irrigation Events for Variety
+echo "Step 12: Adding varied irrigation events across gardens..."
+
+# Add some manual watering events for indoor gardens
+curl -s -X POST "${API_URL}/irrigation-system/events" \
+  -H "Authorization: Bearer ${TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"garden_id\": ${GARDEN4_ID},
+    \"watered_at\": \"$(date -u -v-2d +"%Y-%m-%dT10:00:00.000Z" 2>/dev/null || date -u -d '2 days ago' +"%Y-%m-%dT10:00:00.000Z")\",
+    \"duration_minutes\": 5,
+    \"is_manual\": true,
+    \"notes\": \"Hand watered indoor herbs\"
+  }" > /dev/null
+
+curl -s -X POST "${API_URL}/irrigation-system/events" \
+  -H "Authorization: Bearer ${TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"garden_id\": ${GARDEN4_ID},
+    \"watered_at\": \"$(date -u +"%Y-%m-%dT09:00:00.000Z")\",
+    \"duration_minutes\": 5,
+    \"is_manual\": true,
+    \"notes\": \"Morning watering\"
+  }" > /dev/null
+echo "✓ Added 2 manual watering events for Indoor Herb Garden"
+
+# Add hydroponic nutrient changes (counted as watering events)
+curl -s -X POST "${API_URL}/irrigation-system/events" \
+  -H "Authorization: Bearer ${TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"garden_id\": ${GARDEN5_ID},
+    \"watered_at\": \"$(date -u -v-7d +"%Y-%m-%dT08:00:00.000Z" 2>/dev/null || date -u -d '7 days ago' +"%Y-%m-%dT08:00:00.000Z")\",
+    \"duration_minutes\": 15,
+    \"is_manual\": true,
+    \"notes\": \"Reservoir refill and nutrient adjustment\"
+  }" > /dev/null
+
+curl -s -X POST "${API_URL}/irrigation-system/events" \
+  -H "Authorization: Bearer ${TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"garden_id\": ${GARDEN5_ID},
+    \"watered_at\": \"$(date -u +"%Y-%m-%dT08:00:00.000Z")\",
+    \"duration_minutes\": 15,
+    \"is_manual\": true,
+    \"notes\": \"Weekly reservoir maintenance\"
+  }" > /dev/null
+echo "✓ Added 2 hydroponic maintenance events for Hydroponic Greens"
+
+# Add more zone watering events for better history
+for i in {10..14}; do
+  WATERED_AT=$(date -u -v-${i}d +"%Y-%m-%dT12:00:00.000Z" 2>/dev/null || date -u -d "${i} days ago" +"%Y-%m-%dT12:00:00.000Z")
+  curl -s -X POST "${API_URL}/irrigation-system/events" \
+    -H "Authorization: Bearer ${TOKEN}" \
+    -H "Content-Type: application/json" \
+    -d "{
+      \"irrigation_zone_id\": ${ZONE1_ID},
+      \"watered_at\": \"${WATERED_AT}\",
+      \"duration_minutes\": 30,
+      \"is_manual\": false
+    }" > /dev/null
+done
+echo "✓ Added 5 historical watering events for Vegetable Zone"
+echo ""
+
 # Summary
 echo "================================================"
 echo "Test Data Setup Complete!"
 echo "================================================"
 echo ""
 echo "Created Resources:"
-echo "  • 1 Land: Main Property (100x80 ft)"
+echo "  • 1 Land: Main Property (${LAND_WIDTH}x${LAND_HEIGHT} ft)"
 echo "  • 5 Gardens:"
 echo "    - Vegetable Garden (Outdoor, Loam) - ID: $GARDEN1_ID"
 echo "    - Herb Garden (Outdoor, Sandy) - ID: $GARDEN2_ID"
@@ -338,7 +727,13 @@ echo "    - Rain Barrel - ID: $SOURCE2_ID"
 echo "  • 2 Irrigation Zones:"
 echo "    - Vegetable Zone - ID: $ZONE1_ID"
 echo "    - Herb & Flower Zone - ID: $ZONE2_ID"
-echo "  • 8 Watering Events"
+echo "  • 17 Planting Events:"
+echo "    - Vegetable Garden: 4 varieties (Tomato, Pepper, Lettuce, Cucumber)"
+echo "    - Herb Garden: 3 varieties (Basil, Cilantro, Mint)"
+echo "    - Flower Garden: 3 varieties (Marigold, Zinnia, Sunflower)"
+echo "    - Indoor Herb Garden: 2 varieties (Basil, Parsley)"
+echo "    - Hydroponic Greens: 3 varieties (Romaine, Butterhead, Microgreens)"
+echo "  • 22 Watering/Irrigation Events (zone + manual + hydroponic)"
 echo "  • 5 Soil Samples"
 echo ""
 echo "Expected Irrigation Alerts:"
@@ -347,6 +742,9 @@ echo "  ⚠️  DUR_001: Short duration watering (Herb & Flower Zone - 8 min)"
 echo "  🔴 RESPONSE_001: Low moisture despite watering (Herb Garden - 12% moisture)"
 echo ""
 echo "View in app: http://localhost:3000"
+echo ""
+echo "🔄 IMPORTANT: Refresh your browser (Cmd+R / Ctrl+R) to see the updated land layout!"
+echo ""
 echo "Check irrigation insights:"
 echo "  curl -s http://localhost:8080/irrigation-system/insights \\"
 echo "    -H \"Authorization: Bearer $TOKEN\" | python3 -m json.tool"

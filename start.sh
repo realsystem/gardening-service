@@ -21,8 +21,8 @@ echo "Migrations complete."
 
 # Load seed data if needed (only in development)
 if [ "$APP_ENV" = "development" ]; then
-  echo "Loading seed data..."
-  python -m seed_data.plant_varieties || echo "Seed data already loaded or failed."
+  echo "Loading seed data from CSV..."
+  python -m seed_data.load_catalog_csv || echo "Seed data already loaded or failed."
 fi
 
 # Start the API server
