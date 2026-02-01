@@ -4,10 +4,15 @@ import { LandCanvas } from './LandCanvas';
 import { CreateLand } from './CreateLand';
 import { TreeManager } from './TreeManager';
 import { StructureManager } from './StructureManager';
+import { useUnitSystem } from '../contexts/UnitSystemContext';
+import { convertDistance, getUnitLabels } from '../utils/units';
 import type { Land, LandWithGardens, Garden, Tree, Structure } from '../types';
 import './LandList.css';
 
 export function LandList() {
+  const { unitSystem } = useUnitSystem();
+  const unitLabels = getUnitLabels(unitSystem);
+
   const [lands, setLands] = useState<Land[]>([]);
   const [gardens, setGardens] = useState<Garden[]>([]);
   const [landTrees, setLandTrees] = useState<Tree[]>([]);
@@ -142,7 +147,7 @@ export function LandList() {
                   🗑️
                 </button>
               </div>
-              <p className="land-info">{land.width} × {land.height} units</p>
+              <p className="land-info">{convertDistance(land.width, unitSystem).toFixed(1)} × {convertDistance(land.height, unitSystem).toFixed(1)} {unitLabels.distanceShort}</p>
               <button
                 className="btn-secondary"
                 onClick={() => handleSelectLand(land.id)}

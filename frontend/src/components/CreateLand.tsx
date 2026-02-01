@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { api } from '../services/api';
 import type { LandCreate } from '../types';
+import { useUnitSystem } from '../contexts/UnitSystemContext';
+import { convertDistance, convertToMeters, getUnitLabels } from '../utils/units';
 import './CreateLand.css';
 
 interface CreateLandProps {
@@ -9,10 +11,13 @@ interface CreateLandProps {
 }
 
 export function CreateLand({ onCreated, onCancel }: CreateLandProps) {
+  const { unitSystem } = useUnitSystem();
+  const unitLabels = getUnitLabels(unitSystem);
+
   const [formData, setFormData] = useState<LandCreate>({
     name: '',
-    width: 10,
-    height: 10,
+    width: convertDistance(10, unitSystem),
+    height: convertDistance(10, unitSystem),
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -23,7 +28,13 @@ export function CreateLand({ onCreated, onCancel }: CreateLandProps) {
     setLoading(true);
 
     try {
-      await api.createLand(formData);
+      // Convert form data from display units to meters for API
+      const apiData = {
+        ...formData,
+        width: convertToMeters(formData.width, unitSystem),
+        height: convertToMeters(formData.height, unitSystem),
+      };
+      await api.createLand(apiData);
       onCreated();
     } catch (err) {
       setError((err as Error).message || 'Failed to create land');
@@ -62,7 +73,7 @@ export function CreateLand({ onCreated, onCancel }: CreateLandProps) {
 
         <div className="form-row">
           <div className="form-group">
-            <label htmlFor="width">Width *</label>
+            <label htmlFor="width">Width * ({unitLabels.distanceShort})</label>
             <input
               type="number"
               id="width"
@@ -70,14 +81,14 @@ export function CreateLand({ onCreated, onCancel }: CreateLandProps) {
               value={formData.width}
               onChange={handleChange}
               required
-              min="0.5"
-              step="0.5"
+              min={unitSystem === 'imperial' ? '1' : '0.5'}
+              step={unitSystem === 'imperial' ? '1' : '0.5'}
             />
-            <small>In abstract units (meters, feet, etc.)</small>
+            <small>East-west dimension of your land</small>
           </div>
 
           <div className="form-group">
-            <label htmlFor="height">Height *</label>
+            <label htmlFor="height">Height * ({unitLabels.distanceShort})</label>
             <input
               type="number"
               id="height"
@@ -85,10 +96,10 @@ export function CreateLand({ onCreated, onCancel }: CreateLandProps) {
               value={formData.height}
               onChange={handleChange}
               required
-              min="0.5"
-              step="0.5"
+              min={unitSystem === 'imperial' ? '1' : '0.5'}
+              step={unitSystem === 'imperial' ? '1' : '0.5'}
             />
-            <small>In abstract units (meters, feet, etc.)</small>
+            <small>North-south dimension of your land</small>
           </div>
         </div>
 
@@ -103,11 +114,11 @@ export function CreateLand({ onCreated, onCancel }: CreateLandProps) {
       </form>
 
       <div className="info-box">
-        <p><strong>About Units:</strong></p>
+        <p><strong>About Dimensions:</strong></p>
         <p>
-          Use any consistent unit system (meters, feet, or grid squares).
-          For example, a 10×10 land could represent a 10m × 10m backyard
-          or a 10ft × 10ft raised bed area.
+          Enter the dimensions of your land in {unitLabels.distance}.
+          For example, a 10×10 land represents a 10{unitLabels.distanceShort} × 10{unitLabels.distanceShort} area.
+          You can place gardens, trees, and structures on this land.
         </p>
       </div>
     </div>
