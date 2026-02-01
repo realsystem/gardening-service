@@ -8,6 +8,7 @@ export interface User {
   gardening_preferences?: string;
   usda_zone?: string;
   zip_code?: string;
+  is_admin: boolean;
 }
 
 export interface LoginResponse {
@@ -689,4 +690,16 @@ export interface ImportResult {
   errors: string[];
   warnings: string[];
   id_mapping?: Record<string, Record<number, number>>;
+}
+
+// ============================================================================
+// SYSTEM STATS TYPES (Admin-only)
+// ============================================================================
+
+export interface SystemStats {
+  total_users: number;
+  active_users_24h: number;
+  total_gardens: number;
+  total_lands: number;
+  timestamp: string;
 }

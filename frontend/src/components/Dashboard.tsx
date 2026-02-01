@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '../services/api';
-import type { Task, User, SeedBatch, Garden, SensorReading } from '../types';
+import type { Task, User, SeedBatch, Garden, SensorReading, SystemStats } from '../types';
 import { TaskList } from './TaskList';
 import { CreateSeedBatch } from './CreateSeedBatch';
 import { CreatePlantingEvent } from './CreatePlantingEvent';
@@ -37,6 +37,7 @@ export function Dashboard({ user: initialUser, onLogout }: DashboardProps) {
   const [confirmDeleteGardenId, setConfirmDeleteGardenId] = useState<number | null>(null);
   const [viewMode, setViewMode] = useState<'dashboard' | 'plantings' | 'land-layout' | 'irrigation-system'>('dashboard');
   const [selectedGardenId, setSelectedGardenId] = useState<number | undefined>(undefined);
+  const [systemStats, setSystemStats] = useState<SystemStats | null>(null);
 
   // Update selected garden when gardens load or change
   useEffect(() => {
@@ -85,6 +86,22 @@ export function Dashboard({ user: initialUser, onLogout }: DashboardProps) {
   useEffect(() => {
     loadData();
   }, []);
+
+  // Load system stats only for admin users
+  useEffect(() => {
+    const loadSystemStats = async () => {
+      if (user.is_admin) {
+        try {
+          const stats = await api.getSystemStats();
+          setSystemStats(stats);
+        } catch (err) {
+          console.error('Failed to load system stats:', err);
+        }
+      }
+    };
+
+    loadSystemStats();
+  }, [user.is_admin]);
 
   const handleTaskComplete = async (taskId: number) => {
     try {
@@ -617,6 +634,55 @@ export function Dashboard({ user: initialUser, onLogout }: DashboardProps) {
               >
                 {deletingGardenId === confirmDeleteGardenId ? 'Deleting...' : 'Delete Garden'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Admin Footer - Only rendered for admin users */}
+      {user.is_admin && systemStats && (
+        <div style={{
+          position: 'fixed',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          backgroundColor: '#2c3e50',
+          color: 'white',
+          padding: '10px 20px',
+          borderTop: '2px solid #e74c3c',
+          fontSize: '0.85em',
+          zIndex: 1000
+        }}>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            gap: '30px',
+            maxWidth: '1200px',
+            margin: '0 auto'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+              <span style={{ color: '#ecf0f1', fontWeight: '500' }}>Admin View</span>
+              <span style={{ color: '#95a5a6' }}>|</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+              <span style={{ color: '#bdc3c7' }}>Total Users:</span>
+              <span style={{ fontWeight: 'bold' }}>{systemStats.total_users}</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+              <span style={{ color: '#bdc3c7' }}>Active (24h):</span>
+              <span style={{ fontWeight: 'bold' }}>{systemStats.active_users_24h}</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+              <span style={{ color: '#bdc3c7' }}>Total Gardens:</span>
+              <span style={{ fontWeight: 'bold' }}>{systemStats.total_gardens}</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+              <span style={{ color: '#bdc3c7' }}>Total Lands:</span>
+              <span style={{ fontWeight: 'bold' }}>{systemStats.total_lands}</span>
+            </div>
+            <div style={{ fontSize: '0.75em', color: '#95a5a6' }}>
+              Updated: {new Date(systemStats.timestamp).toLocaleTimeString()}
             </div>
           </div>
         </div>
