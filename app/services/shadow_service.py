@@ -127,19 +127,20 @@ def project_tree_shadow(
     shadow_width = canopy_radius * 2
 
     # Determine rectangle bounds based on shadow direction
+    # Canvas coordinates: Y increases downward (south), decreases upward (north)
     if hemisphere.value == "northern":
-        # Shadow extends north (positive Y)
+        # Shadow extends north (negative Y direction - upward on canvas)
         shadow_rect = ShadowRectangle(
             x=tree_x - canopy_radius,
-            y=tree_y - canopy_radius,
+            y=shadow_end_y - canopy_radius,
             width=shadow_width,
             height=shadow_length + canopy_radius * 2
         )
     else:
-        # Shadow extends south (negative Y)
+        # Shadow extends south (positive Y direction - downward on canvas)
         shadow_rect = ShadowRectangle(
             x=tree_x - canopy_radius,
-            y=shadow_end_y - canopy_radius,
+            y=tree_y - canopy_radius,
             width=shadow_width,
             height=shadow_length + canopy_radius * 2
         )
@@ -180,25 +181,161 @@ def project_structure_shadow(
 
     # Shadow extends from the structure in the north/south direction
     # Width matches structure width
+    # Canvas coordinates: Y increases downward (south), decreases upward (north)
 
     if hemisphere.value == "northern":
-        # Shadow extends north (positive Y)
-        # Shadow starts at the structure's north edge
-        shadow_rect = ShadowRectangle(
-            x=structure_x,
-            y=structure_y + structure_depth,
-            width=structure_width,
-            height=shadow_length
-        )
-    else:
-        # Shadow extends south (negative Y)
-        # Shadow starts at the structure's top edge
+        # Shadow extends north (negative Y direction - upward on canvas)
+        # Shadow starts above the structure's top edge
         shadow_rect = ShadowRectangle(
             x=structure_x,
             y=structure_y - shadow_length,
             width=structure_width,
             height=shadow_length
         )
+    else:
+        # Shadow extends south (positive Y direction - downward on canvas)
+        # Shadow starts at the structure's bottom edge
+        shadow_rect = ShadowRectangle(
+            x=structure_x,
+            y=structure_y + structure_depth,
+            width=structure_width,
+            height=shadow_length
+        )
+
+    return shadow_rect
+
+
+def project_tree_shadow_at_time(
+    tree_x: float,
+    tree_y: float,
+    tree_height: float,
+    canopy_radius: float,
+    latitude: float,
+    season: Season,
+    hour: float
+) -> ShadowRectangle:
+    """
+    Project shadow from a tree at a specific time of day.
+
+    Args:
+        tree_x: Tree center x-coordinate
+        tree_y: Tree center y-coordinate
+        tree_height: Tree height in meters
+        canopy_radius: Tree canopy radius in meters
+        latitude: Land latitude
+        season: Season for sun calculation
+        hour: Hour of day (0-24)
+
+    Returns:
+        ShadowRectangle representing the shadow projection
+    """
+    from app.utils.sun_model import (
+        get_hemisphere,
+        get_sun_altitude_at_time,
+        calculate_shadow_length,
+        project_shadow_endpoint_at_time
+    )
+
+    # Get sun parameters
+    hemisphere = get_hemisphere(latitude)
+    sun_altitude = get_sun_altitude_at_time(latitude, season, hour)
+
+    # If sun is below horizon, no shadow
+    if sun_altitude <= 0:
+        return ShadowRectangle(tree_x - canopy_radius, tree_y - canopy_radius, canopy_radius * 2, canopy_radius * 2)
+
+    # Calculate shadow length from tree height
+    shadow_length = calculate_shadow_length(tree_height, sun_altitude)
+
+    # Get shadow endpoint
+    shadow_end_x, shadow_end_y = project_shadow_endpoint_at_time(
+        tree_x, tree_y, shadow_length, hour, hemisphere
+    )
+
+    # Create bounding box that includes both the tree canopy and its shadow
+    # This is a simplified rectangular approximation
+    min_x = min(tree_x - canopy_radius, shadow_end_x - canopy_radius)
+    max_x = max(tree_x + canopy_radius, shadow_end_x + canopy_radius)
+    min_y = min(tree_y - canopy_radius, shadow_end_y - canopy_radius)
+    max_y = max(tree_y + canopy_radius, shadow_end_y + canopy_radius)
+
+    shadow_rect = ShadowRectangle(
+        x=min_x,
+        y=min_y,
+        width=max_x - min_x,
+        height=max_y - min_y
+    )
+
+    return shadow_rect
+
+
+def project_structure_shadow_at_time(
+    structure_x: float,
+    structure_y: float,
+    structure_width: float,
+    structure_depth: float,
+    structure_height: float,
+    latitude: float,
+    season: Season,
+    hour: float
+) -> ShadowRectangle:
+    """
+    Project shadow from a rectangular structure at a specific time of day.
+
+    Args:
+        structure_x: Structure top-left x-coordinate
+        structure_y: Structure top-left y-coordinate
+        structure_width: Structure width
+        structure_depth: Structure depth/length
+        structure_height: Structure height in meters
+        latitude: Land latitude
+        season: Season for sun calculation
+        hour: Hour of day (0-24)
+
+    Returns:
+        ShadowRectangle representing the shadow projection
+    """
+    from app.utils.sun_model import (
+        get_hemisphere,
+        get_sun_altitude_at_time,
+        calculate_shadow_length,
+        get_shadow_direction_at_time
+    )
+
+    # Get sun parameters
+    hemisphere = get_hemisphere(latitude)
+    sun_altitude = get_sun_altitude_at_time(latitude, season, hour)
+
+    # If sun is below horizon, no shadow
+    if sun_altitude <= 0:
+        return ShadowRectangle(structure_x, structure_y, structure_width, structure_depth)
+
+    # Calculate shadow length from structure height
+    shadow_length = calculate_shadow_length(structure_height, sun_altitude)
+
+    # Get shadow direction
+    dx, dy = get_shadow_direction_at_time(hour, hemisphere)
+
+    # Calculate shadow projection from each corner of the structure
+    # For simplicity, project from the structure center
+    center_x = structure_x + structure_width / 2
+    center_y = structure_y + structure_depth / 2
+
+    shadow_end_x = center_x + (dx * shadow_length)
+    shadow_end_y = center_y + (dy * shadow_length)
+
+    # Create bounding box that includes both the structure and its shadow
+    min_x = min(structure_x, shadow_end_x - structure_width / 2)
+    max_x = max(structure_x + structure_width, shadow_end_x + structure_width / 2)
+    min_y = min(structure_y, shadow_end_y - structure_depth / 2)
+    max_y = max(structure_y + structure_depth, shadow_end_y + structure_depth / 2)
+
+    shadow_rect = ShadowRectangle(
+        x=min_x,
+        y=min_y,
+        width=max_x - min_x,
+        height=max_y - min_y
+    )
 
     return shadow_rect
 

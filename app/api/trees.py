@@ -211,6 +211,7 @@ def delete_tree(
 def get_tree_shadow_extent(
     tree_id: int,
     latitude: float = 40.0,
+    hour: float | None = None,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -222,6 +223,7 @@ def get_tree_shadow_extent(
 
     Query parameters:
     - latitude: Latitude for sun angle calculation (default: 40.0 for temperate zone)
+    - hour: Hour of day for shadow calculation (0-24, default: None for seasonal midday shadows)
     """
     from app.services.sun_exposure_service import SunExposureService
 
@@ -241,6 +243,6 @@ def get_tree_shadow_extent(
         )
 
     # Get shadow extent data using the service
-    shadow_data = SunExposureService.get_tree_shadow_extent(tree, latitude)
+    shadow_data = SunExposureService.get_tree_shadow_extent(tree, latitude, hour)
 
     return shadow_data
