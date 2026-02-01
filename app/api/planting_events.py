@@ -61,6 +61,8 @@ def create_planting_event(
         location_in_garden=event_data.location_in_garden,
         health_status=event_data.health_status,
         plant_notes=event_data.plant_notes,
+        x=event_data.x,
+        y=event_data.y,
         notes=event_data.notes
     )
 
