@@ -201,8 +201,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  pointer-events: all;
-  cursor: help;
+  pointer-events: none; /* Allow clicks to pass through to gardens underneath */
   transition: background-color 0.2s, border-color 0.2s;
   z-index: 20; /* Above gardens to show tree coverage */
 }
