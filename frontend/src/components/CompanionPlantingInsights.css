@@ -1,0 +1,305 @@
+.companion-insights {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 30px;
+}
+
+.companion-insights h3 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  color: #2c5f2d;
+  font-size: 1.4em;
+}
+
+.companion-insights h4 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  color: #333;
+  font-size: 1.1em;
+}
+
+.companion-summary {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 30px;
+  flex-wrap: wrap;
+}
+
+.summary-stat {
+  flex: 1;
+  min-width: 120px;
+  padding: 15px;
+  border-radius: 6px;
+  text-align: center;
+}
+
+.summary-stat.beneficial {
+  background: #e8f5e9;
+  border: 2px solid #4caf50;
+}
+
+.summary-stat.conflicts {
+  background: #fff3e0;
+  border: 2px solid #ff9800;
+}
+
+.summary-stat.suggestions {
+  background: #e3f2fd;
+  border: 2px solid #2196f3;
+}
+
+.stat-value {
+  font-size: 2em;
+  font-weight: bold;
+  color: #333;
+}
+
+.stat-label {
+  font-size: 0.9em;
+  color: #666;
+  margin-top: 5px;
+}
+
+.companion-section {
+  margin-bottom: 30px;
+}
+
+.companion-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.companion-card {
+  border-radius: 6px;
+  padding: 15px;
+  border: 1px solid #ddd;
+}
+
+.beneficial-card {
+  background: #f1f8f4;
+  border-left: 4px solid #4caf50;
+}
+
+.conflict-card {
+  background: #fff8f0;
+  border-left: 4px solid #ff9800;
+}
+
+.companion-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.plant-names {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: #333;
+  flex-wrap: wrap;
+}
+
+.plant-name {
+  font-size: 1.1em;
+}
+
+.separator {
+  color: #999;
+  font-weight: normal;
+}
+
+.companion-badges {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.status-badge {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.85em;
+  font-weight: 600;
+}
+
+.status-badge.optimal {
+  background: #4caf50;
+  color: white;
+}
+
+.status-badge.active {
+  background: #8bc34a;
+  color: white;
+}
+
+.status-badge.conflict {
+  background: #ff9800;
+  color: white;
+}
+
+.confidence-badge {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.75em;
+  font-weight: 600;
+}
+
+.confidence-badge.high {
+  background: #2196f3;
+  color: white;
+}
+
+.confidence-badge.medium {
+  background: #03a9f4;
+  color: white;
+}
+
+.confidence-badge.low {
+  background: #b0bec5;
+  color: white;
+}
+
+.companion-details {
+  margin-top: 10px;
+}
+
+.mechanism {
+  color: #555;
+  line-height: 1.5;
+  margin-bottom: 8px;
+}
+
+.problem-description {
+  color: #d84315;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.distance-info {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 0.9em;
+  color: #666;
+  margin-bottom: 8px;
+}
+
+.optimal-note {
+  color: #4caf50;
+  font-weight: 500;
+}
+
+.separation-note {
+  color: #ff9800;
+  font-weight: 500;
+}
+
+.source {
+  font-size: 0.85em;
+  color: #666;
+  font-style: italic;
+  margin-bottom: 8px;
+}
+
+.notes {
+  font-size: 0.9em;
+  color: #777;
+  padding: 8px;
+  background: #f9f9f9;
+  border-radius: 4px;
+  margin-top: 8px;
+}
+
+.suggestion-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.suggestion-card {
+  background: #f5f9ff;
+  border: 1px solid #2196f3;
+  border-radius: 6px;
+  padding: 12px 15px;
+}
+
+.suggestion-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.suggestion-type {
+  font-weight: 600;
+  color: #1976d2;
+  font-size: 0.95em;
+}
+
+.suggestion-details {
+  color: #555;
+}
+
+.plant-pair {
+  margin-bottom: 6px;
+  font-size: 0.95em;
+}
+
+.reason {
+  color: #666;
+  line-height: 1.5;
+  margin-bottom: 8px;
+  font-size: 0.9em;
+}
+
+.distance-recommendation {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 0.9em;
+  color: #666;
+}
+
+.arrow {
+  color: #2196f3;
+  font-weight: bold;
+}
+
+.recommended {
+  color: #1976d2;
+  font-weight: 600;
+}
+
+.info-message {
+  padding: 15px;
+  background: #e3f2fd;
+  border-left: 4px solid #2196f3;
+  border-radius: 4px;
+  color: #1565c0;
+}
+
+@media (max-width: 768px) {
+  .companion-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .companion-badges {
+    width: 100%;
+  }
+
+  .distance-recommendation {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+}

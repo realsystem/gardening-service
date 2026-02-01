@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import type { GardenDetails as GardenDetailsType, GardenShadingInfo } from '../types';
 import { GardenSensorReadings } from './GardenSensorReadings';
+import { CompanionPlantingInsights } from './CompanionPlantingInsights';
 
 interface GardenDetailsProps {
   gardenId: number;
@@ -195,6 +196,11 @@ export function GardenDetails({ gardenId, onBack }: GardenDetailsProps) {
           <div style={{ fontSize: '0.9em', color: '#666' }}>Ready to Harvest</div>
         </div>
       </div>
+
+      {/* Companion Planting Insights */}
+      {stats.active_plantings > 0 && (
+        <CompanionPlantingInsights gardenId={gardenId} />
+      )}
 
       {/* Plantings */}
       <div style={{ marginBottom: '30px' }}>
