@@ -26,6 +26,7 @@ from app.api import (
     export_import_router,
     system_router,
     admin_router,
+    admin_compliance_router,
     companion_analysis_router,
 )
 from app.error_handlers import (
@@ -80,6 +81,7 @@ app.include_router(structures_router)
 app.include_router(export_import_router)
 app.include_router(system_router)
 app.include_router(admin_router)
+app.include_router(admin_compliance_router)
 app.include_router(companion_analysis_router)
 
 

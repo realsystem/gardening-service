@@ -3,12 +3,14 @@ from datetime import datetime
 from sqlalchemy.orm import Session
 from typing import Dict, List, Tuple
 from packaging import version
+from fastapi import HTTPException, status
 
 from app.models.user import User
 from app.models.land import Land
 from app.models.garden import Garden, GardenType, LightSourceType, HydroSystemType
 from app.models.tree import Tree
 from app.models.planting_event import PlantingEvent, PlantingMethod, PlantHealth
+from app.models.plant_variety import PlantVariety
 from app.models.soil_sample import SoilSample
 from app.models.irrigation_source import IrrigationSource
 from app.models.irrigation_zone import IrrigationZone
@@ -21,6 +23,7 @@ from app.schemas.export_import import (
     ImportValidationIssue,
     EXPORT_SCHEMA_VERSION,
 )
+from app.compliance.service import ComplianceService
 
 
 class ImportService:
@@ -421,9 +424,30 @@ class ImportService:
             tree_id_map[tree_data.id] = new_tree.id
         id_mapping["trees"] = tree_id_map
 
-        # Import plantings
+        # Import plantings (with compliance check for restricted varieties)
+        compliance_service = ComplianceService(db)
         planting_id_map = {}
         for planting_data in data.plantings:
+            # Compliance check: verify plant variety is not restricted
+            # This prevents importing plantings that reference restricted varieties
+            variety = db.query(PlantVariety).filter(
+                PlantVariety.id == planting_data.plant_variety_id
+            ).first()
+
+            if variety:
+                # Check if this variety is restricted
+                compliance_service.check_and_enforce_plant_restriction(
+                    user=user,
+                    common_name=variety.common_name,
+                    scientific_name=variety.scientific_name,
+                    notes=planting_data.plant_notes,
+                    request_metadata={
+                        "endpoint": "import_user_data",
+                        "variety_id": variety.id,
+                        "import_mode": mode
+                    }
+                )
+
             new_planting = PlantingEvent(
                 user_id=user.id,
                 garden_id=garden_id_map[planting_data.garden_id],
