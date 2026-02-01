@@ -205,3 +205,42 @@ def delete_tree(
 
     tree_repo.delete(tree)
     return None
+
+
+@router.get("/{tree_id}/shadow-extent")
+def get_tree_shadow_extent(
+    tree_id: int,
+    latitude: float = 40.0,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Calculate seasonal shadow extent for a tree.
+
+    Returns shadow rectangles for winter, equinox, and summer based on
+    sun altitude angles at the given latitude.
+
+    Query parameters:
+    - latitude: Latitude for sun angle calculation (default: 40.0 for temperate zone)
+    """
+    from app.services.sun_exposure_service import SunExposureService
+
+    tree_repo = TreeRepository(db)
+    tree = tree_repo.get_by_id(tree_id)
+
+    if not tree:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Tree not found"
+        )
+
+    if tree.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to access this tree"
+        )
+
+    # Get shadow extent data using the service
+    shadow_data = SunExposureService.get_tree_shadow_extent(tree, latitude)
+
+    return shadow_data

@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { api } from '../services/api';
-import type { LandWithGardens, Garden, GardenSpatialInfo, Tree } from '../types';
+import type { LandWithGardens, Garden, GardenSpatialInfo, Tree, TreeShadowExtent, GardenSunExposure } from '../types';
 import './LandCanvas.css';
 
 interface LandCanvasProps {
@@ -37,6 +37,10 @@ export function LandCanvas({ land, gardens, trees = [], onUpdate }: LandCanvasPr
   const [placingGarden, setPlacingGarden] = useState<number | null>(null);
   const [snapEnabled, setSnapEnabled] = useState<boolean>(true); // Snap enabled by default
   const [altKeyPressed, setAltKeyPressed] = useState<boolean>(false); // Track Alt key
+  const [showSeasonalShadows, setShowSeasonalShadows] = useState<boolean>(false);
+  const [selectedSeason, setSelectedSeason] = useState<'winter' | 'equinox' | 'summer'>('summer');
+  const [gardenSunExposure, setGardenSunExposure] = useState<Map<number, GardenSunExposure>>(new Map());
+  const [treeShadows, setTreeShadows] = useState<Map<number, TreeShadowExtent>>(new Map());
   const canvasRef = useRef<HTMLDivElement>(null);
 
   // Calculate canvas dimensions
@@ -168,6 +172,43 @@ export function LandCanvas({ land, gardens, trees = [], onUpdate }: LandCanvasPr
     };
   }, []);
 
+  // Fetch sun exposure data for gardens and trees
+  useEffect(() => {
+    const fetchSunExposureData = async () => {
+      // Fetch garden sun exposure
+      const gardenExposureMap = new Map<number, GardenSunExposure>();
+      for (const garden of land.gardens) {
+        if (garden.x != null && garden.y != null) {
+          try {
+            const exposure = await api.getGardenSunExposure(garden.id);
+            gardenExposureMap.set(garden.id, exposure);
+          } catch (error) {
+            console.error(`Failed to fetch sun exposure for garden ${garden.id}:`, error);
+          }
+        }
+      }
+      setGardenSunExposure(gardenExposureMap);
+
+      // Fetch tree shadow extents (default latitude 40.0 for temperate zone)
+      const treeShadowMap = new Map<number, TreeShadowExtent>();
+      for (const tree of trees) {
+        if (tree.x != null && tree.y != null && tree.height != null) {
+          try {
+            const shadowExtent = await api.getTreeShadowExtent(tree.id, 40.0);
+            treeShadowMap.set(tree.id, shadowExtent);
+          } catch (error) {
+            console.error(`Failed to fetch shadow extent for tree ${tree.id}:`, error);
+          }
+        }
+      }
+      setTreeShadows(treeShadowMap);
+    };
+
+    if (showSeasonalShadows) {
+      fetchSunExposureData();
+    }
+  }, [land.gardens, trees, showSeasonalShadows]);
+
   const handlePlaceGarden = async (garden: Garden) => {
     // Prevent double-click placement
     if (placingGarden) {
@@ -279,6 +320,44 @@ export function LandCanvas({ land, gardens, trees = [], onUpdate }: LandCanvasPr
         </p>
       </div>
 
+      {/* Seasonal shadow controls */}
+      <div style={{ padding: '10px', backgroundColor: '#fff3cd', borderRadius: '4px', marginBottom: '10px', border: '1px solid #ffc107' }}>
+        <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', fontSize: '0.9em', marginBottom: '8px' }}>
+          <input
+            type="checkbox"
+            checked={showSeasonalShadows}
+            onChange={(e) => setShowSeasonalShadows(e.target.checked)}
+            style={{ marginRight: '8px', cursor: 'pointer' }}
+          />
+          <span><strong>Show Seasonal Shadows</strong></span>
+        </label>
+        {showSeasonalShadows && (
+          <div style={{ marginLeft: '24px' }}>
+            <label style={{ display: 'block', fontSize: '0.85em', marginBottom: '4px', color: '#666' }}>
+              Season:
+            </label>
+            <select
+              value={selectedSeason}
+              onChange={(e) => setSelectedSeason(e.target.value as 'winter' | 'equinox' | 'summer')}
+              style={{
+                padding: '4px 8px',
+                borderRadius: '3px',
+                border: '1px solid #ccc',
+                fontSize: '0.85em',
+                cursor: 'pointer'
+              }}
+            >
+              <option value="winter">Winter (Longest shadows)</option>
+              <option value="equinox">Equinox (Medium shadows)</option>
+              <option value="summer">Summer (Shortest shadows)</option>
+            </select>
+            <p style={{ margin: '6px 0 0 0', fontSize: '0.75em', color: '#856404' }}>
+              Shadow projection based on sun altitude at solar noon
+            </p>
+          </div>
+        )}
+      </div>
+
       <div className="canvas-wrapper">
         <div
           ref={canvasRef}
@@ -323,6 +402,33 @@ export function LandCanvas({ land, gardens, trees = [], onUpdate }: LandCanvasPr
             {/* Render both grids */}
             <rect width="100%" height="100%" fill="url(#minor-grid)" />
             <rect width="100%" height="100%" fill="url(#major-grid)" />
+
+            {/* Seasonal shadows overlay */}
+            {showSeasonalShadows && treeShadows.size > 0 && (
+              <>
+                {Array.from(treeShadows.entries()).map(([treeId, shadowExtent]) => {
+                  if (!shadowExtent.seasonal_shadows) return null;
+                  const shadowRect = shadowExtent.seasonal_shadows[selectedSeason];
+                  if (!shadowRect) return null;
+
+                  return (
+                    <rect
+                      key={`shadow-${treeId}-${selectedSeason}`}
+                      x={shadowRect.x * GRID_SIZE}
+                      y={shadowRect.y * GRID_SIZE}
+                      width={shadowRect.width * GRID_SIZE}
+                      height={shadowRect.height * GRID_SIZE}
+                      fill="rgba(100, 100, 150, 0.3)"
+                      stroke="rgba(100, 100, 150, 0.6)"
+                      strokeWidth="1"
+                      strokeDasharray="4 2"
+                    >
+                      <title>{`Shadow from tree ${treeId} in ${selectedSeason}`}</title>
+                    </rect>
+                  );
+                })}
+              </>
+            )}
           </svg>
 
           {/* Trees (render first, so they appear behind gardens) */}
@@ -367,6 +473,23 @@ export function LandCanvas({ land, gardens, trees = [], onUpdate }: LandCanvasPr
             const displayX = isDragging && dragState.currentX !== undefined ? dragState.currentX : garden.x;
             const displayY = isDragging && dragState.currentY !== undefined ? dragState.currentY : garden.y;
 
+            // Get sun exposure data for color-coding
+            const exposure = gardenSunExposure.get(garden.id);
+            let backgroundColor = '';
+            let borderColor = '';
+            if (showSeasonalShadows && exposure?.exposure_category) {
+              if (exposure.exposure_category === 'Full Sun') {
+                backgroundColor = 'rgba(144, 238, 144, 0.6)'; // Light green
+                borderColor = 'rgba(34, 139, 34, 0.8)'; // Forest green
+              } else if (exposure.exposure_category === 'Partial Sun') {
+                backgroundColor = 'rgba(255, 223, 128, 0.6)'; // Light yellow-orange
+                borderColor = 'rgba(255, 165, 0, 0.8)'; // Orange
+              } else if (exposure.exposure_category === 'Shade') {
+                backgroundColor = 'rgba(200, 200, 200, 0.6)'; // Light gray
+                borderColor = 'rgba(128, 128, 128, 0.8)'; // Gray
+              }
+            }
+
             return (
               <div
                 key={garden.id}
@@ -376,6 +499,8 @@ export function LandCanvas({ land, gardens, trees = [], onUpdate }: LandCanvasPr
                   top: `${displayY * GRID_SIZE}px`,
                   width: `${garden.width * GRID_SIZE}px`,
                   height: `${garden.height * GRID_SIZE}px`,
+                  ...(backgroundColor && { backgroundColor }),
+                  ...(borderColor && { borderColor }),
                 }}
                 onMouseDown={(e) => handleMouseDown(e, garden)}
                 onClick={() => setSelectedGarden(garden.id)}
@@ -418,6 +543,135 @@ export function LandCanvas({ land, gardens, trees = [], onUpdate }: LandCanvasPr
         </div>
       )}
 
+      {/* Sun Exposure Details Panel */}
+      {showSeasonalShadows && selectedGarden && (() => {
+        const selectedGardenData = land.gardens.find(g => g.id === selectedGarden);
+        const exposure = gardenSunExposure.get(selectedGarden);
+
+        if (!selectedGardenData || !exposure) return null;
+
+        return (
+          <div style={{
+            padding: '12px',
+            backgroundColor: '#f0f8ff',
+            borderRadius: '6px',
+            marginBottom: '10px',
+            border: '1px solid #4682b4'
+          }}>
+            <h4 style={{ margin: '0 0 10px 0', color: '#2c5282', fontSize: '1em' }}>
+              ☀️ Sun Exposure: {selectedGardenData.name}
+            </h4>
+
+            {exposure.seasonal_exposure_score !== null && (
+              <div style={{ marginBottom: '8px' }}>
+                <strong>Overall Exposure Score:</strong> {(exposure.seasonal_exposure_score * 100).toFixed(0)}%
+                <div style={{
+                  width: '100%',
+                  height: '8px',
+                  backgroundColor: '#e0e0e0',
+                  borderRadius: '4px',
+                  marginTop: '4px',
+                  overflow: 'hidden'
+                }}>
+                  <div style={{
+                    width: `${exposure.seasonal_exposure_score * 100}%`,
+                    height: '100%',
+                    backgroundColor: exposure.exposure_category === 'Full Sun' ? '#4caf50' :
+                                   exposure.exposure_category === 'Partial Sun' ? '#ffa726' : '#9e9e9e',
+                    transition: 'width 0.3s ease'
+                  }} />
+                </div>
+              </div>
+            )}
+
+            {exposure.exposure_category && (
+              <div style={{ marginBottom: '8px' }}>
+                <strong>Category:</strong>{' '}
+                <span style={{
+                  padding: '2px 8px',
+                  borderRadius: '3px',
+                  backgroundColor: exposure.exposure_category === 'Full Sun' ? '#c8e6c9' :
+                                 exposure.exposure_category === 'Partial Sun' ? '#ffe0b2' : '#e0e0e0',
+                  color: exposure.exposure_category === 'Full Sun' ? '#2e7d32' :
+                         exposure.exposure_category === 'Partial Sun' ? '#e65100' : '#616161',
+                  fontWeight: 'bold',
+                  fontSize: '0.85em'
+                }}>
+                  {exposure.exposure_category}
+                </span>
+              </div>
+            )}
+
+            {exposure.seasonal_shading && (
+              <div style={{ marginBottom: '8px' }}>
+                <strong>Seasonal Shading:</strong>
+                <table style={{ width: '100%', marginTop: '6px', fontSize: '0.85em', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ backgroundColor: '#e3f2fd' }}>
+                      <th style={{ padding: '4px 8px', textAlign: 'left', borderBottom: '1px solid #90caf9' }}>Season</th>
+                      <th style={{ padding: '4px 8px', textAlign: 'right', borderBottom: '1px solid #90caf9' }}>Shaded</th>
+                      <th style={{ padding: '4px 8px', textAlign: 'left', borderBottom: '1px solid #90caf9' }}>Category</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {exposure.seasonal_shading.winter && (
+                      <tr>
+                        <td style={{ padding: '4px 8px', borderBottom: '1px solid #e0e0e0' }}>Winter</td>
+                        <td style={{ padding: '4px 8px', textAlign: 'right', borderBottom: '1px solid #e0e0e0' }}>
+                          {exposure.seasonal_shading.winter.shaded_percentage.toFixed(0)}%
+                        </td>
+                        <td style={{ padding: '4px 8px', borderBottom: '1px solid #e0e0e0', fontSize: '0.8em' }}>
+                          {exposure.seasonal_shading.winter.exposure_category}
+                        </td>
+                      </tr>
+                    )}
+                    {exposure.seasonal_shading.equinox && (
+                      <tr>
+                        <td style={{ padding: '4px 8px', borderBottom: '1px solid #e0e0e0' }}>Equinox</td>
+                        <td style={{ padding: '4px 8px', textAlign: 'right', borderBottom: '1px solid #e0e0e0' }}>
+                          {exposure.seasonal_shading.equinox.shaded_percentage.toFixed(0)}%
+                        </td>
+                        <td style={{ padding: '4px 8px', borderBottom: '1px solid #e0e0e0', fontSize: '0.8em' }}>
+                          {exposure.seasonal_shading.equinox.exposure_category}
+                        </td>
+                      </tr>
+                    )}
+                    {exposure.seasonal_shading.summer && (
+                      <tr>
+                        <td style={{ padding: '4px 8px' }}>Summer</td>
+                        <td style={{ padding: '4px 8px', textAlign: 'right' }}>
+                          {exposure.seasonal_shading.summer.shaded_percentage.toFixed(0)}%
+                        </td>
+                        <td style={{ padding: '4px 8px', fontSize: '0.8em' }}>
+                          {exposure.seasonal_shading.summer.exposure_category}
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {exposure.warnings && exposure.warnings.length > 0 && (
+              <div style={{
+                padding: '8px',
+                backgroundColor: '#fff3e0',
+                borderRadius: '4px',
+                border: '1px solid #ff9800',
+                marginTop: '8px'
+              }}>
+                <strong style={{ color: '#e65100', fontSize: '0.85em' }}>⚠️ Warnings:</strong>
+                <ul style={{ margin: '4px 0 0 0', paddingLeft: '20px', fontSize: '0.8em' }}>
+                  {exposure.warnings.map((warning, idx) => (
+                    <li key={idx} style={{ color: '#bf360c', marginBottom: '2px' }}>{warning}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        );
+      })()}
+
       <div className="canvas-legend">
         <p><strong>Instructions:</strong></p>
         <ul>
@@ -426,6 +680,19 @@ export function LandCanvas({ land, gardens, trees = [], onUpdate }: LandCanvasPr
           <li>Click × to remove a garden from the land</li>
           <li>Gardens cannot overlap</li>
           <li>Grid: Minor lines = 0.1 units, Major lines = 1 unit</li>
+          {showSeasonalShadows && (
+            <>
+              <li style={{ marginTop: '8px', color: '#1976d2' }}>
+                <strong>Seasonal Shadows:</strong> Blue shaded areas show tree shadow projection
+              </li>
+              <li style={{ color: '#1976d2' }}>
+                <strong>Garden Colors:</strong>{' '}
+                <span style={{ color: '#2e7d32' }}>Green = Full Sun</span>,{' '}
+                <span style={{ color: '#e65100' }}>Orange = Partial Sun</span>,{' '}
+                <span style={{ color: '#616161' }}>Gray = Shade</span>
+              </li>
+            </>
+          )}
         </ul>
       </div>
     </div>

@@ -1,6 +1,6 @@
 """Garden schemas"""
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, Dict, List
 from datetime import datetime
 from app.models.garden import GardenType, LightSourceType, HydroSystemType
 
@@ -130,3 +130,32 @@ class GardenResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class GardenResponseWithSunExposure(GardenResponse):
+    """
+    Extended garden response with computed sun exposure data.
+
+    These fields are computed on-demand from tree positions and seasonal sun angles.
+    Not stored in database - calculated at request time.
+    """
+    seasonal_exposure_score: Optional[float] = Field(
+        None,
+        description="Overall seasonal sun exposure score (0-1), where 1 is full sun"
+    )
+    seasonal_shading: Optional[Dict[str, dict]] = Field(
+        None,
+        description="Per-season shading data (winter, equinox, summer)"
+    )
+    exposure_category: Optional[str] = Field(
+        None,
+        description="Exposure category: 'Full Sun', 'Partial Sun', or 'Shade'"
+    )
+    shading_sources: List[int] = Field(
+        default_factory=list,
+        description="IDs of trees casting shadows on this garden"
+    )
+    sun_warnings: List[str] = Field(
+        default_factory=list,
+        description="Sun exposure warnings and recommendations"
+    )
