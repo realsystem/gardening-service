@@ -1,0 +1,72 @@
+.structure-manager {
+  margin: 1rem 0;
+  padding: 1rem;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.structure-manager-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.structure-manager-header h3 {
+  margin: 0;
+  color: #5d4e37;
+}
+
+.structure-form {
+  background: #f8f9fa;
+  padding: 1.5rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+}
+
+.structure-form h4 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  color: #5d4e37;
+}
+
+.structures-list {
+  margin-top: 1rem;
+}
+
+.structures-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
+}
+
+.structure-card {
+  background: #f8f9fa;
+  padding: 1rem;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.structure-info h4 {
+  margin: 0 0 0.5rem 0;
+  color: #5d4e37;
+  font-size: 1.1rem;
+}
+
+.structure-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.structure-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}

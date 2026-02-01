@@ -41,6 +41,10 @@ import type {
   Tree,
   TreeCreate,
   TreeUpdate,
+  Structure,
+  StructureCreate,
+  StructureUpdate,
+  StructureShadowExtent,
   GardenShadingInfo,
   GardenSunExposure,
   TreeShadowExtent,
@@ -686,6 +690,47 @@ class ApiClient {
   async getTreeShadowExtent(treeId: number, latitude?: number): Promise<TreeShadowExtent> {
     const params = latitude !== undefined ? `?latitude=${latitude}` : '';
     return this.request<TreeShadowExtent>(`/trees/${treeId}/shadow-extent${params}`);
+  }
+
+  // Structures
+  async createStructure(data: StructureCreate): Promise<Structure> {
+    return this.request<Structure>('/structures', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getStructures(): Promise<Structure[]> {
+    return this.request<Structure[]>('/structures');
+  }
+
+  async getStructure(structureId: number): Promise<Structure> {
+    return this.request<Structure>(`/structures/${structureId}`);
+  }
+
+  async getStructuresOnLand(landId: number): Promise<Structure[]> {
+    return this.request<Structure[]>(`/structures/land/${landId}`);
+  }
+
+  async updateStructure(structureId: number, data: StructureUpdate): Promise<Structure> {
+    return this.request<Structure>(`/structures/${structureId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteStructure(structureId: number): Promise<void> {
+    await fetch(`${API_BASE_URL}/structures/${structureId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${this.token}`,
+      },
+    });
+  }
+
+  async getStructureShadowExtent(structureId: number, latitude?: number): Promise<StructureShadowExtent> {
+    const params = latitude !== undefined ? `?latitude=${latitude}` : '';
+    return this.request<StructureShadowExtent>(`/structures/${structureId}/shadow-extent${params}`);
   }
 
   // ========================================================================
