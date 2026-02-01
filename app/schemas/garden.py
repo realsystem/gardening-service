@@ -33,6 +33,12 @@ class GardenCreate(BaseModel):
     ppm_max: Optional[int] = Field(None, ge=0)
     water_temp_min_f: Optional[float] = None
     water_temp_max_f: Optional[float] = None
+    # Spatial layout fields (for gardens placed on land plots)
+    land_id: Optional[int] = None
+    x: Optional[float] = None
+    y: Optional[float] = None
+    width: Optional[float] = Field(None, gt=0)
+    height: Optional[float] = Field(None, gt=0)
     # Irrigation system fields
     irrigation_zone_id: Optional[int] = None
     mulch_depth_inches: Optional[float] = Field(None, ge=0)
@@ -66,6 +72,12 @@ class GardenUpdate(BaseModel):
     ppm_max: Optional[int] = Field(None, ge=0)
     water_temp_min_f: Optional[float] = None
     water_temp_max_f: Optional[float] = None
+    # Spatial layout fields (for gardens placed on land plots)
+    land_id: Optional[int] = None
+    x: Optional[float] = None
+    y: Optional[float] = None
+    width: Optional[float] = Field(None, gt=0)
+    height: Optional[float] = Field(None, gt=0)
     # Irrigation system fields
     irrigation_zone_id: Optional[int] = None
     mulch_depth_inches: Optional[float] = Field(None, ge=0)
