@@ -112,6 +112,8 @@ export interface PlantingEvent {
   location_in_garden?: string;
   health_status?: 'healthy' | 'stressed' | 'diseased';
   plant_notes?: string;
+  x?: number;
+  y?: number;
 }
 
 export interface Task {

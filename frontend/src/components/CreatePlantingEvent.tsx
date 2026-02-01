@@ -18,6 +18,8 @@ export function CreatePlantingEvent({ onClose, onSuccess }: CreatePlantingEventP
   const [location, setLocation] = useState('');
   const [healthStatus, setHealthStatus] = useState<'healthy' | 'stressed' | 'diseased' | ''>('');
   const [plantNotes, setPlantNotes] = useState('');
+  const [positionX, setPositionX] = useState('');
+  const [positionY, setPositionY] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [needsGarden, setNeedsGarden] = useState(false);
@@ -82,6 +84,8 @@ export function CreatePlantingEvent({ onClose, onSuccess }: CreatePlantingEventP
         location_in_garden: location || undefined,
         health_status: healthStatus || undefined,
         plant_notes: plantNotes || undefined,
+        x: positionX ? parseFloat(positionX) : undefined,
+        y: positionY ? parseFloat(positionY) : undefined,
       });
       onSuccess();
     } catch (err) {
@@ -206,6 +210,42 @@ export function CreatePlantingEvent({ onClose, onSuccess }: CreatePlantingEventP
                 <option value="stressed">Stressed</option>
                 <option value="diseased">Diseased</option>
               </select>
+            </div>
+
+            <div style={{ background: '#e8f5e9', padding: '12px', borderRadius: '6px', marginBottom: '15px' }}>
+              <div style={{ fontSize: '0.95em', fontWeight: '600', marginBottom: '8px', color: '#2c5f2d' }}>
+                🌿 Plant Position (for Companion Planting Analysis)
+              </div>
+              <div style={{ fontSize: '0.85em', color: '#555', marginBottom: '10px' }}>
+                Optional: Set plant position to get companion planting recommendations
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label>X Position (meters)</label>
+                  <input
+                    type="number"
+                    value={positionX}
+                    onChange={(e) => setPositionX(e.target.value)}
+                    placeholder="0.0"
+                    step="0.1"
+                    disabled={loading}
+                  />
+                </div>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label>Y Position (meters)</label>
+                  <input
+                    type="number"
+                    value={positionY}
+                    onChange={(e) => setPositionY(e.target.value)}
+                    placeholder="0.0"
+                    step="0.1"
+                    disabled={loading}
+                  />
+                </div>
+              </div>
+              <div style={{ fontSize: '0.8em', color: '#666', marginTop: '6px' }}>
+                Example: First plant at (0, 0), second plant 0.5m away at (0.5, 0)
+              </div>
             </div>
 
             <div className="form-group">
