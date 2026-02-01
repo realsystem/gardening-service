@@ -229,15 +229,6 @@ echo ""
 # Step 6: Create Trees for Sun-Path Visualization
 echo "Step 6: Creating trees for seasonal shadow analysis..."
 
-# Get tree species IDs
-SPECIES=$(curl -s -X GET "${API_URL}/tree-species" \
-  -H "Authorization: Bearer ${TOKEN}" 2>/dev/null || echo "[]")
-
-# Extract species IDs (fallback to generic IDs if endpoint doesn't exist yet)
-OAK_ID=$(echo "$SPECIES" | python3 -c "import sys, json; data=json.load(sys.stdin); print(next((s['id'] for s in data if 'Oak' in s.get('common_name', '')), 1))" 2>/dev/null || echo "1")
-MAPLE_ID=$(echo "$SPECIES" | python3 -c "import sys, json; data=json.load(sys.stdin); print(next((s['id'] for s in data if 'Maple' in s.get('common_name', '')), 2))" 2>/dev/null || echo "2")
-PINE_ID=$(echo "$SPECIES" | python3 -c "import sys, json; data=json.load(sys.stdin); print(next((s['id'] for s in data if 'Pine' in s.get('common_name', '')), 3))" 2>/dev/null || echo "3")
-
 # Tree 1: Large Oak south of Vegetable Garden (creates significant shading)
 # Garden is at (1,1) with size 14x10, so placing tree at x=8, y=-5 (south of garden)
 TREE1_RESPONSE=$(curl -s -X POST "${API_URL}/trees" \
@@ -246,12 +237,10 @@ TREE1_RESPONSE=$(curl -s -X POST "${API_URL}/trees" \
   -d "{
     \"land_id\": ${LAND_ID},
     \"name\": \"Mature Oak\",
-    \"species_id\": ${OAK_ID},
     \"x\": 8.0,
     \"y\": -5.0,
     \"height\": 18.0,
-    \"canopy_radius\": 4.5,
-    \"notes\": \"Large shade tree south of vegetable garden - demonstrates winter shadow impact\"
+    \"canopy_radius\": 4.5
   }" 2>/dev/null)
 TREE1_ID=$(echo "$TREE1_RESPONSE" | grep -o '"id":[0-9]*' | head -1 | cut -d':' -f2)
 if [ ! -z "$TREE1_ID" ] && [ "$TREE1_ID" != "" ]; then
@@ -269,12 +258,10 @@ TREE2_RESPONSE=$(curl -s -X POST "${API_URL}/trees" \
   -d "{
     \"land_id\": ${LAND_ID},
     \"name\": \"Red Maple\",
-    \"species_id\": ${MAPLE_ID},
     \"x\": 33.0,
     \"y\": 6.0,
     \"height\": 12.0,
-    \"canopy_radius\": 3.0,
-    \"notes\": \"Medium tree east of herb garden - minimal shadow impact\"
+    \"canopy_radius\": 3.0
   }" 2>/dev/null)
 TREE2_ID=$(echo "$TREE2_RESPONSE" | grep -o '"id":[0-9]*' | head -1 | cut -d':' -f2)
 if [ ! -z "$TREE2_ID" ] && [ "$TREE2_ID" != "" ]; then
@@ -290,12 +277,10 @@ TREE3_RESPONSE=$(curl -s -X POST "${API_URL}/trees" \
   -d "{
     \"land_id\": ${LAND_ID},
     \"name\": \"White Pine\",
-    \"species_id\": ${PINE_ID},
     \"x\": 16.0,
     \"y\": 26.0,
     \"height\": 22.0,
-    \"canopy_radius\": 3.5,
-    \"notes\": \"Tall evergreen north of flower garden - shadows cast away from garden\"
+    \"canopy_radius\": 3.5
   }" 2>/dev/null)
 TREE3_ID=$(echo "$TREE3_RESPONSE" | grep -o '"id":[0-9]*' | head -1 | cut -d':' -f2)
 if [ ! -z "$TREE3_ID" ] && [ "$TREE3_ID" != "" ]; then
@@ -310,12 +295,10 @@ TREE4_RESPONSE=$(curl -s -X POST "${API_URL}/trees" \
   -d "{
     \"land_id\": ${LAND_ID},
     \"name\": \"Ornamental Cherry\",
-    \"species_id\": ${OAK_ID},
     \"x\": 31.0,
     \"y\": 23.0,
     \"height\": 8.0,
-    \"canopy_radius\": 2.0,
-    \"notes\": \"Small decorative tree - short shadows\"
+    \"canopy_radius\": 2.0
   }" 2>/dev/null)
 TREE4_ID=$(echo "$TREE4_RESPONSE" | grep -o '"id":[0-9]*' | head -1 | cut -d':' -f2)
 if [ ! -z "$TREE4_ID" ] && [ "$TREE4_ID" != "" ]; then
@@ -330,12 +313,10 @@ TREE5_RESPONSE=$(curl -s -X POST "${API_URL}/trees" \
   -d "{
     \"land_id\": ${LAND_ID},
     \"name\": \"Sugar Maple\",
-    \"species_id\": ${MAPLE_ID},
     \"x\": 10.0,
     \"y\": 9.0,
     \"height\": 15.0,
-    \"canopy_radius\": 3.5,
-    \"notes\": \"Medium shade tree - demonstrates moderate seasonal shading\"
+    \"canopy_radius\": 3.5
   }" 2>/dev/null)
 TREE5_ID=$(echo "$TREE5_RESPONSE" | grep -o '"id":[0-9]*' | head -1 | cut -d':' -f2)
 if [ ! -z "$TREE5_ID" ] && [ "$TREE5_ID" != "" ]; then
