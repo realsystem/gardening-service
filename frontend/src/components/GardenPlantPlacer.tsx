@@ -25,8 +25,8 @@ interface GardenPlantPlacerProps {
   onPositionChange: (position: PlantPosition) => void;
 }
 
-const CANVAS_WIDTH = 500;
-const CANVAS_HEIGHT = 400;
+const CANVAS_WIDTH = 400;
+const CANVAS_HEIGHT = 320;
 const GRID_SIZE = 50; // pixels per meter
 const GRID_CELL_SIZE = 0.3048; // 1 foot in meters (12 inches = 0.3048m)
 
