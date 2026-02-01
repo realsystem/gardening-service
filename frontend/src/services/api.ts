@@ -118,6 +118,8 @@ class ApiClient {
     avatar_url?: string;
     city?: string;
     gardening_preferences?: string;
+    zip_code?: string;
+    unit_system?: 'metric' | 'imperial';
   }): Promise<User> {
     return this.request<User>('/users/me', {
       method: 'PATCH',
