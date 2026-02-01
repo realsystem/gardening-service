@@ -41,3 +41,7 @@ backups/
 frontend/node_modules/
 frontend/dist/
 frontend/coverage/
+
+# Admin Scripts (SECURITY: Never commit admin assignment scripts)
+assign_admin.py
+**/assign_admin*.py

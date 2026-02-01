@@ -45,7 +45,8 @@ import type {
   ExportData,
   ImportPreview,
   ImportRequest,
-  ImportResult
+  ImportResult,
+  SystemStats
 } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
@@ -699,6 +700,14 @@ class ApiClient {
       method: 'POST',
       body: JSON.stringify(request),
     });
+  }
+
+  // ========================================================================
+  // SYSTEM STATS (Admin-only)
+  // ========================================================================
+
+  async getSystemStats(): Promise<SystemStats> {
+    return this.request<SystemStats>('/system/stats');
   }
 }
 

@@ -23,6 +23,8 @@ from app.api import (
     rule_insights_router,
     trees_router,
     export_import_router,
+    system_router,
+    admin_router,
 )
 from app.error_handlers import (
     http_exception_handler,
@@ -73,6 +75,8 @@ app.include_router(dashboard_router)
 app.include_router(rule_insights_router)
 app.include_router(trees_router)
 app.include_router(export_import_router)
+app.include_router(system_router)
+app.include_router(admin_router)
 
 
 @app.get("/")

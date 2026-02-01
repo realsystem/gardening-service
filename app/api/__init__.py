@@ -16,6 +16,8 @@ from app.api.dashboard import router as dashboard_router
 from app.api.rule_insights import router as rule_insights_router
 from app.api.trees import router as trees_router
 from app.api.export_import import router as export_import_router
+from app.api.system import router as system_router
+from app.api.admin import router as admin_router
 
 __all__ = [
     "users_router",
@@ -36,4 +38,6 @@ __all__ = [
     "rule_insights_router",
     "trees_router",
     "export_import_router",
+    "system_router",
+    "admin_router",
 ]

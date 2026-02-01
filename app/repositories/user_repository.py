@@ -11,7 +11,14 @@ class UserRepository:
         self.db = db
 
     def create(self, email: str, hashed_password: str, **kwargs) -> User:
-        """Create a new user"""
+        """Create a new user
+
+        Note: is_admin cannot be set via this method for security reasons.
+        Use a dedicated admin promotion endpoint instead.
+        """
+        # Explicitly exclude is_admin from kwargs for security
+        kwargs.pop('is_admin', None)
+
         user = User(
             email=email,
             hashed_password=hashed_password,
@@ -31,7 +38,14 @@ class UserRepository:
         return self.db.query(User).filter(User.email == email).first()
 
     def update(self, user: User, **kwargs) -> User:
-        """Update user"""
+        """Update user
+
+        Note: is_admin cannot be updated via this method for security reasons.
+        Use a dedicated admin promotion endpoint instead.
+        """
+        # Explicitly exclude is_admin from kwargs for security
+        kwargs.pop('is_admin', None)
+
         for key, value in kwargs.items():
             if hasattr(user, key):
                 setattr(user, key, value)

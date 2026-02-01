@@ -39,6 +39,7 @@ class UserResponse(BaseModel):
     latitude: Optional[float] = None
     longitude: Optional[float] = None
     usda_zone: Optional[str] = None
+    is_admin: bool = False
     created_at: datetime
 
     class Config:
