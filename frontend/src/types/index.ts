@@ -628,3 +628,65 @@ export interface IrrigationZoneDetails {
   recent_events: WateringEvent[];
   statistics: ZoneStatistics;
 }
+
+// ============================================================================
+// DATA EXPORT/IMPORT TYPES
+// ============================================================================
+
+export interface ExportData {
+  metadata: {
+    schema_version: string;
+    app_version: string;
+    export_timestamp: string;
+    user_id: number;
+    include_sensor_readings: boolean;
+  };
+  user_profile: {
+    display_name?: string;
+    city?: string;
+    zip_code?: string;
+    usda_zone?: string;
+    gardening_preferences?: string;
+  };
+  lands: any[];
+  gardens: any[];
+  trees: any[];
+  plantings: any[];
+  soil_samples: any[];
+  irrigation_sources: any[];
+  irrigation_zones: any[];
+  watering_events: any[];
+  sensor_readings: any[];
+}
+
+export interface ImportValidationIssue {
+  severity: 'info' | 'warning' | 'error';
+  category: string;
+  message: string;
+  details?: any;
+}
+
+export interface ImportPreview {
+  valid: boolean;
+  issues: ImportValidationIssue[];
+  counts: Record<string, number>;
+  warnings: string[];
+  schema_version_compatible: boolean;
+  would_overwrite?: number;
+}
+
+export interface ImportRequest {
+  mode: 'dry_run' | 'merge' | 'overwrite';
+  data: ExportData;
+}
+
+export interface ImportResult {
+  success: boolean;
+  mode: string;
+  items_imported: Record<string, number>;
+  items_updated?: Record<string, number>;
+  items_deleted?: number;
+  errors: string[];
+  warnings: string[];
+  id_mapping?: Record<string, Record<number, number>>;
+}
