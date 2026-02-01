@@ -108,10 +108,10 @@ export function CompanionPlantingInsights({ gardenId }: CompanionPlantingInsight
                 <div className="companion-details">
                   <p className="mechanism">{pair.mechanism}</p>
                   <div className="distance-info">
-                    <span>Distance: {pair.distance_m.toFixed(1)}m</span>
+                    <span>Distance: {(pair.distance_m ?? 0).toFixed(1)}m</span>
                     {pair.optimal_distance_m && (
                       <span className="optimal-note">
-                        (Optimal: {pair.optimal_distance_m.toFixed(1)}m)
+                        (Optimal: {(pair.optimal_distance_m ?? 0).toFixed(1)}m)
                       </span>
                     )}
                   </div>
@@ -150,9 +150,9 @@ export function CompanionPlantingInsights({ gardenId }: CompanionPlantingInsight
                   <p className="problem-description">{conflict.problem_description}</p>
                   <p className="mechanism">{conflict.mechanism}</p>
                   <div className="distance-info">
-                    <span>Current distance: {conflict.distance_m.toFixed(1)}m</span>
+                    <span>Current distance: {(conflict.distance_m ?? 0).toFixed(1)}m</span>
                     <span className="separation-note">
-                      (Recommended separation: {conflict.recommended_separation_m.toFixed(1)}m)
+                      (Recommended separation: {(conflict.recommended_separation_m ?? 0).toFixed(1)}m)
                     </span>
                   </div>
                   <p className="source">
@@ -187,9 +187,9 @@ export function CompanionPlantingInsights({ gardenId }: CompanionPlantingInsight
                   </p>
                   <p className="reason">{suggestion.reason}</p>
                   <div className="distance-recommendation">
-                    <span>Current: {suggestion.current_distance_m.toFixed(1)}m</span>
+                    <span>Current: {(suggestion.current_distance_m ?? 0).toFixed(1)}m</span>
                     <span className="arrow">→</span>
-                    <span className="recommended">Recommended: {suggestion.recommended_distance_m.toFixed(1)}m</span>
+                    <span className="recommended">Recommended: {(suggestion.recommended_distance_m ?? 0).toFixed(1)}m</span>
                   </div>
                 </div>
               </div>

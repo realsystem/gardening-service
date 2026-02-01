@@ -8,7 +8,7 @@ from fastapi.testclient import TestClient
 
 from app.database import Base, get_db
 from app.main import app
-from app.models.user import User
+from app.models.user import User, UnitSystem
 from app.models.plant_variety import PlantVariety, WaterRequirement, SunRequirement
 from app.models.seed_batch import SeedBatch
 from app.models.garden import Garden, GardenType, LightSourceType, HydroSystemType
@@ -67,7 +67,8 @@ def sample_user(test_db):
         email="test@example.com",
         hashed_password=AuthService.hash_password("testpass123"),
         display_name="Test User",
-        city="Portland"
+        city="Portland",
+        unit_system=UnitSystem.METRIC
     )
     test_db.add(user)
     test_db.commit()
@@ -81,7 +82,8 @@ def second_user(test_db):
     user = User(
         email="user2@example.com",
         hashed_password=AuthService.hash_password("password456"),
-        display_name="Second User"
+        display_name="Second User",
+        unit_system=UnitSystem.METRIC
     )
     test_db.add(user)
     test_db.commit()

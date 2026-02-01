@@ -53,7 +53,8 @@ import type {
   ImportRequest,
   ImportResult,
   SystemStats,
-  CompanionAnalysisResponse
+  CompanionAnalysisResponse,
+  NutrientOptimization
 } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
@@ -178,7 +179,7 @@ class ApiClient {
     container_type?: string;
     grow_medium?: string;
     is_hydroponic?: boolean;
-    hydro_system_type?: 'nft' | 'dwc' | 'ebb_flow' | 'aeroponics' | 'drip' | 'wick';
+    hydro_system_type?: 'nft' | 'dwc' | 'ebb_flow' | 'aeroponics' | 'drip' | 'wick' | 'fertigation' | 'container';
     reservoir_size_liters?: number;
     nutrient_schedule?: string;
     ph_min?: number;
@@ -206,6 +207,10 @@ class ApiClient {
 
   async getGardenSensorReadings(gardenId: number): Promise<SensorReading[]> {
     return this.request<SensorReading[]>(`/gardens/${gardenId}/sensor-readings`);
+  }
+
+  async getNutrientOptimization(gardenId: number): Promise<NutrientOptimization> {
+    return this.request<NutrientOptimization>(`/gardens/${gardenId}/nutrient-optimization`);
   }
 
   async deleteGarden(gardenId: number): Promise<void> {

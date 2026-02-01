@@ -186,12 +186,49 @@ GARDEN5_RESPONSE=$(curl -s -X POST "${API_URL}/gardens" \
     "name": "Hydroponic Greens",
     "garden_type": "indoor",
     "location": "basement",
-    "hydroponic_system_type": "nft",
+    "is_hydroponic": true,
+    "hydro_system_type": "nft",
+    "reservoir_size_liters": 50,
     "sun_exposure": "artificial_light",
-    "notes": "NFT system for lettuce and microgreens"
+    "notes": "NFT system for lettuce and microgreens - demonstrates low EC for leafy greens"
   }')
 GARDEN5_ID=$(echo "$GARDEN5_RESPONSE" | grep -o '"id":[0-9]*' | head -1 | cut -d':' -f2)
-echo "✓ Hydroponic Greens created (ID: $GARDEN5_ID)"
+echo "✓ Hydroponic Greens created (ID: $GARDEN5_ID) - NFT, 50L reservoir"
+
+# Garden 6: Hydroponic Tomatoes (DWC Hydroponics)
+GARDEN6_RESPONSE=$(curl -s -X POST "${API_URL}/gardens" \
+  -H "Authorization: Bearer ${TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Hydroponic Tomatoes",
+    "garden_type": "indoor",
+    "location": "grow tent",
+    "is_hydroponic": true,
+    "hydro_system_type": "dwc",
+    "reservoir_size_liters": 80,
+    "sun_exposure": "artificial_light",
+    "notes": "Deep Water Culture for high-nutrient demand fruiting crops"
+  }')
+GARDEN6_ID=$(echo "$GARDEN6_RESPONSE" | grep -o '"id":[0-9]*' | head -1 | cut -d':' -f2)
+echo "✓ Hydroponic Tomatoes created (ID: $GARDEN6_ID) - DWC, 80L reservoir"
+
+# Garden 7: Container Garden (Fertigation)
+GARDEN7_RESPONSE=$(curl -s -X POST "${API_URL}/gardens" \
+  -H "Authorization: Bearer ${TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Patio Container Garden",
+    "garden_type": "outdoor",
+    "location": "patio",
+    "is_hydroponic": false,
+    "hydro_system_type": "container",
+    "soil_type": "potting_mix",
+    "reservoir_size_liters": 30,
+    "sun_exposure": "full_sun",
+    "notes": "Container growing with drip fertigation system"
+  }')
+GARDEN7_ID=$(echo "$GARDEN7_RESPONSE" | grep -o '"id":[0-9]*' | head -1 | cut -d':' -f2)
+echo "✓ Patio Container Garden created (ID: $GARDEN7_ID) - Container system, 30L reservoir"
 echo ""
 
 # Step 5: Place Gardens on Land
@@ -883,6 +920,53 @@ curl -s -X POST "${API_URL}/planting-events" \
     \"notes\": \"Quick-growing microgreens, ready in 7-14 days\"
   }" > /dev/null
 echo "✓ Planted Microgreens in Hydroponic System (100+ seeds, almost ready)"
+
+# Plantings for Hydroponic Tomatoes (Garden 6) - Fruiting Stage
+curl -s -X POST "${API_URL}/planting-events" \
+  -H "Authorization: Bearer ${TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"garden_id\": ${GARDEN6_ID},
+    \"plant_variety_id\": ${TOMATO_CHERRY_ID},
+    \"planting_date\": \"${PLANTING_DATE_45D}\",
+    \"planting_method\": \"transplant\",
+    \"plant_count\": 4,
+    \"location_in_garden\": \"DWC buckets 1-4\",
+    \"health_status\": \"healthy\",
+    \"notes\": \"Hydroponic cherry tomatoes in fruiting stage - high EC demand (2.5-3.0 mS/cm)\"
+  }" > /dev/null
+echo "✓ Planted Cherry Tomatoes in Hydroponic DWC (4 plants, fruiting stage - HIGH EC)"
+
+# Plantings for Container Garden (Garden 7) - Flowering Stage
+curl -s -X POST "${API_URL}/planting-events" \
+  -H "Authorization: Bearer ${TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"garden_id\": ${GARDEN7_ID},
+    \"plant_variety_id\": ${PEPPER_BELL_ID},
+    \"planting_date\": \"${PLANTING_DATE_30D}\",
+    \"planting_method\": \"transplant\",
+    \"plant_count\": 6,
+    \"location_in_garden\": \"Large containers with drip lines\",
+    \"health_status\": \"healthy\",
+    \"notes\": \"Bell peppers in flowering stage with fertigation - medium EC demand (1.5-2.0 mS/cm)\"
+  }" > /dev/null
+echo "✓ Planted Bell Peppers in Container Garden (6 plants, flowering - MEDIUM EC)"
+
+curl -s -X POST "${API_URL}/planting-events" \
+  -H "Authorization: Bearer ${TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"garden_id\": ${GARDEN7_ID},
+    \"plant_variety_id\": ${BASIL_ID},
+    \"planting_date\": \"${PLANTING_DATE_20D}\",
+    \"planting_method\": \"transplant\",
+    \"plant_count\": 8,
+    \"location_in_garden\": \"Small containers\",
+    \"health_status\": \"healthy\",
+    \"notes\": \"Basil companion plants in vegetative stage - low EC demand (1.0-1.6 mS/cm)\"
+  }" > /dev/null
+echo "✓ Planted Basil in Container Garden (8 plants, vegetative - LOW EC)"
 echo ""
 
 # Step 12: Add More Irrigation Events for Variety
@@ -965,19 +1049,21 @@ echo "    - Red Maple (12ft, east of Herb Garden) - Minimal shading"
 echo "    - White Pine (22ft, north of Flower Garden) - Zero shading (NH)"
 echo "    - Ornamental Cherry (8ft, southeast corner) - Small shadows"
 echo "    - Sugar Maple (15ft, between gardens) - Moderate shading"
-echo "  • 5 Gardens:"
+echo "  • 7 Gardens:"
 echo "    - Vegetable Garden (Outdoor, Loam) - ID: $GARDEN1_ID"
 echo "    - Herb Garden (Outdoor, Sandy) - ID: $GARDEN2_ID"
 echo "    - Flower Garden (Outdoor, Clay) - ID: $GARDEN3_ID"
 echo "    - Indoor Herb Garden (Indoor) - ID: $GARDEN4_ID"
-echo "    - Hydroponic Greens (Indoor/Hydro) - ID: $GARDEN5_ID"
+echo "    - Hydroponic Greens (NFT, 50L) - ID: $GARDEN5_ID"
+echo "    - Hydroponic Tomatoes (DWC, 80L) - ID: $GARDEN6_ID"
+echo "    - Patio Container Garden (Container, 30L) - ID: $GARDEN7_ID"
 echo "  • 2 Water Sources:"
 echo "    - City Water - ID: $SOURCE1_ID"
 echo "    - Rain Barrel - ID: $SOURCE2_ID"
 echo "  • 2 Irrigation Zones:"
 echo "    - Vegetable Zone - ID: $ZONE1_ID"
 echo "    - Herb & Flower Zone - ID: $ZONE2_ID"
-echo "  • 22 Planting Events (with companion planting scenarios):"
+echo "  • 27 Planting Events (with companion planting and nutrient optimization scenarios):"
 echo "    - Vegetable Garden: 10 varieties with positions demonstrating:"
 echo "      ✓ Tomato + Basil (beneficial pair at 0.4m)"
 echo "      ✓ Carrot + Onion (beneficial pair at 0.3m)"
@@ -999,6 +1085,21 @@ echo "     • Lettuce + Radish: Radishes loosen soil for lettuce roots"
 echo "  ⚠️  Conflicts Demonstrated:"
 echo "     • Tomato + Broccoli: Competition for nutrients"
 echo "     • Bean + Onion: Onions inhibit bean growth"
+echo ""
+echo "Nutrient Optimization (Hydroponic/Fertigation/Container Systems):"
+echo "  🧪 Three systems demonstrating different EC/pH requirements:"
+echo "     • Hydroponic Greens (NFT): Lettuce (low EC 0.8-1.2 mS/cm, pH 5.5-6.5)"
+echo "     • Hydroponic Tomatoes (DWC): Fruiting stage (HIGH EC 2.5-3.0 mS/cm, pH 5.5-6.5)"
+echo "     • Container Garden (Fertigation): Mixed EC demands (peppers + basil)"
+echo "  📊 View nutrient recommendations:"
+echo "     curl -s http://localhost:8080/gardens/${GARDEN5_ID}/nutrient-optimization -H \"Authorization: Bearer \$TOKEN\" | python3 -m json.tool"
+echo "     curl -s http://localhost:8080/gardens/${GARDEN6_ID}/nutrient-optimization -H \"Authorization: Bearer \$TOKEN\" | python3 -m json.tool"
+echo "     curl -s http://localhost:8080/gardens/${GARDEN7_ID}/nutrient-optimization -H \"Authorization: Bearer \$TOKEN\" | python3 -m json.tool"
+echo "  💡 Features demonstrated:"
+echo "     - Growth stage-dependent EC recommendations (seedling→vegetative→flowering→fruiting)"
+echo "     - pH optimization for nutrient availability"
+echo "     - Solution replacement schedules based on reservoir size"
+echo "     - Mixed-crop EC calculation (max demand wins)"
 echo ""
 echo "Expected Irrigation Alerts:"
 echo "  ⚠️  FREQ_001: Watering too frequently (Herb & Flower Zone - daily watering)"

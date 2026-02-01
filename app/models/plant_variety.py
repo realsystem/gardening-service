@@ -1,5 +1,5 @@
 """PlantVariety model - static reference data"""
-from sqlalchemy import Column, Integer, String, Text, Enum as SQLEnum
+from sqlalchemy import Column, Integer, String, Text, Float, Enum as SQLEnum
 from sqlalchemy.orm import relationship
 from app.database import Base
 import enum
@@ -52,6 +52,24 @@ class PlantVariety(Base):
     growing_notes = Column(Text, nullable=True)
     photo_url = Column(String(500), nullable=True)
     tags = Column(Text, nullable=True)  # Comma-separated tags: "easy,fruiting,perennial"
+
+    # Nutrient optimization profile (growth stage dependent EC ranges in mS/cm)
+    seedling_ec_min = Column(Float, nullable=True)  # Seedling stage EC minimum
+    seedling_ec_max = Column(Float, nullable=True)  # Seedling stage EC maximum
+    vegetative_ec_min = Column(Float, nullable=True)  # Vegetative stage EC minimum
+    vegetative_ec_max = Column(Float, nullable=True)  # Vegetative stage EC maximum
+    flowering_ec_min = Column(Float, nullable=True)  # Flowering stage EC minimum
+    flowering_ec_max = Column(Float, nullable=True)  # Flowering stage EC maximum
+    fruiting_ec_min = Column(Float, nullable=True)  # Fruiting stage EC minimum
+    fruiting_ec_max = Column(Float, nullable=True)  # Fruiting stage EC maximum
+
+    # pH optimization (usually consistent across growth stages)
+    optimal_ph_min = Column(Float, nullable=True)  # Optimal pH minimum
+    optimal_ph_max = Column(Float, nullable=True)  # Optimal pH maximum
+
+    # Solution management schedule
+    solution_change_days_min = Column(Integer, nullable=True)  # Minimum days between full changes
+    solution_change_days_max = Column(Integer, nullable=True)  # Maximum days between full changes
 
     # Relationships
     seed_batches = relationship("SeedBatch", back_populates="plant_variety")

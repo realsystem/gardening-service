@@ -15,6 +15,7 @@ from app.schemas.garden_details import (
 from app.schemas.garden_layout import GardenLayoutUpdate
 from app.schemas.sensor_reading import SensorReadingResponse
 from app.schemas.tree import GardenShadingInfo
+from app.schemas.nutrient_optimization import NutrientOptimizationResponse, ECRecommendation, PHRecommendation, ReplacementSchedule, NutrientWarning, ActivePlanting
 from app.repositories.garden_repository import GardenRepository
 from app.repositories.sensor_reading_repository import SensorReadingRepository
 from app.repositories.land_repository import LandRepository
@@ -561,3 +562,95 @@ def get_garden_sun_exposure(
     exposure_data = SunExposureService.get_garden_sun_exposure(garden, db)
 
     return exposure_data
+
+
+@router.get("/{garden_id}/nutrient-optimization", response_model=NutrientOptimizationResponse)
+def get_nutrient_optimization(
+    garden_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Get nutrient optimization plan for a hydroponic, fertigation, or container garden.
+
+    Returns science-based EC/pH recommendations, water replacement schedule, and warnings
+    based on active plantings and their growth stages.
+
+    Only applicable to:
+    - Hydroponic systems (NFT, DWC, Drip, Ebb & Flow, Aeroponics, Wick)
+    - Fertigation systems (soil + nutrient solution)
+    - Container growing with nutrients
+
+    Returns 400 error for traditional outdoor soil gardens.
+    """
+    from app.services.nutrient_optimization_service import NutrientOptimizationService
+    from app.models.garden import HydroSystemType
+
+    repo = GardenRepository(db)
+    garden = repo.get_by_id(garden_id)
+
+    if not garden:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Garden not found"
+        )
+
+    if garden.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to access this garden"
+        )
+
+    # Validate garden is hydroponic/fertigation/container
+    if not garden.is_hydroponic and garden.hydro_system_type not in [
+        HydroSystemType.FERTIGATION,
+        HydroSystemType.CONTAINER
+    ]:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Nutrient optimization only applies to hydroponic, fertigation, or container systems. "
+                   "This garden is configured as a traditional soil garden."
+        )
+
+    # Generate optimization using service
+    service = NutrientOptimizationService()
+    result = service.optimize_for_garden(garden, db)
+
+    # Convert service result to API response
+    return NutrientOptimizationResponse(
+        garden_id=result.garden_id,
+        garden_name=result.garden_name,
+        system_type=result.system_type,
+        ec_recommendation=ECRecommendation(
+            min_ms_cm=result.ec_recommendation.min_ms_cm,
+            max_ms_cm=result.ec_recommendation.max_ms_cm,
+            rationale=result.ec_recommendation.rationale
+        ),
+        ph_recommendation=PHRecommendation(
+            min_ph=result.ph_recommendation.min_ph,
+            max_ph=result.ph_recommendation.max_ph,
+            rationale=result.ph_recommendation.rationale
+        ),
+        replacement_schedule=ReplacementSchedule(
+            topoff_interval_days=result.replacement_schedule.topoff_interval_days,
+            full_replacement_days=result.replacement_schedule.full_replacement_days,
+            rationale=result.replacement_schedule.rationale
+        ),
+        warnings=[
+            NutrientWarning(
+                warning_id=w.warning_id,
+                severity=w.severity,
+                message=w.message,
+                mitigation=w.mitigation
+            )
+            for w in result.warnings
+        ],
+        active_plantings=[
+            ActivePlanting(
+                plant_name=p['plant_name'],
+                growth_stage=p['growth_stage']
+            )
+            for p in result.active_plantings
+        ],
+        generated_at=result.generated_at
+    )
