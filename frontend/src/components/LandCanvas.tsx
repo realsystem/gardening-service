@@ -402,33 +402,6 @@ export function LandCanvas({ land, gardens, trees = [], onUpdate }: LandCanvasPr
             {/* Render both grids */}
             <rect width="100%" height="100%" fill="url(#minor-grid)" />
             <rect width="100%" height="100%" fill="url(#major-grid)" />
-
-            {/* Seasonal shadows overlay */}
-            {showSeasonalShadows && treeShadows.size > 0 && (
-              <>
-                {Array.from(treeShadows.entries()).map(([treeId, shadowExtent]) => {
-                  if (!shadowExtent.seasonal_shadows) return null;
-                  const shadowRect = shadowExtent.seasonal_shadows[selectedSeason];
-                  if (!shadowRect) return null;
-
-                  return (
-                    <rect
-                      key={`shadow-${treeId}-${selectedSeason}`}
-                      x={shadowRect.x * GRID_SIZE}
-                      y={shadowRect.y * GRID_SIZE}
-                      width={shadowRect.width * GRID_SIZE}
-                      height={shadowRect.height * GRID_SIZE}
-                      fill="rgba(100, 100, 150, 0.3)"
-                      stroke="rgba(100, 100, 150, 0.6)"
-                      strokeWidth="1"
-                      strokeDasharray="4 2"
-                    >
-                      <title>{`Shadow from tree ${treeId} in ${selectedSeason}`}</title>
-                    </rect>
-                  );
-                })}
-              </>
-            )}
           </svg>
 
           {/* Trees (render first, so they appear behind gardens) */}
@@ -520,6 +493,44 @@ export function LandCanvas({ land, gardens, trees = [], onUpdate }: LandCanvasPr
               </div>
             );
           })}
+
+          {/* Seasonal shadows overlay (on top of gardens) */}
+          {showSeasonalShadows && treeShadows.size > 0 && (
+            <svg
+              className="shadow-overlay"
+              width={canvasWidth}
+              height={canvasHeight}
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                pointerEvents: 'none',
+                zIndex: 100
+              }}
+            >
+              {Array.from(treeShadows.entries()).map(([treeId, shadowExtent]) => {
+                if (!shadowExtent.seasonal_shadows) return null;
+                const shadowRect = shadowExtent.seasonal_shadows[selectedSeason];
+                if (!shadowRect) return null;
+
+                return (
+                  <rect
+                    key={`shadow-${treeId}-${selectedSeason}`}
+                    x={shadowRect.x * GRID_SIZE}
+                    y={shadowRect.y * GRID_SIZE}
+                    width={shadowRect.width * GRID_SIZE}
+                    height={shadowRect.height * GRID_SIZE}
+                    fill="rgba(100, 100, 150, 0.3)"
+                    stroke="rgba(100, 100, 150, 0.6)"
+                    strokeWidth="1"
+                    strokeDasharray="4 2"
+                  >
+                    <title>{`Shadow from tree ${treeId} in ${selectedSeason}`}</title>
+                  </rect>
+                );
+              })}
+            </svg>
+          )}
         </div>
       </div>
 
