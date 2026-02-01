@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { api } from '../services/api';
 import type { Structure, StructureCreate, StructureUpdate, LandWithGardens } from '../types';
+import { useUnitSystem } from '../contexts/UnitSystemContext';
+import { convertDistance, convertToMeters, getUnitLabels } from '../utils/units';
 import './StructureManager.css';
 
 interface StructureManagerProps {
@@ -10,6 +12,9 @@ interface StructureManagerProps {
 }
 
 export function StructureManager({ land, structures, onUpdate }: StructureManagerProps) {
+  const { unitSystem } = useUnitSystem();
+  const unitLabels = getUnitLabels(unitSystem);
+
   const [isAdding, setIsAdding] = useState(false);
   const [editingStructure, setEditingStructure] = useState<Structure | null>(null);
   const [errorMessage, setErrorMessage] = useState('');
@@ -18,9 +23,9 @@ export function StructureManager({ land, structures, onUpdate }: StructureManage
     name: '',
     x: 0,
     y: 0,
-    width: 5,
-    depth: 3,
-    height: 3,
+    width: convertDistance(5, unitSystem),
+    depth: convertDistance(3, unitSystem),
+    height: convertDistance(3, unitSystem),
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -28,12 +33,20 @@ export function StructureManager({ land, structures, onUpdate }: StructureManage
     setErrorMessage('');
 
     try {
+      // Convert form data from display units to meters for API
+      const apiData = {
+        ...formData,
+        width: formData.width !== undefined ? convertToMeters(formData.width, unitSystem) : undefined,
+        depth: formData.depth !== undefined ? convertToMeters(formData.depth, unitSystem) : undefined,
+        height: formData.height !== undefined ? convertToMeters(formData.height, unitSystem) : undefined,
+      };
+
       if (editingStructure) {
         // Update existing structure
-        await api.updateStructure(editingStructure.id, formData as StructureUpdate);
+        await api.updateStructure(editingStructure.id, apiData as StructureUpdate);
       } else {
         // Create new structure
-        await api.createStructure(formData as StructureCreate);
+        await api.createStructure(apiData as StructureCreate);
       }
 
       setIsAdding(false);
@@ -43,9 +56,9 @@ export function StructureManager({ land, structures, onUpdate }: StructureManage
         name: '',
         x: 0,
         y: 0,
-        width: 5,
-        depth: 3,
-        height: 3,
+        width: convertDistance(5, unitSystem),
+        depth: convertDistance(3, unitSystem),
+        height: convertDistance(3, unitSystem),
       });
       onUpdate();
     } catch (error) {
@@ -66,13 +79,14 @@ export function StructureManager({ land, structures, onUpdate }: StructureManage
 
   const handleEdit = (structure: Structure) => {
     setEditingStructure(structure);
+    // Convert structure's meter values to display units
     setFormData({
       name: structure.name,
       x: structure.x,
       y: structure.y,
-      width: structure.width,
-      depth: structure.depth,
-      height: structure.height,
+      width: convertDistance(structure.width, unitSystem),
+      depth: convertDistance(structure.depth, unitSystem),
+      height: convertDistance(structure.height, unitSystem),
     });
     setIsAdding(true);
   };
@@ -85,9 +99,9 @@ export function StructureManager({ land, structures, onUpdate }: StructureManage
       name: '',
       x: 0,
       y: 0,
-      width: 5,
-      depth: 3,
-      height: 3,
+      width: convertDistance(5, unitSystem),
+      depth: convertDistance(3, unitSystem),
+      height: convertDistance(3, unitSystem),
     });
     setErrorMessage('');
   };
@@ -155,12 +169,12 @@ export function StructureManager({ land, structures, onUpdate }: StructureManage
 
           <div className="form-row">
             <div className="form-group">
-              <label htmlFor="structure-width">Width * (units)</label>
+              <label htmlFor="structure-width">Width * ({unitLabels.distanceShort})</label>
               <input
                 id="structure-width"
                 type="number"
-                step="0.5"
-                min="0.5"
+                step={unitSystem === 'imperial' ? '1' : '0.5'}
+                min={unitSystem === 'imperial' ? '1' : '0.5'}
                 value={formData.width}
                 onChange={(e) => setFormData({ ...formData, width: parseFloat(e.target.value) })}
                 required
@@ -169,12 +183,12 @@ export function StructureManager({ land, structures, onUpdate }: StructureManage
             </div>
 
             <div className="form-group">
-              <label htmlFor="structure-depth">Depth * (units)</label>
+              <label htmlFor="structure-depth">Depth * ({unitLabels.distanceShort})</label>
               <input
                 id="structure-depth"
                 type="number"
-                step="0.5"
-                min="0.5"
+                step={unitSystem === 'imperial' ? '1' : '0.5'}
+                min={unitSystem === 'imperial' ? '1' : '0.5'}
                 value={formData.depth}
                 onChange={(e) => setFormData({ ...formData, depth: parseFloat(e.target.value) })}
                 required
@@ -184,12 +198,12 @@ export function StructureManager({ land, structures, onUpdate }: StructureManage
           </div>
 
           <div className="form-group">
-            <label htmlFor="structure-height">Height * (units)</label>
+            <label htmlFor="structure-height">Height * ({unitLabels.distanceShort})</label>
             <input
               id="structure-height"
               type="number"
-              step="0.5"
-              min="0.5"
+              step={unitSystem === 'imperial' ? '1' : '0.5'}
+              min={unitSystem === 'imperial' ? '1' : '0.5'}
               value={formData.height}
               onChange={(e) => setFormData({ ...formData, height: parseFloat(e.target.value) })}
               required
@@ -221,8 +235,8 @@ export function StructureManager({ land, structures, onUpdate }: StructureManage
                   <h4>{structure.name}</h4>
                   <div className="structure-details">
                     <span>Position: ({structure.x.toFixed(1)}, {structure.y.toFixed(1)})</span>
-                    <span>Size: {structure.width} × {structure.depth} units</span>
-                    <span>Height: {structure.height} units</span>
+                    <span>Size: {convertDistance(structure.width, unitSystem).toFixed(1)} × {convertDistance(structure.depth, unitSystem).toFixed(1)} {unitLabels.distanceShort}</span>
+                    <span>Height: {convertDistance(structure.height, unitSystem).toFixed(1)} {unitLabels.distanceShort}</span>
                   </div>
                 </div>
                 <div className="structure-actions">
