@@ -15,6 +15,8 @@ from app.models.irrigation_source import IrrigationSource
 from app.models.irrigation_zone import IrrigationZone
 from app.models.watering_event import WateringEvent
 from app.models.tree import Tree
+from app.models.structure import Structure
+from app.models.companion_relationship import CompanionRelationship
 
 __all__ = [
     "User",
@@ -33,4 +35,6 @@ __all__ = [
     "IrrigationZone",
     "WateringEvent",
     "Tree",
+    "Structure",
+    "CompanionRelationship",
 ]
