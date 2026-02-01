@@ -14,6 +14,7 @@ from app.models.password_reset_token import PasswordResetToken
 from app.models.irrigation_source import IrrigationSource
 from app.models.irrigation_zone import IrrigationZone
 from app.models.watering_event import WateringEvent
+from app.models.tree import Tree
 
 __all__ = [
     "User",
@@ -31,4 +32,5 @@ __all__ = [
     "IrrigationSource",
     "IrrigationZone",
     "WateringEvent",
+    "Tree",
 ]

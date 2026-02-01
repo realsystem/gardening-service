@@ -32,3 +32,4 @@ class Land(Base):
     # Relationships
     user = relationship("User", back_populates="lands")
     gardens = relationship("Garden", back_populates="land", foreign_keys="Garden.land_id")
+    trees = relationship("Tree", back_populates="land", cascade="all, delete-orphan")

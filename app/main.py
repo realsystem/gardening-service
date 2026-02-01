@@ -21,6 +21,7 @@ from app.api import (
     password_router,
     dashboard_router,
     rule_insights_router,
+    trees_router,
 )
 from app.error_handlers import (
     http_exception_handler,
@@ -69,6 +70,7 @@ app.include_router(irrigation_router)
 app.include_router(irrigation_system_router)
 app.include_router(dashboard_router)
 app.include_router(rule_insights_router)
+app.include_router(trees_router)
 
 
 @app.get("/")

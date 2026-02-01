@@ -6,6 +6,7 @@ from app.schemas.seed_batch import SeedBatchCreate, SeedBatchUpdate, SeedBatchRe
 from app.schemas.germination_event import GerminationEventCreate, GerminationEventUpdate, GerminationEventResponse
 from app.schemas.planting_event import PlantingEventCreate, PlantingEventUpdate, PlantingEventResponse
 from app.schemas.care_task import CareTaskCreate, CareTaskUpdate, CareTaskResponse, CareTaskComplete
+from app.schemas.tree import TreeCreate, TreeUpdate, TreeResponse, TreeWithSpecies, GardenShadingInfo
 
 __all__ = [
     "UserCreate",
@@ -29,4 +30,9 @@ __all__ = [
     "CareTaskUpdate",
     "CareTaskResponse",
     "CareTaskComplete",
+    "TreeCreate",
+    "TreeUpdate",
+    "TreeResponse",
+    "TreeWithSpecies",
+    "GardenShadingInfo",
 ]

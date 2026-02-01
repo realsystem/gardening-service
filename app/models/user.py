@@ -50,3 +50,6 @@ class User(Base):
     irrigation_sources = relationship("IrrigationSource", back_populates="user", cascade="all, delete-orphan")
     irrigation_zones = relationship("IrrigationZone", back_populates="user", cascade="all, delete-orphan")
     watering_events = relationship("WateringEvent", back_populates="user", cascade="all, delete-orphan")
+
+    # Tree shading relationships
+    trees = relationship("Tree", back_populates="user", cascade="all, delete-orphan")

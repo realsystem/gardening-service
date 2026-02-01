@@ -167,3 +167,18 @@ def cleanup_irrigation_sources(authenticated_client: httpx.Client) -> Generator[
             authenticated_client.delete(f"/irrigation-system/sources/{source_id}")
         except Exception:
             pass
+
+
+@pytest.fixture(scope="function")
+def test_land(authenticated_client: httpx.Client) -> dict:
+    """Create a test land plot for tree and garden placement tests"""
+    land_data = {
+        "name": "Test Land",
+        "width": 100.0,
+        "height": 100.0
+    }
+
+    response = authenticated_client.post("/lands", json=land_data)
+    assert response.status_code == 201, f"Land creation failed: {response.text}"
+
+    return response.json()
