@@ -426,6 +426,62 @@ export interface GardenLayoutUpdate {
 }
 
 // ============================================================================
+// TREE SHADING TYPES
+// ============================================================================
+
+export interface Tree {
+  id: number;
+  user_id: number;
+  land_id: number;
+  name: string;
+  species_id?: number;
+  species_common_name?: string;
+  species_scientific_name?: string;
+  x: number;
+  y: number;
+  canopy_radius: number;
+  height?: number;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface TreeCreate {
+  land_id: number;
+  name: string;
+  species_id?: number;
+  x: number;
+  y: number;
+  canopy_radius: number;
+  height?: number;
+}
+
+export interface TreeUpdate {
+  name?: string;
+  species_id?: number;
+  x?: number;
+  y?: number;
+  canopy_radius?: number;
+  height?: number;
+}
+
+export interface ShadingContribution {
+  tree_id: number;
+  tree_name: string;
+  shade_contribution: number;
+  intersection_area: number;
+  average_intensity: number;
+}
+
+export interface GardenShadingInfo {
+  garden_id: number;
+  sun_exposure_score: number;
+  sun_exposure_category: 'full_sun' | 'partial_sun' | 'shade';
+  total_shade_factor: number;
+  baseline_sun_exposure: number;
+  contributing_trees: ShadingContribution[];
+}
+
+// ============================================================================
 // IRRIGATION SYSTEM TYPES
 // ============================================================================
 

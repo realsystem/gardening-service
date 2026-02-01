@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '../services/api';
-import type { GardenDetails as GardenDetailsType } from '../types';
+import type { GardenDetails as GardenDetailsType, GardenShadingInfo } from '../types';
 import { GardenSensorReadings } from './GardenSensorReadings';
 
 interface GardenDetailsProps {
@@ -10,6 +10,7 @@ interface GardenDetailsProps {
 
 export function GardenDetails({ gardenId, onBack }: GardenDetailsProps) {
   const [details, setDetails] = useState<GardenDetailsType | null>(null);
+  const [shadingInfo, setShadingInfo] = useState<GardenShadingInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -19,6 +20,17 @@ export function GardenDetails({ gardenId, onBack }: GardenDetailsProps) {
         setLoading(true);
         const data = await api.getGardenDetails(gardenId);
         setDetails(data);
+
+        // Try to load shading info (only for gardens with spatial layout)
+        if (data.garden.land_id) {
+          try {
+            const shading = await api.getGardenShading(gardenId);
+            setShadingInfo(shading);
+          } catch (err) {
+            // Shading info is optional, don't fail if not available
+            console.log('Shading info not available for this garden');
+          }
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load garden details');
       } finally {
@@ -94,6 +106,61 @@ export function GardenDetails({ gardenId, onBack }: GardenDetailsProps) {
                 pH Range: {garden.ph_min} - {garden.ph_max}
                 {garden.ec_min !== undefined && garden.ec_max !== undefined &&
                   ` • EC: ${garden.ec_min} - ${garden.ec_max} mS/cm`}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Sun Exposure / Shading Information */}
+        {shadingInfo && (
+          <div style={{
+            marginTop: '15px',
+            padding: '15px',
+            backgroundColor: shadingInfo.sun_exposure_category === 'full_sun' ? '#fff8e1' :
+                           shadingInfo.sun_exposure_category === 'partial_sun' ? '#e8f5e9' : '#f3e5f5',
+            borderRadius: '8px',
+            border: `2px solid ${shadingInfo.sun_exposure_category === 'full_sun' ? '#ffd54f' :
+                                 shadingInfo.sun_exposure_category === 'partial_sun' ? '#81c784' : '#ba68c8'}`
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+              <span style={{ fontSize: '1.5em' }}>
+                {shadingInfo.sun_exposure_category === 'full_sun' ? '☀️' :
+                 shadingInfo.sun_exposure_category === 'partial_sun' ? '⛅' : '🌤️'}
+              </span>
+              <strong style={{ fontSize: '1.1em' }}>
+                {shadingInfo.sun_exposure_category === 'full_sun' ? 'Full Sun' :
+                 shadingInfo.sun_exposure_category === 'partial_sun' ? 'Partial Sun' : 'Shade'}
+              </strong>
+              <span style={{
+                marginLeft: 'auto',
+                fontSize: '1.2em',
+                fontWeight: 'bold',
+                color: shadingInfo.sun_exposure_category === 'full_sun' ? '#f57c00' :
+                       shadingInfo.sun_exposure_category === 'partial_sun' ? '#388e3c' : '#7b1fa2'
+              }}>
+                {Math.round(shadingInfo.sun_exposure_score * 100)}%
+              </span>
+            </div>
+
+            {shadingInfo.contributing_trees.length > 0 && (
+              <div style={{ marginTop: '10px', fontSize: '0.9em', color: '#555' }}>
+                <div style={{ fontWeight: 600, marginBottom: '4px' }}>
+                  Affected by {shadingInfo.contributing_trees.length} tree{shadingInfo.contributing_trees.length > 1 ? 's' : ''}:
+                </div>
+                <ul style={{ margin: '4px 0', paddingLeft: '20px' }}>
+                  {shadingInfo.contributing_trees.map((tree, idx) => (
+                    <li key={idx}>
+                      <strong>{tree.tree_name}</strong>
+                      {' '}({Math.round(tree.shade_contribution * 100)}% shade contribution)
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {shadingInfo.contributing_trees.length === 0 && (
+              <div style={{ fontSize: '0.9em', color: '#666', marginTop: '5px' }}>
+                No nearby trees affecting this garden
               </div>
             )}
           </div>

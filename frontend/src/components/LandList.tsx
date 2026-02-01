@@ -2,12 +2,14 @@ import { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import { LandCanvas } from './LandCanvas';
 import { CreateLand } from './CreateLand';
-import type { Land, LandWithGardens, Garden } from '../types';
+import { TreeManager } from './TreeManager';
+import type { Land, LandWithGardens, Garden, Tree } from '../types';
 import './LandList.css';
 
 export function LandList() {
   const [lands, setLands] = useState<Land[]>([]);
   const [gardens, setGardens] = useState<Garden[]>([]);
+  const [landTrees, setLandTrees] = useState<Tree[]>([]);
   const [selectedLand, setSelectedLand] = useState<LandWithGardens | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -36,8 +38,12 @@ export function LandList() {
 
   const handleSelectLand = async (landId: number) => {
     try {
-      const landDetails = await api.getLand(landId);
+      const [landDetails, treesOnLand] = await Promise.all([
+        api.getLand(landId),
+        api.getTreesOnLand(landId),
+      ]);
       setSelectedLand(landDetails);
+      setLandTrees(treesOnLand);
     } catch (err) {
       setError((err as Error).message || 'Failed to load land details');
     }
@@ -133,9 +139,15 @@ export function LandList() {
 
       {selectedLand && (
         <div className="land-canvas-section">
+          <TreeManager
+            land={selectedLand}
+            trees={landTrees}
+            onUpdate={handleLandUpdate}
+          />
           <LandCanvas
             land={selectedLand}
             gardens={gardens}
+            trees={landTrees}
             onUpdate={handleLandUpdate}
           />
         </div>
