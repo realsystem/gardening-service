@@ -290,6 +290,45 @@
   opacity: 0.6;
 }
 
+/* Structure Rendering */
+.structure-rect {
+  position: absolute;
+  background: rgba(139, 69, 19, 0.4); /* Brown for buildings */
+  border: 2px solid rgba(101, 67, 33, 0.8);
+  border-radius: 2px;
+  cursor: move;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: box-shadow 0.2s;
+  user-select: none;
+  z-index: 5; /* Below trees (20) and gardens (10) */
+}
+
+.structure-rect:hover {
+  background: rgba(139, 69, 19, 0.5);
+  box-shadow: 0 2px 6px rgba(101, 67, 33, 0.5);
+}
+
+.structure-rect.dragging {
+  opacity: 0.8;
+  box-shadow: 0 4px 12px rgba(139, 69, 19, 0.6);
+  z-index: 1000;
+  transition: none;
+}
+
+.structure-label {
+  color: white;
+  font-weight: 600;
+  font-size: 0.8em;
+  text-align: center;
+  padding: 4px;
+  word-break: break-word;
+  max-width: 90%;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+}
+
 /* Shadow overlay - must be on top of everything */
 .shadow-overlay {
   position: absolute !important;
