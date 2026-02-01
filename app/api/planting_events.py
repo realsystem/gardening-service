@@ -11,6 +11,7 @@ from app.repositories.plant_variety_repository import PlantVarietyRepository
 from app.api.dependencies import get_current_user
 from app.models.user import User
 from app.rules.task_generator import TaskGenerator
+from app.compliance.service import get_compliance_service
 
 router = APIRouter(prefix="/planting-events", tags=["planting-events"])
 
@@ -47,6 +48,20 @@ def create_planting_event(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Plant variety not found"
         )
+
+    # Compliance check: ensure plant variety is not restricted
+    compliance_service = get_compliance_service(db)
+    compliance_service.check_and_enforce_plant_restriction(
+        user=current_user,
+        common_name=variety.common_name,
+        scientific_name=variety.scientific_name,
+        notes=event_data.notes,
+        request_metadata={
+            "endpoint": "planting_events_create",
+            "variety_id": variety.id,
+            "garden_id": event_data.garden_id
+        }
+    )
 
     # Create planting event
     event_repo = PlantingEventRepository(db)

@@ -97,6 +97,28 @@ def user_token(sample_user):
     return AuthService.create_access_token(sample_user.id, sample_user.email)
 
 
+@pytest.fixture
+def admin_user(test_db):
+    """Create an admin user for testing"""
+    user = User(
+        email="admin@example.com",
+        hashed_password=AuthService.hash_password("adminpass123"),
+        display_name="Admin User",
+        is_admin=True,
+        unit_system=UnitSystem.METRIC
+    )
+    test_db.add(user)
+    test_db.commit()
+    test_db.refresh(user)
+    return user
+
+
+@pytest.fixture
+def admin_token(admin_user):
+    """Generate JWT token for admin user"""
+    return AuthService.create_access_token(admin_user.id, admin_user.email)
+
+
 # Plant variety fixtures
 @pytest.fixture
 def sample_plant_variety(test_db):

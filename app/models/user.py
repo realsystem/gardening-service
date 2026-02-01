@@ -43,6 +43,13 @@ class User(Base):
     # Unit preferences
     unit_system = Column(Enum(UnitSystem), nullable=False, server_default='metric')
 
+    # Compliance audit fields (immutable, admin-only visibility)
+    restricted_crop_flag = Column(Boolean, default=False, nullable=False, server_default='false')
+    restricted_crop_count = Column(Integer, default=0, nullable=False, server_default='0')
+    restricted_crop_first_violation = Column(DateTime(timezone=True), nullable=True)
+    restricted_crop_last_violation = Column(DateTime(timezone=True), nullable=True)
+    restricted_crop_reason = Column(String(100), nullable=True)  # Internal reason code
+
     # Timestamps stored in UTC
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())

@@ -30,6 +30,7 @@ from app.services.layout_service import (
     apply_snap_to_grid
 )
 from app.utils.grid_config import GRID_RESOLUTION
+from app.compliance.service import get_compliance_service
 
 router = APIRouter(prefix="/gardens", tags=["gardens"])
 
@@ -610,6 +611,27 @@ def get_nutrient_optimization(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Nutrient optimization only applies to hydroponic, fertigation, or container systems. "
                    "This garden is configured as a traditional soil garden."
+        )
+
+    # Check for plantings in garden to detect parameter-only optimization attempts
+    from app.repositories.planting_event_repository import PlantingEventRepository
+    planting_repo = PlantingEventRepository(db)
+    all_plantings = planting_repo.get_by_garden(garden.id)
+    has_plantings = len(all_plantings) > 0
+
+    # Compliance check: detect parameter-only optimization attempts
+    # (requesting optimization with no plants could be an attempt to reverse-engineer parameters)
+    if not has_plantings:
+        compliance_service = get_compliance_service(db)
+        compliance_service.detect_parameter_only_optimization(
+            user=current_user,
+            garden_id=garden_id,
+            has_plantings=has_plantings,
+            request_metadata={
+                "endpoint": "nutrient_optimization",
+                "garden_id": garden_id,
+                "system_type": garden.hydro_system_type.value if garden.hydro_system_type else None
+            }
         )
 
     # Generate optimization using service
