@@ -14,6 +14,7 @@ export function Profile({ user, onUpdate, onClose }: ProfileProps) {
   const [avatarUrl, setAvatarUrl] = useState(user.avatar_url || '');
   const [city, setCity] = useState(user.city || '');
   const [gardeningPreferences, setGardeningPreferences] = useState(user.gardening_preferences || '');
+  const [unitSystem, setUnitSystem] = useState(user.unit_system || 'metric');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -40,11 +41,14 @@ export function Profile({ user, onUpdate, onClose }: ProfileProps) {
         avatar_url: avatarUrl || undefined,
         city: city || undefined,
         gardening_preferences: gardeningPreferences || undefined,
+        unit_system: unitSystem as 'metric' | 'imperial',
       });
       onUpdate(updatedUser);
       setSuccess(true);
       setTimeout(() => {
         onClose();
+        // Reload page to apply unit changes throughout the app
+        window.location.reload();
       }, 1500);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update profile');
@@ -202,6 +206,22 @@ export function Profile({ user, onUpdate, onClose }: ProfileProps) {
               disabled={loading}
               maxLength={100}
             />
+          </div>
+
+          <div className="form-group">
+            <label>Unit System</label>
+            <select
+              value={unitSystem}
+              onChange={(e) => setUnitSystem(e.target.value as 'metric' | 'imperial')}
+              disabled={loading}
+              style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }}
+            >
+              <option value="metric">Metric (meters, °C)</option>
+              <option value="imperial">Imperial (feet, °F)</option>
+            </select>
+            <small style={{ color: '#666', fontSize: '0.85em' }}>
+              Choose your preferred measurement system. Changes will apply after saving.
+            </small>
           </div>
 
           <div className="form-group">
