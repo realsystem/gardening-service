@@ -202,35 +202,7 @@ export function GardenDetails({ gardenId, onBack }: GardenDetailsProps) {
         <CompanionPlantingInsights gardenId={gardenId} />
       )}
 
-      {/* Garden Map */}
-      {(() => {
-        const positionedPlantings = plantings.filter(p => p.x !== undefined && p.y !== undefined);
-        if (positionedPlantings.length === 0) return null;
-
-        return (
-          <div style={{ padding: '20px', background: 'white', borderRadius: '8px', margin: '20px 0', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-            <h3 style={{ marginTop: 0, color: '#2c5f2d' }}>🗺️ Garden Layout</h3>
-            <p style={{ color: '#666', marginBottom: '15px' }}>{positionedPlantings.length} plants positioned in your garden</p>
-            <div style={{ display: 'grid', gap: '10px' }}>
-              {positionedPlantings.map((planting) => (
-                <div key={planting.id} style={{ padding: '10px', border: '1px solid #e0e0e0', borderRadius: '4px', background: '#f9f9f9' }}>
-                  <strong style={{ color: '#4caf50' }}>{planting.plant_name}</strong>
-                  <span style={{ marginLeft: '10px', color: '#666', fontSize: '0.9em' }}>
-                    Position: ({planting.x?.toFixed(1)}m, {planting.y?.toFixed(1)}m)
-                  </span>
-                  {planting.planting_date && (
-                    <span style={{ marginLeft: '10px', color: '#999', fontSize: '0.85em' }}>
-                      Planted: {new Date(planting.planting_date).toLocaleDateString()}
-                    </span>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        );
-      })()}
-
-      {/* Plantings */}
+      {/* Plants in this Garden - Combined List */}
       <div style={{ marginBottom: '30px' }}>
         <h2>Plants in this Garden</h2>
         {plantings.length === 0 ? (
@@ -258,10 +230,20 @@ export function GardenDetails({ gardenId, onBack }: GardenDetailsProps) {
                       {planting.plant_count && ` • ${planting.plant_count} plants`}
                       {planting.location_in_garden && ` • ${planting.location_in_garden}`}
                     </div>
+                    {(planting.x !== undefined && planting.y !== undefined) && (
+                      <div style={{ fontSize: '0.9em', color: '#4caf50', marginTop: '5px', fontWeight: '500' }}>
+                        🗺️ Position: ({planting.x.toFixed(1)}m, {planting.y.toFixed(1)}m)
+                      </div>
+                    )}
                     {planting.expected_harvest_date && (
                       <div style={{ fontSize: '0.9em', color: '#666', marginTop: '5px' }}>
                         Expected Harvest: {new Date(planting.expected_harvest_date).toLocaleDateString()}
                         {planting.days_to_harvest && ` (${planting.days_to_harvest} days)`}
+                      </div>
+                    )}
+                    {planting.health_status && (
+                      <div style={{ fontSize: '0.9em', color: '#666', marginTop: '5px' }}>
+                        Health: {planting.health_status}
                       </div>
                     )}
                   </div>

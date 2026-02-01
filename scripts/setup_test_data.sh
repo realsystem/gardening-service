@@ -522,13 +522,20 @@ ZINNIA_ID=$(echo "$VARIETIES" | python3 -c "import sys, json; data=json.load(sys
 SUNFLOWER_ID=$(echo "$VARIETIES" | python3 -c "import sys, json; data=json.load(sys.stdin); print(next((v['id'] for v in data if v['common_name']=='Sunflower'), 87))" 2>/dev/null || echo "87")
 LETTUCE_BUTTER_ID=$(echo "$VARIETIES" | python3 -c "import sys, json; data=json.load(sys.stdin); print(next((v['id'] for v in data if v['common_name']=='Lettuce' and v['variety_name']=='Butterhead'), 13))" 2>/dev/null || echo "13")
 MICROGREENS_ID=$(echo "$VARIETIES" | python3 -c "import sys, json; data=json.load(sys.stdin); print(next((v['id'] for v in data if v['common_name']=='Microgreens'), 94))" 2>/dev/null || echo "94")
+# Additional varieties for companion planting demonstrations
+CARROT_ID=$(echo "$VARIETIES" | python3 -c "import sys, json; data=json.load(sys.stdin); print(next((v['id'] for v in data if v['common_name']=='Carrot'), 19))" 2>/dev/null || echo "19")
+ONION_ID=$(echo "$VARIETIES" | python3 -c "import sys, json; data=json.load(sys.stdin); print(next((v['id'] for v in data if v['common_name']=='Onion'), 33))" 2>/dev/null || echo "33")
+RADISH_ID=$(echo "$VARIETIES" | python3 -c "import sys, json; data=json.load(sys.stdin); print(next((v['id'] for v in data if v['common_name']=='Radish'), 18))" 2>/dev/null || echo "18")
+BROCCOLI_ID=$(echo "$VARIETIES" | python3 -c "import sys, json; data=json.load(sys.stdin); print(next((v['id'] for v in data if v['common_name']=='Broccoli'), 5))" 2>/dev/null || echo "5")
+BEAN_ID=$(echo "$VARIETIES" | python3 -c "import sys, json; data=json.load(sys.stdin); print(next((v['id'] for v in data if v['common_name']=='Bean'), 23))" 2>/dev/null || echo "23")
 
-# Plantings for Vegetable Garden
+# Plantings for Vegetable Garden - with positions for companion planting analysis
 PLANTING_DATE_30D=$(date -u -v-30d +"%Y-%m-%d" 2>/dev/null || date -u -d '30 days ago' +"%Y-%m-%d")
 PLANTING_DATE_45D=$(date -u -v-45d +"%Y-%m-%d" 2>/dev/null || date -u -d '45 days ago' +"%Y-%m-%d")
 PLANTING_DATE_20D=$(date -u -v-20d +"%Y-%m-%d" 2>/dev/null || date -u -d '20 days ago' +"%Y-%m-%d")
 PLANTING_DATE_15D=$(date -u -v-15d +"%Y-%m-%d" 2>/dev/null || date -u -d '15 days ago' +"%Y-%m-%d")
 
+# Tomato at (2.0, 2.0) - will pair with Basil (beneficial) and conflict with Broccoli
 curl -s -X POST "${API_URL}/planting-events" \
   -H "Authorization: Bearer ${TOKEN}" \
   -H "Content-Type: application/json" \
@@ -540,25 +547,67 @@ curl -s -X POST "${API_URL}/planting-events" \
     \"plant_count\": 6,
     \"location_in_garden\": \"North bed, rows 1-2\",
     \"health_status\": \"healthy\",
-    \"notes\": \"Cherry tomatoes for summer harvest\"
+    \"x\": 2.0,
+    \"y\": 2.0,
+    \"notes\": \"Cherry tomatoes for summer harvest, planted with basil companion\"
   }" > /dev/null
-echo "✓ Planted Cherry Tomatoes in Vegetable Garden (6 plants, 45 days ago)"
+echo "✓ Planted Cherry Tomatoes at (2.0, 2.0) - companion planting with Basil"
 
+# Basil at (2.4, 2.0) - beneficial companion to Tomato (0.4m distance)
 curl -s -X POST "${API_URL}/planting-events" \
   -H "Authorization: Bearer ${TOKEN}" \
   -H "Content-Type: application/json" \
   -d "{
     \"garden_id\": ${GARDEN1_ID},
-    \"plant_variety_id\": ${PEPPER_BELL_ID},
+    \"plant_variety_id\": ${BASIL_ID},
     \"planting_date\": \"${PLANTING_DATE_45D}\",
     \"planting_method\": \"transplant\",
-    \"plant_count\": 4,
-    \"location_in_garden\": \"North bed, row 3\",
+    \"plant_count\": 8,
+    \"location_in_garden\": \"North bed, with tomatoes\",
     \"health_status\": \"healthy\",
-    \"notes\": \"Bell peppers - multiple colors\"
+    \"x\": 2.4,
+    \"y\": 2.0,
+    \"notes\": \"Sweet basil as tomato companion - improves flavor and deters pests\"
   }" > /dev/null
-echo "✓ Planted Bell Peppers in Vegetable Garden (4 plants, 45 days ago)"
+echo "✓ Planted Basil at (2.4, 2.0) - 0.4m from Tomatoes (beneficial pair)"
 
+# Carrot at (1.0, 3.5) - will pair with Onion (beneficial)
+curl -s -X POST "${API_URL}/planting-events" \
+  -H "Authorization: Bearer ${TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"garden_id\": ${GARDEN1_ID},
+    \"plant_variety_id\": ${CARROT_ID},
+    \"planting_date\": \"${PLANTING_DATE_30D}\",
+    \"planting_method\": \"direct_sow\",
+    \"plant_count\": 20,
+    \"location_in_garden\": \"South bed, row 1\",
+    \"health_status\": \"healthy\",
+    \"x\": 1.0,
+    \"y\": 3.5,
+    \"notes\": \"Carrots interplanted with onions to deter carrot fly\"
+  }" > /dev/null
+echo "✓ Planted Carrots at (1.0, 3.5) - companion planting with Onions"
+
+# Onion at (1.3, 3.5) - beneficial companion to Carrot (0.3m distance)
+curl -s -X POST "${API_URL}/planting-events" \
+  -H "Authorization: Bearer ${TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"garden_id\": ${GARDEN1_ID},
+    \"plant_variety_id\": ${ONION_ID},
+    \"planting_date\": \"${PLANTING_DATE_30D}\",
+    \"planting_method\": \"transplant\",
+    \"plant_count\": 15,
+    \"location_in_garden\": \"South bed, row 1\",
+    \"health_status\": \"healthy\",
+    \"x\": 1.3,
+    \"y\": 3.5,
+    \"notes\": \"Onions as carrot companion - mutual pest deterrence\"
+  }" > /dev/null
+echo "✓ Planted Onions at (1.3, 3.5) - 0.3m from Carrots (beneficial pair)"
+
+# Lettuce at (3.2, 3.2) - will pair with Radish (beneficial)
 curl -s -X POST "${API_URL}/planting-events" \
   -H "Authorization: Bearer ${TOKEN}" \
   -H "Content-Type: application/json" \
@@ -570,10 +619,31 @@ curl -s -X POST "${API_URL}/planting-events" \
     \"plant_count\": 12,
     \"location_in_garden\": \"South bed, succession planting\",
     \"health_status\": \"healthy\",
-    \"notes\": \"Cut-and-come-again harvesting\"
+    \"x\": 3.2,
+    \"y\": 3.2,
+    \"notes\": \"Cut-and-come-again harvesting, planted with radishes\"
   }" > /dev/null
-echo "✓ Planted Romaine Lettuce in Vegetable Garden (12 plants, 20 days ago)"
+echo "✓ Planted Romaine Lettuce at (3.2, 3.2) - companion planting with Radishes"
 
+# Radish at (3.5, 3.2) - beneficial companion to Lettuce (0.3m distance)
+curl -s -X POST "${API_URL}/planting-events" \
+  -H "Authorization: Bearer ${TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"garden_id\": ${GARDEN1_ID},
+    \"plant_variety_id\": ${RADISH_ID},
+    \"planting_date\": \"${PLANTING_DATE_20D}\",
+    \"planting_method\": \"direct_sow\",
+    \"plant_count\": 30,
+    \"location_in_garden\": \"South bed, interplanted\",
+    \"health_status\": \"healthy\",
+    \"x\": 3.5,
+    \"y\": 3.2,
+    \"notes\": \"Fast-growing radishes as lettuce companion\"
+  }" > /dev/null
+echo "✓ Planted Radishes at (3.5, 3.2) - 0.3m from Lettuce (beneficial pair)"
+
+# Cucumber at (0.5, 1.5) - on trellis
 curl -s -X POST "${API_URL}/planting-events" \
   -H "Authorization: Bearer ${TOKEN}" \
   -H "Content-Type: application/json" \
@@ -583,11 +653,67 @@ curl -s -X POST "${API_URL}/planting-events" \
     \"planting_date\": \"${PLANTING_DATE_30D}\",
     \"planting_method\": \"direct_sow\",
     \"plant_count\": 3,
-    \"location_in_garden\": \"Trellis along east side\",
+    \"location_in_garden\": \"Trellis along west side\",
     \"health_status\": \"healthy\",
+    \"x\": 0.5,
+    \"y\": 1.5,
     \"notes\": \"Vertical growing on trellis\"
   }" > /dev/null
-echo "✓ Planted Slicing Cucumbers in Vegetable Garden (3 plants, 30 days ago)"
+echo "✓ Planted Slicing Cucumbers at (0.5, 1.5)"
+
+# Broccoli at (3.5, 2.5) - antagonistic to Tomato (~1.8m distance, within 3m threshold)
+curl -s -X POST "${API_URL}/planting-events" \
+  -H "Authorization: Bearer ${TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"garden_id\": ${GARDEN1_ID},
+    \"plant_variety_id\": ${BROCCOLI_ID},
+    \"planting_date\": \"${PLANTING_DATE_45D}\",
+    \"planting_method\": \"transplant\",
+    \"plant_count\": 4,
+    \"location_in_garden\": \"North bed, row 4\",
+    \"health_status\": \"healthy\",
+    \"x\": 3.5,
+    \"y\": 2.5,
+    \"notes\": \"Broccoli for fall harvest - may compete with nearby tomatoes\"
+  }" > /dev/null
+echo "✓ Planted Broccoli at (3.5, 2.5) - demonstrates conflict with Tomato"
+
+# Bean at (0.8, 3.5) - antagonistic to Onion (~0.5m distance, within 2m threshold)
+curl -s -X POST "${API_URL}/planting-events" \
+  -H "Authorization: Bearer ${TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"garden_id\": ${GARDEN1_ID},
+    \"plant_variety_id\": ${BEAN_ID},
+    \"planting_date\": \"${PLANTING_DATE_30D}\",
+    \"planting_method\": \"direct_sow\",
+    \"plant_count\": 12,
+    \"location_in_garden\": \"South bed, row 2\",
+    \"health_status\": \"healthy\",
+    \"x\": 0.8,
+    \"y\": 3.5,
+    \"notes\": \"Bush beans for nitrogen fixing\"
+  }" > /dev/null
+echo "✓ Planted Beans at (0.8, 3.5) - demonstrates conflict with Onions"
+
+# Bell Peppers at (3.8, 1.2) - separate area
+curl -s -X POST "${API_URL}/planting-events" \
+  -H "Authorization: Bearer ${TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"garden_id\": ${GARDEN1_ID},
+    \"plant_variety_id\": ${PEPPER_BELL_ID},
+    \"planting_date\": \"${PLANTING_DATE_45D}\",
+    \"planting_method\": \"transplant\",
+    \"plant_count\": 4,
+    \"location_in_garden\": \"North bed, row 5\",
+    \"health_status\": \"healthy\",
+    \"x\": 3.8,
+    \"y\": 1.2,
+    \"notes\": \"Bell peppers - multiple colors\"
+  }" > /dev/null
+echo "✓ Planted Bell Peppers at (3.8, 1.2)"
 
 # Plantings for Herb Garden
 curl -s -X POST "${API_URL}/planting-events" \
@@ -851,14 +977,28 @@ echo "    - Rain Barrel - ID: $SOURCE2_ID"
 echo "  • 2 Irrigation Zones:"
 echo "    - Vegetable Zone - ID: $ZONE1_ID"
 echo "    - Herb & Flower Zone - ID: $ZONE2_ID"
-echo "  • 17 Planting Events:"
-echo "    - Vegetable Garden: 4 varieties (Tomato, Pepper, Lettuce, Cucumber)"
+echo "  • 22 Planting Events (with companion planting scenarios):"
+echo "    - Vegetable Garden: 10 varieties with positions demonstrating:"
+echo "      ✓ Tomato + Basil (beneficial pair at 0.4m)"
+echo "      ✓ Carrot + Onion (beneficial pair at 0.3m)"
+echo "      ✓ Lettuce + Radish (beneficial pair at 0.3m)"
+echo "      ⚠️  Tomato + Broccoli (conflict within 3m)"
+echo "      ⚠️  Bean + Onion (conflict within 2m)"
 echo "    - Herb Garden: 3 varieties (Basil, Cilantro, Mint)"
 echo "    - Flower Garden: 3 varieties (Marigold, Zinnia, Sunflower)"
 echo "    - Indoor Herb Garden: 2 varieties (Basil, Parsley)"
 echo "    - Hydroponic Greens: 3 varieties (Romaine, Butterhead, Microgreens)"
 echo "  • 22 Watering/Irrigation Events (zone + manual + hydroponic)"
 echo "  • 5 Soil Samples"
+echo ""
+echo "Companion Planting Analysis:"
+echo "  🌱 Beneficial Pairs Demonstrated:"
+echo "     • Tomato + Basil: Basil deters aphids and improves tomato flavor"
+echo "     • Carrot + Onion: Onion scent confuses carrot fly"
+echo "     • Lettuce + Radish: Radishes loosen soil for lettuce roots"
+echo "  ⚠️  Conflicts Demonstrated:"
+echo "     • Tomato + Broccoli: Competition for nutrients"
+echo "     • Bean + Onion: Onions inhibit bean growth"
 echo ""
 echo "Expected Irrigation Alerts:"
 echo "  ⚠️  FREQ_001: Watering too frequently (Herb & Flower Zone - daily watering)"
