@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { api } from '../services/api';
-import type { Garden, PlantVariety } from '../types';
+import type { Garden, PlantVariety, PlantingEvent } from '../types';
+import { GardenPlantPlacer } from './GardenPlantPlacer';
 
 interface CreatePlantingEventProps {
   onClose: () => void;
@@ -20,6 +21,8 @@ export function CreatePlantingEvent({ onClose, onSuccess }: CreatePlantingEventP
   const [plantNotes, setPlantNotes] = useState('');
   const [positionX, setPositionX] = useState('');
   const [positionY, setPositionY] = useState('');
+  const [useVisualPlacement, setUseVisualPlacement] = useState(true);
+  const [existingPlantings, setExistingPlantings] = useState<PlantingEvent[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [needsGarden, setNeedsGarden] = useState(false);
@@ -51,6 +54,26 @@ export function CreatePlantingEvent({ onClose, onSuccess }: CreatePlantingEventP
     };
     loadData();
   }, []);
+
+  // Load existing plantings when garden is selected
+  useEffect(() => {
+    const loadPlantings = async () => {
+      if (!gardenId) {
+        setExistingPlantings([]);
+        return;
+      }
+
+      try {
+        const plantings = await api.getPlantingEvents(parseInt(gardenId));
+        // Only include plantings with positions
+        setExistingPlantings(plantings.filter(p => p.x !== undefined && p.y !== undefined));
+      } catch (err) {
+        console.error('Failed to load existing plantings:', err);
+      }
+    };
+
+    loadPlantings();
+  }, [gardenId]);
 
   const handleCreateGarden = async () => {
     if (!newGardenName.trim()) return;
@@ -219,33 +242,67 @@ export function CreatePlantingEvent({ onClose, onSuccess }: CreatePlantingEventP
               <div style={{ fontSize: '0.85em', color: '#555', marginBottom: '10px' }}>
                 Optional: Set plant position to get companion planting recommendations
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label>X Position (meters)</label>
+
+              <div style={{ marginBottom: '10px' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
                   <input
-                    type="number"
-                    value={positionX}
-                    onChange={(e) => setPositionX(e.target.value)}
-                    placeholder="0.0"
-                    step="0.1"
-                    disabled={loading}
+                    type="checkbox"
+                    checked={useVisualPlacement}
+                    onChange={(e) => setUseVisualPlacement(e.target.checked)}
+                    disabled={loading || !gardenId}
                   />
-                </div>
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label>Y Position (meters)</label>
-                  <input
-                    type="number"
-                    value={positionY}
-                    onChange={(e) => setPositionY(e.target.value)}
-                    placeholder="0.0"
-                    step="0.1"
-                    disabled={loading}
-                  />
-                </div>
+                  <span style={{ fontSize: '0.9em' }}>Use visual placement (click on garden map)</span>
+                </label>
               </div>
-              <div style={{ fontSize: '0.8em', color: '#666', marginTop: '6px' }}>
-                Example: First plant at (0, 0), second plant 0.5m away at (0.5, 0)
-              </div>
+
+              {useVisualPlacement && gardenId ? (
+                <GardenPlantPlacer
+                  existingPlants={existingPlantings.map(p => ({
+                    id: p.id,
+                    name: p.plant_variety?.common_name || 'Plant',
+                    x: p.x || 0,
+                    y: p.y || 0
+                  }))}
+                  onPositionChange={(position) => {
+                    setPositionX(position.x.toFixed(1));
+                    setPositionY(position.y.toFixed(1));
+                  }}
+                  currentPosition={positionX && positionY ? {
+                    x: parseFloat(positionX),
+                    y: parseFloat(positionY)
+                  } : undefined}
+                />
+              ) : (
+                <>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label>X Position (meters)</label>
+                      <input
+                        type="number"
+                        value={positionX}
+                        onChange={(e) => setPositionX(e.target.value)}
+                        placeholder="0.0"
+                        step="0.1"
+                        disabled={loading}
+                      />
+                    </div>
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label>Y Position (meters)</label>
+                      <input
+                        type="number"
+                        value={positionY}
+                        onChange={(e) => setPositionY(e.target.value)}
+                        placeholder="0.0"
+                        step="0.1"
+                        disabled={loading}
+                      />
+                    </div>
+                  </div>
+                  <div style={{ fontSize: '0.8em', color: '#666', marginTop: '6px' }}>
+                    Example: First plant at (0, 0), second plant 0.5m away at (0.5, 0)
+                  </div>
+                </>
+              )}
             </div>
 
             <div className="form-group">
