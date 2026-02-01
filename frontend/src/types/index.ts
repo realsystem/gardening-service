@@ -1,4 +1,6 @@
 // API Types
+export type UnitSystem = 'metric' | 'imperial';
+
 export interface User {
   id: number;
   email: string;
@@ -8,6 +10,9 @@ export interface User {
   gardening_preferences?: string;
   usda_zone?: string;
   zip_code?: string;
+  latitude?: number;
+  longitude?: number;
+  unit_system: UnitSystem;
   is_admin: boolean;
 }
 

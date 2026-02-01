@@ -210,7 +210,7 @@ def delete_tree(
 @router.get("/{tree_id}/shadow-extent")
 def get_tree_shadow_extent(
     tree_id: int,
-    latitude: float = 40.0,
+    latitude: float | None = None,
     hour: float | None = None,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
@@ -222,7 +222,7 @@ def get_tree_shadow_extent(
     sun altitude angles at the given latitude.
 
     Query parameters:
-    - latitude: Latitude for sun angle calculation (default: 40.0 for temperate zone)
+    - latitude: Latitude for sun angle calculation (default: uses user's latitude or 40.0)
     - hour: Hour of day for shadow calculation (0-24, default: None for seasonal midday shadows)
     """
     from app.services.sun_exposure_service import SunExposureService
@@ -242,7 +242,10 @@ def get_tree_shadow_extent(
             detail="Not authorized to access this tree"
         )
 
+    # Use provided latitude, or user's latitude, or default to 40.0
+    effective_latitude = latitude if latitude is not None else (current_user.latitude if current_user.latitude is not None else 40.0)
+
     # Get shadow extent data using the service
-    shadow_data = SunExposureService.get_tree_shadow_extent(tree, latitude, hour)
+    shadow_data = SunExposureService.get_tree_shadow_extent(tree, effective_latitude, hour)
 
     return shadow_data

@@ -323,12 +323,12 @@ export function LandCanvas({ land, gardens, trees = [], structures = [], onUpdat
       }
       setGardenSunExposure(gardenExposureMap);
 
-      // Fetch tree shadow extents (default latitude 40.0 for temperate zone)
+      // Fetch tree shadow extents (uses user's latitude from backend)
       const treeShadowMap = new Map<number, TreeShadowExtent>();
       for (const tree of trees) {
         if (tree.x != null && tree.y != null && tree.height != null) {
           try {
-            const shadowExtent = await api.getTreeShadowExtent(tree.id, 40.0, selectedHour);
+            const shadowExtent = await api.getTreeShadowExtent(tree.id, undefined, selectedHour);
             treeShadowMap.set(tree.id, shadowExtent);
           } catch (error) {
             console.error(`Failed to fetch shadow extent for tree ${tree.id}:`, error);
@@ -337,12 +337,12 @@ export function LandCanvas({ land, gardens, trees = [], structures = [], onUpdat
       }
       setTreeShadows(treeShadowMap);
 
-      // Fetch structure shadow extents
+      // Fetch structure shadow extents (uses user's latitude from backend)
       const structureShadowMap = new Map<number, StructureShadowExtent>();
       for (const structure of structures) {
         if (structure.x != null && structure.y != null && structure.height != null) {
           try {
-            const shadowExtent = await api.getStructureShadowExtent(structure.id, 40.0, selectedHour);
+            const shadowExtent = await api.getStructureShadowExtent(structure.id, undefined, selectedHour);
             structureShadowMap.set(structure.id, shadowExtent);
           } catch (error) {
             console.error(`Failed to fetch shadow extent for structure ${structure.id}:`, error);
