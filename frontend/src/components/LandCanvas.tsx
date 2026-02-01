@@ -41,6 +41,7 @@ export function LandCanvas({ land, gardens, trees = [], structures = [], onUpdat
   const [altKeyPressed, setAltKeyPressed] = useState<boolean>(false); // Track Alt key
   const [showSeasonalShadows, setShowSeasonalShadows] = useState<boolean>(false);
   const [selectedSeason, setSelectedSeason] = useState<'winter' | 'equinox' | 'summer'>('summer');
+  const [selectedHour, setSelectedHour] = useState<number>(12); // Default to noon
   const [gardenSunExposure, setGardenSunExposure] = useState<Map<number, GardenSunExposure>>(new Map());
   const [treeShadows, setTreeShadows] = useState<Map<number, TreeShadowExtent>>(new Map());
   const [structureShadows, setStructureShadows] = useState<Map<number, StructureShadowExtent>>(new Map());
@@ -327,7 +328,7 @@ export function LandCanvas({ land, gardens, trees = [], structures = [], onUpdat
       for (const tree of trees) {
         if (tree.x != null && tree.y != null && tree.height != null) {
           try {
-            const shadowExtent = await api.getTreeShadowExtent(tree.id, 40.0);
+            const shadowExtent = await api.getTreeShadowExtent(tree.id, 40.0, selectedHour);
             treeShadowMap.set(tree.id, shadowExtent);
           } catch (error) {
             console.error(`Failed to fetch shadow extent for tree ${tree.id}:`, error);
@@ -341,7 +342,7 @@ export function LandCanvas({ land, gardens, trees = [], structures = [], onUpdat
       for (const structure of structures) {
         if (structure.x != null && structure.y != null && structure.height != null) {
           try {
-            const shadowExtent = await api.getStructureShadowExtent(structure.id, 40.0);
+            const shadowExtent = await api.getStructureShadowExtent(structure.id, 40.0, selectedHour);
             structureShadowMap.set(structure.id, shadowExtent);
           } catch (error) {
             console.error(`Failed to fetch shadow extent for structure ${structure.id}:`, error);
@@ -354,7 +355,7 @@ export function LandCanvas({ land, gardens, trees = [], structures = [], onUpdat
     if (showSeasonalShadows) {
       fetchSunExposureData();
     }
-  }, [land.gardens, trees, structures, showSeasonalShadows]);
+  }, [land.gardens, trees, structures, showSeasonalShadows, selectedHour]);
 
   const findFreePosition = (width: number, height: number): { x: number; y: number } | null => {
     const tolerance = 0.01; // Small tolerance for floating-point precision
@@ -539,15 +540,38 @@ export function LandCanvas({ land, gardens, trees = [], structures = [], onUpdat
                 borderRadius: '3px',
                 border: '1px solid #ccc',
                 fontSize: '0.85em',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                marginBottom: '12px'
               }}
             >
               <option value="winter">Winter (Longest shadows)</option>
               <option value="equinox">Equinox (Medium shadows)</option>
               <option value="summer">Summer (Shortest shadows)</option>
             </select>
-            <p style={{ margin: '6px 0 0 0', fontSize: '0.75em', color: '#856404' }}>
-              Shadow projection based on sun altitude at solar noon
+
+            <label style={{ display: 'block', fontSize: '0.85em', marginBottom: '4px', color: '#666' }}>
+              Time of Day: {selectedHour === 0 ? '12:00 AM' : selectedHour < 12 ? `${selectedHour}:00 AM` : selectedHour === 12 ? '12:00 PM' : `${selectedHour - 12}:00 PM`}
+            </label>
+            <input
+              type="range"
+              min="6"
+              max="18"
+              step="1"
+              value={selectedHour}
+              onChange={(e) => setSelectedHour(parseInt(e.target.value))}
+              style={{
+                width: '100%',
+                cursor: 'pointer'
+              }}
+            />
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7em', color: '#999', marginTop: '2px' }}>
+              <span>6 AM (Sunrise)</span>
+              <span>12 PM (Noon)</span>
+              <span>6 PM (Sunset)</span>
+            </div>
+
+            <p style={{ margin: '10px 0 0 0', fontSize: '0.75em', color: '#856404' }}>
+              Shadow projection for selected season and time
             </p>
           </div>
         )}
@@ -558,9 +582,6 @@ export function LandCanvas({ land, gardens, trees = [], structures = [], onUpdat
         <div className="compass-indicator">
           <div className="compass-arrow">↑</div>
           <div className="compass-label">N</div>
-          <div className="compass-divider">|</div>
-          <div className="compass-label">S</div>
-          <div className="compass-arrow">↓</div>
         </div>
 
         <div
