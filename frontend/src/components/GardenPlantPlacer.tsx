@@ -21,6 +21,7 @@ interface GardenPlantPlacerProps {
   gardenHeight?: number;
   existingPlants?: ExistingPlant[];
   currentPosition?: PlantPosition;
+  currentPlantName?: string; // name of the plant being placed
   currentPlantSpacing?: number; // spacing in inches for the plant being placed
   onPositionChange: (position: PlantPosition) => void;
 }
@@ -35,6 +36,7 @@ export function GardenPlantPlacer({
   gardenHeight = 8,
   existingPlants = [],
   currentPosition,
+  currentPlantName,
   currentPlantSpacing,
   onPositionChange
 }: GardenPlantPlacerProps) {
@@ -233,9 +235,9 @@ export function GardenPlantPlacer({
       // Label
       ctx.fillStyle = '#1976d2';
       ctx.font = 'bold 12px sans-serif';
-      ctx.fillText('New Plant', px + 18, py + 4);
+      ctx.fillText(currentPlantName || 'New Plant', px + 18, py + 4);
     }
-  }, [gardenWidth, gardenHeight, scale, canvasDisplayWidth, canvasDisplayHeight, existingPlants, currentPosition, hoveredPosition, currentPlantSpacing]);
+  }, [gardenWidth, gardenHeight, scale, canvasDisplayWidth, canvasDisplayHeight, existingPlants, currentPosition, hoveredPosition, currentPlantSpacing, currentPlantName]);
 
   const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;

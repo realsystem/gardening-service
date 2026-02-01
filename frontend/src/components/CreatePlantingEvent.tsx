@@ -252,13 +252,13 @@ export function CreatePlantingEvent({ onClose, onSuccess }: CreatePlantingEventP
                     type="checkbox"
                     checked={useVisualPlacement}
                     onChange={(e) => setUseVisualPlacement(e.target.checked)}
-                    disabled={loading || !gardenId}
+                    disabled={loading || !gardenId || !plantVarietyId}
                   />
                   <span style={{ fontSize: '0.9em' }}>Use visual placement (click on garden map)</span>
                 </label>
               </div>
 
-              {useVisualPlacement && gardenId ? (
+              {useVisualPlacement && gardenId && plantVarietyId ? (
                 <GardenPlantPlacer
                   existingPlants={existingPlantings.map(p => ({
                     id: p.id,
@@ -267,6 +267,7 @@ export function CreatePlantingEvent({ onClose, onSuccess }: CreatePlantingEventP
                     y: p.y || 0,
                     spacing: p.plant_variety?.spacing_inches
                   }))}
+                  currentPlantName={selectedVariety?.common_name}
                   currentPlantSpacing={selectedVariety?.spacing_inches}
                   onPositionChange={(position) => {
                     setPositionX(position.x.toFixed(2));
@@ -277,6 +278,10 @@ export function CreatePlantingEvent({ onClose, onSuccess }: CreatePlantingEventP
                     y: parseFloat(positionY)
                   } : undefined}
                 />
+              ) : useVisualPlacement && (!gardenId || !plantVarietyId) ? (
+                <div style={{ padding: '15px', background: '#fff3cd', borderRadius: '4px', color: '#856404', fontSize: '0.9em' }}>
+                  ⚠️ Please select a Garden and Plant Variety above to use visual placement
+                </div>
               ) : (
                 <>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
