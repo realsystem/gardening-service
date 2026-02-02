@@ -9,11 +9,7 @@ from app.models.planting_event import PlantingEvent
 from app.models.care_task import CareTask
 from app.models.sensor_reading import SensorReading
 from app.models.soil_sample import SoilSample
-from app.models.irrigation_event import IrrigationEvent
 from app.models.password_reset_token import PasswordResetToken
-from app.models.irrigation_source import IrrigationSource
-from app.models.irrigation_zone import IrrigationZone
-from app.models.watering_event import WateringEvent
 from app.models.tree import Tree
 from app.models.structure import Structure
 from app.models.companion_relationship import CompanionRelationship
@@ -29,11 +25,7 @@ __all__ = [
     "CareTask",
     "SensorReading",
     "SoilSample",
-    "IrrigationEvent",
     "PasswordResetToken",
-    "IrrigationSource",
-    "IrrigationZone",
-    "WateringEvent",
     "Tree",
     "Structure",
     "CompanionRelationship",

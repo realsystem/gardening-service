@@ -75,8 +75,7 @@ class Garden(Base):
     width = Column(Float, nullable=True)  # garden width in abstract units
     height = Column(Float, nullable=True)  # garden height in abstract units
 
-    # Irrigation system fields
-    irrigation_zone_id = Column(Integer, ForeignKey("irrigation_zones.id", ondelete='SET NULL'), nullable=True, index=True)
+    # Garden characteristics (no tracking, for reference only)
     mulch_depth_inches = Column(Float, nullable=True)  # Mulch depth affects water retention
     is_raised_bed = Column(Boolean, nullable=False, default=False)  # Raised beds drain differently
     soil_texture_override = Column(String(50), nullable=True)  # sandy, loamy, clay (overrides defaults)
@@ -87,8 +86,6 @@ class Garden(Base):
     # Relationships
     user = relationship("User", back_populates="gardens")
     land = relationship("Land", back_populates="gardens", foreign_keys=[land_id])
-    irrigation_zone = relationship("IrrigationZone", back_populates="gardens", foreign_keys=[irrigation_zone_id])
     planting_events = relationship("PlantingEvent", back_populates="garden", cascade="all, delete-orphan")
     sensor_readings = relationship("SensorReading", back_populates="garden", cascade="all, delete-orphan")
     soil_samples = relationship("SoilSample", back_populates="garden", cascade="all, delete-orphan")
-    irrigation_events = relationship("IrrigationEvent", back_populates="garden", cascade="all, delete-orphan")

@@ -12,6 +12,13 @@ class UnitSystem(str, enum.Enum):
     IMPERIAL = "imperial"  # feet, fahrenheit
 
 
+class UserGroup(str, enum.Enum):
+    """User group for progressive feature disclosure"""
+    AMATEUR_GARDENER = "amateur_gardener"  # Simplified interface, 90% of users
+    FARMER = "farmer"  # Intermediate features, commercial growers
+    SCIENTIFIC_RESEARCHER = "scientific_researcher"  # Full access to all features
+
+
 class User(Base):
     """
     User account.
@@ -43,6 +50,13 @@ class User(Base):
     # Unit preferences
     unit_system = Column(Enum(UnitSystem), nullable=False, server_default='metric')
 
+    # User group for progressive feature disclosure
+    user_group = Column(Enum(UserGroup), nullable=False, server_default='amateur_gardener')
+
+    # Feature toggles (amateur users control visibility)
+    show_trees = Column(Boolean, default=False, nullable=False, server_default='false')
+    enable_alerts = Column(Boolean, default=False, nullable=False, server_default='false')
+
     # Compliance audit fields (immutable, admin-only visibility)
     restricted_crop_flag = Column(Boolean, default=False, nullable=False, server_default='false')
     restricted_crop_count = Column(Integer, default=0, nullable=False, server_default='0')
@@ -63,14 +77,8 @@ class User(Base):
     care_tasks = relationship("CareTask", back_populates="user", cascade="all, delete-orphan")
     sensor_readings = relationship("SensorReading", back_populates="user", cascade="all, delete-orphan")
     soil_samples = relationship("SoilSample", back_populates="user", cascade="all, delete-orphan")
-    irrigation_events = relationship("IrrigationEvent", back_populates="user", cascade="all, delete-orphan")
     password_reset_tokens = relationship("PasswordResetToken", back_populates="user", cascade="all, delete-orphan")
 
-    # Irrigation system relationships
-    irrigation_sources = relationship("IrrigationSource", back_populates="user", cascade="all, delete-orphan")
-    irrigation_zones = relationship("IrrigationZone", back_populates="user", cascade="all, delete-orphan")
-    watering_events = relationship("WateringEvent", back_populates="user", cascade="all, delete-orphan")
-
-    # Tree shading relationships
+    # Tree shading relationships (hidden for amateur users by default)
     trees = relationship("Tree", back_populates="user", cascade="all, delete-orphan")
     structures = relationship("Structure", back_populates="user", cascade="all, delete-orphan")

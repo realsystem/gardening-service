@@ -1,5 +1,5 @@
 """PlantVariety model - static reference data"""
-from sqlalchemy import Column, Integer, String, Text, Float, Enum as SQLEnum
+from sqlalchemy import Column, Integer, String, Text, Float, Boolean, Enum as SQLEnum
 from sqlalchemy.orm import relationship
 from app.database import Base
 import enum
@@ -46,6 +46,12 @@ class PlantVariety(Base):
     # Requirements
     sun_requirement = Column(SQLEnum(SunRequirement, values_callable=lambda x: [e.value for e in x]), nullable=True)
     water_requirement = Column(SQLEnum(WaterRequirement, values_callable=lambda x: [e.value for e in x]), nullable=True)
+
+    # Advisory watering guidance (passive information, no tracking required)
+    water_needs = Column(String(20), nullable=True)  # "low", "medium", "high" - simple indicator
+    drought_tolerant = Column(Boolean, default=False, nullable=False)  # Drought tolerance flag
+    typical_watering_frequency_days = Column(Integer, nullable=True)  # Reference only, e.g., 3 means "every 3 days"
+    watering_guidance = Column(Text, nullable=True)  # Human-readable guidance text
 
     # Additional info
     description = Column(Text, nullable=True)
