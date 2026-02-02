@@ -17,15 +17,25 @@ depends_on = None
 
 
 def upgrade() -> None:
-    # Convert is_raised_bed from Integer to Boolean
-    # PostgreSQL requires explicit casting and default change
-    op.execute("""
-        ALTER TABLE gardens
-        ALTER COLUMN is_raised_bed DROP DEFAULT,
-        ALTER COLUMN is_raised_bed TYPE BOOLEAN
-        USING CASE WHEN is_raised_bed = 0 THEN FALSE ELSE TRUE END,
-        ALTER COLUMN is_raised_bed SET DEFAULT FALSE
-    """)
+    # Convert is_raised_bed from Integer to Boolean (if needed)
+    # Check if column is already boolean before attempting conversion
+    from sqlalchemy import inspect
+    from sqlalchemy.engine import reflection
+
+    conn = op.get_bind()
+    inspector = inspect(conn)
+    columns = inspector.get_columns('gardens')
+    is_raised_bed_col = next((col for col in columns if col['name'] == 'is_raised_bed'), None)
+
+    # Only convert if column exists and is not already boolean
+    if is_raised_bed_col and str(is_raised_bed_col['type']).upper() not in ('BOOLEAN', 'BOOL'):
+        op.execute("""
+            ALTER TABLE gardens
+            ALTER COLUMN is_raised_bed DROP DEFAULT,
+            ALTER COLUMN is_raised_bed TYPE BOOLEAN
+            USING CASE WHEN is_raised_bed::INTEGER = 0 THEN FALSE ELSE TRUE END,
+            ALTER COLUMN is_raised_bed SET DEFAULT FALSE
+        """)
 
 
 def downgrade() -> None:
