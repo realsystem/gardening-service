@@ -89,12 +89,15 @@ class TestPhase1ForeignKeys:
         db.add(relationship)
         db.commit()
 
+        # Store relationship ID before cascade delete
+        relationship_id = relationship.id
+
         # Delete plant_a should cascade to relationship
         db.delete(plant_a)
         db.commit()
 
         # Relationship should be gone
-        assert db.query(CompanionRelationship).filter_by(id=relationship.id).first() is None
+        assert db.query(CompanionRelationship).filter_by(id=relationship_id).first() is None
 
     def test_user_cascade_to_gardens(self, db, test_user):
         """Test that deleting a user cascades to their gardens"""
