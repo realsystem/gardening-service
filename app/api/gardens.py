@@ -23,7 +23,7 @@ from app.models.planting_event import PlantingEvent
 from app.models.care_task import CareTask, TaskStatus
 from app.models.plant_variety import PlantVariety
 from app.api.dependencies import get_current_user
-from app.models.user import User
+from app.models.user import User, UserGroup
 from app.services.layout_service import (
     validate_spatial_data_complete,
     validate_garden_placement,
@@ -31,6 +31,7 @@ from app.services.layout_service import (
 )
 from app.utils.grid_config import GRID_RESOLUTION
 from app.compliance.service import get_compliance_service
+from app.utils.feature_gating import is_feature_enabled, require_user_group
 
 router = APIRouter(prefix="/gardens", tags=["gardens"])
 
@@ -41,10 +42,31 @@ def create_garden(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Create a new garden"""
+    """
+    Create a new garden.
+
+    **Feature Gating**:
+    - Amateur users: Cannot create hydroponic gardens
+    - Researchers: Full access to all garden types
+    """
     repo = GardenRepository(db)
+
     # Convert Pydantic model to dict, excluding unset values
     garden_dict = garden_data.model_dump(exclude_unset=True)
+
+    # FEATURE GATE: Hydroponic gardens require researcher account
+    if garden_dict.get('is_hydroponic', False):
+        if not is_feature_enabled(current_user, 'hydroponics'):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail={
+                    "error": "Hydroponic features not available",
+                    "message": "Hydroponic gardens require a Scientific Researcher account",
+                    "your_account_type": current_user.user_group.value.replace('_', ' ').title(),
+                    "upgrade_info": "Change your account type to 'Scientific Researcher' in Settings"
+                }
+            )
+
     garden = repo.create(
         user_id=current_user.id,
         **garden_dict
@@ -566,6 +588,7 @@ def get_garden_sun_exposure(
 
 
 @router.get("/{garden_id}/nutrient-optimization", response_model=NutrientOptimizationResponse)
+@require_user_group([UserGroup.SCIENTIFIC_RESEARCHER])
 def get_nutrient_optimization(
     garden_id: int,
     current_user: User = Depends(get_current_user),
@@ -573,6 +596,8 @@ def get_nutrient_optimization(
 ):
     """
     Get nutrient optimization plan for a hydroponic, fertigation, or container garden.
+
+    **Requires**: Scientific Researcher account
 
     Returns science-based EC/pH recommendations, water replacement schedule, and warnings
     based on active plantings and their growth stages.
@@ -583,6 +608,7 @@ def get_nutrient_optimization(
     - Container growing with nutrients
 
     Returns 400 error for traditional outdoor soil gardens.
+    Returns 403 error for non-researcher accounts.
     """
     from app.services.nutrient_optimization_service import NutrientOptimizationService
     from app.models.garden import HydroSystemType

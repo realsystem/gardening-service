@@ -1,8 +1,8 @@
 """User schemas"""
 from pydantic import BaseModel, EmailStr, Field
-from typing import Optional
+from typing import Optional, Dict, Any
 from datetime import datetime
-from app.models.user import UnitSystem
+from app.models.user import UnitSystem, UserGroup
 
 
 class UserCreate(BaseModel):
@@ -28,6 +28,10 @@ class UserProfileUpdate(BaseModel):
     gardening_preferences: Optional[str] = None
     zip_code: Optional[str] = Field(None, max_length=10)
     unit_system: Optional[UnitSystem] = None
+    # Feature disclosure settings
+    user_group: Optional[UserGroup] = Field(None, description="Amateur, Farmer, or Scientific Researcher")
+    show_trees: Optional[bool] = Field(None, description="Show trees on layout (amateur users)")
+    enable_alerts: Optional[bool] = Field(None, description="Enable rule-based alerts and recommendations")
 
 
 class UserResponse(BaseModel):
@@ -44,6 +48,12 @@ class UserResponse(BaseModel):
     usda_zone: Optional[str] = None
     unit_system: UnitSystem = UnitSystem.METRIC
     is_admin: bool = False
+    # Feature disclosure
+    user_group: UserGroup = UserGroup.AMATEUR_GARDENER
+    show_trees: bool = False
+    enable_alerts: bool = False
+    # Feature flags (computed)
+    feature_flags: Optional[Dict[str, Any]] = Field(None, description="Available features for this user")
     created_at: datetime
 
     class Config:

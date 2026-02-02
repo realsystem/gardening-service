@@ -10,6 +10,7 @@ from app.services.climate_zone_service import ClimateZoneService
 from app.services.location_service import LocationService
 from app.api.dependencies import get_current_user
 from app.models.user import User
+from app.utils.feature_gating import get_feature_flags
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -83,9 +84,48 @@ def login(credentials: UserLogin, db: Session = Depends(get_db)):
 @router.get("/me", response_model=UserResponse)
 def get_current_user_info(current_user: User = Depends(get_current_user)):
     """
-    Get current user information.
+    Get current user information with feature flags.
+
+    Feature flags indicate which features are available based on:
+    - User group (amateur/farmer/researcher)
+    - User preferences (show_trees, enable_alerts)
+
+    Example response:
+    {
+        "id": 1,
+        "email": "user@example.com",
+        "user_group": "amateur_gardener",
+        "show_trees": false,
+        "enable_alerts": false,
+        "feature_flags": {
+            "hydroponics": false,
+            "tree_shadows": false,
+            "alerts_enabled": false
+        }
+    }
     """
-    return current_user
+    # Convert user model to dict to add computed fields
+    user_dict = {
+        "id": current_user.id,
+        "email": current_user.email,
+        "display_name": current_user.display_name,
+        "avatar_url": current_user.avatar_url,
+        "city": current_user.city,
+        "gardening_preferences": current_user.gardening_preferences,
+        "zip_code": current_user.zip_code,
+        "latitude": current_user.latitude,
+        "longitude": current_user.longitude,
+        "usda_zone": current_user.usda_zone,
+        "unit_system": current_user.unit_system,
+        "is_admin": current_user.is_admin,
+        "user_group": current_user.user_group,
+        "show_trees": current_user.show_trees,
+        "enable_alerts": current_user.enable_alerts,
+        "created_at": current_user.created_at,
+        "feature_flags": get_feature_flags(current_user)
+    }
+
+    return user_dict
 
 
 @router.patch("/me", response_model=UserResponse)

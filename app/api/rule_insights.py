@@ -35,6 +35,8 @@ def get_garden_insights(
 
     Evaluates all rules against current garden state and returns
     triggered alerts with scientific explanations.
+
+    **Note**: Returns empty results if user has disabled alerts (enable_alerts = false).
     """
     # Verify garden ownership
     garden = db.query(Garden).filter(
@@ -44,6 +46,18 @@ def get_garden_insights(
 
     if not garden:
         raise HTTPException(status_code=404, detail="Garden not found")
+
+    # FEATURE GATE: Respect user's enable_alerts preference
+    if not current_user.enable_alerts:
+        return {
+            "garden_id": garden_id,
+            "garden_name": garden.name,
+            "evaluation_time": datetime.utcnow().isoformat(),
+            "triggered_rules": [],
+            "rules_by_severity": {"critical": 0, "warning": 0, "info": 0},
+            "rules_by_category": {},
+            "message": "Alerts disabled. Enable in Settings to see recommendations."
+        }
 
     # Get garden state
     context = _build_garden_context(db, garden)
@@ -101,6 +115,19 @@ def get_planting_insights(
 
     if not planting:
         raise HTTPException(status_code=404, detail="Planting not found")
+
+    # FEATURE GATE: Respect user's enable_alerts preference
+    if not current_user.enable_alerts:
+        return {
+            "planting_id": planting_id,
+            "plant_name": "Unknown",
+            "plant_variety": None,
+            "evaluation_time": datetime.utcnow().isoformat(),
+            "triggered_rules": [],
+            "rules_by_severity": {"critical": 0, "warning": 0, "info": 0},
+            "rules_by_category": {},
+            "message": "Alerts disabled. Enable in Settings to see recommendations."
+        }
 
     # Get plant variety
     plant_variety = db.query(PlantVariety).filter(
