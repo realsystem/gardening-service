@@ -12,8 +12,8 @@ from app.utils.feature_flags import is_rule_engine_enabled
 logger = logging.getLogger(__name__)
 from app.rules.indoor_rules import (
     LightScheduleRule,
-    TemperatureMonitoringRule,
-    HumidityMonitoringRule,
+    # TemperatureMonitoringRule,  # Removed in Phase 6 - requires sensor readings
+    # HumidityMonitoringRule,  # Removed in Phase 6 - requires sensor readings
     NutrientScheduleRule
 )
 from app.rules.hydroponics_rules import (
@@ -99,35 +99,36 @@ class TaskGenerator:
 
         return self._apply_rules_and_create_tasks(db, context, [SeedViabilityRule()])
 
-    def generate_tasks_for_sensor_reading(self, db: Session, sensor_reading, user_id: int) -> List[CareTask]:
-        """
-        Generate warning tasks based on sensor readings.
-
-        Args:
-            db: Database session
-            sensor_reading: SensorReading instance
-            user_id: User ID
-
-        Returns:
-            List of created CareTask instances
-        """
-        context = {
-            "sensor_reading": sensor_reading,
-            "user_id": user_id,
-        }
-
-        # Apply indoor monitoring rules
-        rules = [TemperatureMonitoringRule(), HumidityMonitoringRule()]
-
-        # Add hydroponics monitoring rules if this is a hydroponic garden
-        if sensor_reading.garden and sensor_reading.garden.is_hydroponic:
-            rules.extend([
-                PHMonitoringRule(),
-                ECPPMMonitoringRule(),
-                WaterTemperatureMonitoringRule()
-            ])
-
-        return self._apply_rules_and_create_tasks(db, context, rules)
+    # generate_tasks_for_sensor_reading removed in Phase 6 - sensor readings feature removed
+    # def generate_tasks_for_sensor_reading(self, db: Session, sensor_reading, user_id: int) -> List[CareTask]:
+    #     """
+    #     Generate warning tasks based on sensor readings.
+    #
+    #     Args:
+    #         db: Database session
+    #         sensor_reading: SensorReading instance
+    #         user_id: User ID
+    #
+    #     Returns:
+    #         List of created CareTask instances
+    #     """
+    #     context = {
+    #         "sensor_reading": sensor_reading,
+    #         "user_id": user_id,
+    #     }
+    #
+    #     # Apply indoor monitoring rules
+    #     rules = [TemperatureMonitoringRule(), HumidityMonitoringRule()]
+    #
+    #     # Add hydroponics monitoring rules if this is a hydroponic garden
+    #     if sensor_reading.garden and sensor_reading.garden.is_hydroponic:
+    #         rules.extend([
+    #             PHMonitoringRule(),
+    #             ECPPMMonitoringRule(),
+    #             WaterTemperatureMonitoringRule()
+    #         ])
+    #
+    #     return self._apply_rules_and_create_tasks(db, context, rules)
 
     def _apply_rules_and_create_tasks(
         self,

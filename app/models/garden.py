@@ -87,5 +87,5 @@ class Garden(Base):
     user = relationship("User", back_populates="gardens")
     land = relationship("Land", back_populates="gardens", foreign_keys=[land_id])
     planting_events = relationship("PlantingEvent", back_populates="garden", cascade="all, delete-orphan")
-    sensor_readings = relationship("SensorReading", back_populates="garden", cascade="all, delete-orphan")
+    # sensor_readings relationship removed in Phase 6 of platform simplification
     soil_samples = relationship("SoilSample", back_populates="garden", cascade="all, delete-orphan")

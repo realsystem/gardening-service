@@ -81,22 +81,40 @@ def upgrade() -> None:
     # STEP 2: Drop foreign key constraints
     # ============================================
 
-    # Drop irrigation_zone_id from gardens
-    op.drop_constraint('gardens_irrigation_zone_id_fkey', 'gardens', type_='foreignkey')
-    op.drop_column('gardens', 'irrigation_zone_id')
+    # Drop irrigation_zone_id from gardens (if exists)
+    connection = op.get_bind()
+    inspector = sa.inspect(connection)
 
-    print("✓ Removed irrigation_zone_id from gardens")
+    # Check if column exists before trying to drop constraint
+    columns = [col['name'] for col in inspector.get_columns('gardens')]
+    if 'irrigation_zone_id' in columns:
+        # Check if constraint exists
+        fkeys = inspector.get_foreign_keys('gardens')
+        constraint_names = [fk['name'] for fk in fkeys if fk.get('constrained_columns') == ['irrigation_zone_id']]
+        if constraint_names:
+            op.drop_constraint(constraint_names[0], 'gardens', type_='foreignkey')
+        op.drop_column('gardens', 'irrigation_zone_id')
+        print("✓ Removed irrigation_zone_id from gardens")
+    else:
+        print("✓ irrigation_zone_id column not present (already removed)")
 
     # ============================================
     # STEP 3: Drop watering/irrigation tables
     # ============================================
 
-    op.drop_table('watering_events')
-    op.drop_table('irrigation_events')
-    op.drop_table('irrigation_zones')
-    op.drop_table('irrigation_sources')
+    # Check and drop tables if they exist
+    tables = inspector.get_table_names()
 
-    print("✓ Dropped watering/irrigation tables")
+    if 'watering_events' in tables:
+        op.drop_table('watering_events')
+    if 'irrigation_events' in tables:
+        op.drop_table('irrigation_events')
+    if 'irrigation_zones' in tables:
+        op.drop_table('irrigation_zones')
+    if 'irrigation_sources' in tables:
+        op.drop_table('irrigation_sources')
+
+    print("✓ Dropped watering/irrigation tables (if existed)")
 
     # ============================================
     # STEP 4: Add user groups enum and columns

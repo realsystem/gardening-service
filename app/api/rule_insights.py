@@ -16,8 +16,7 @@ from app.models.garden import Garden
 from app.models.planting_event import PlantingEvent
 from app.models.plant_variety import PlantVariety
 from app.models.soil_sample import SoilSample
-from app.models.irrigation_event import IrrigationEvent
-from app.models.sensor_reading import SensorReading
+# SensorReading removed in Phase 6 of platform simplification
 from app.api.dependencies import get_current_user
 from app.rules.engine import RuleContext, get_registry
 
@@ -209,22 +208,8 @@ def _build_garden_context(db: Session, garden: Garden) -> RuleContext:
         context.temperature_min_f = garden.temp_min_f
         context.temperature_max_f = garden.temp_max_f
 
-    # Get irrigation summary (last 7 days)
-    seven_days_ago = datetime.utcnow() - timedelta(days=7)
-    irrigation_events = db.query(IrrigationEvent).filter(
-        IrrigationEvent.garden_id == garden.id,
-        IrrigationEvent.irrigation_date >= seven_days_ago
-    ).all()
-
-    if irrigation_events:
-        context.total_irrigation_events_7d = len(irrigation_events)
-        context.avg_water_volume_liters = sum(
-            e.water_volume_liters for e in irrigation_events if e.water_volume_liters
-        ) / len(irrigation_events) if irrigation_events else None
-
-        # Most recent irrigation
-        most_recent = max(irrigation_events, key=lambda x: x.irrigation_date)
-        context.days_since_last_watering = (datetime.utcnow() - most_recent.irrigation_date).days
+    # Irrigation tracking removed in Phase 1 of platform simplification
+    # See REFACTORING_SUMMARY.md for details
 
     return context
 
@@ -260,15 +245,7 @@ def _build_planting_context(db: Session, planting: PlantingEvent, plant_variety:
         context.phosphorus_ppm = planting_soil.phosphorus_ppm
         context.potassium_ppm = planting_soil.potassium_ppm
 
-    # Get planting-specific irrigation
-    seven_days_ago = datetime.utcnow() - timedelta(days=7)
-    planting_irrigation = db.query(IrrigationEvent).filter(
-        IrrigationEvent.planting_event_id == planting.id,
-        IrrigationEvent.irrigation_date >= seven_days_ago
-    ).all()
-
-    if planting_irrigation:
-        most_recent = max(planting_irrigation, key=lambda x: x.irrigation_date)
-        context.days_since_last_watering = (datetime.utcnow() - most_recent.irrigation_date).days
+    # Irrigation tracking removed in Phase 1 of platform simplification
+    # See REFACTORING_SUMMARY.md for details
 
     return context

@@ -56,7 +56,8 @@ def create_user(user_data: UserCreate, db: Session = Depends(get_db)):
         latitude=latitude,
         longitude=longitude,
         usda_zone=usda_zone,
-        unit_system=unit_system
+        unit_system=unit_system,
+        user_group=user_data.user_group
     )
 
     return user

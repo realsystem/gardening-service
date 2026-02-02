@@ -149,6 +149,9 @@ export function LandList() {
               <p className="land-info">{convertDistance(land.width, unitSystem).toFixed(1)} × {convertDistance(land.height, unitSystem).toFixed(1)} {unitLabels.distanceShort}</p>
               <button
                 className="btn-secondary"
+                style={selectedLand?.id === land.id
+                  ? { backgroundColor: '#3498db', color: 'white' }
+                  : { backgroundColor: 'white', color: '#3498db' }}
                 onClick={() => handleSelectLand(land.id)}
               >
                 {selectedLand?.id === land.id ? 'Viewing' : 'View Layout'}

@@ -12,10 +12,8 @@ from app.models.tree import Tree
 from app.models.planting_event import PlantingEvent, PlantingMethod, PlantHealth
 from app.models.plant_variety import PlantVariety
 from app.models.soil_sample import SoilSample
-from app.models.irrigation_source import IrrigationSource
-from app.models.irrigation_zone import IrrigationZone
-from app.models.watering_event import WateringEvent
-from app.models.sensor_reading import SensorReading
+# SensorReading removed in Phase 6 of platform simplification
+# Irrigation models removed in Phase 1 of platform simplification
 from app.schemas.export_import import (
     ExportData,
     ImportPreview,
@@ -66,8 +64,8 @@ class ImportService:
             "soil_samples": len(data.soil_samples),
             "irrigation_sources": len(data.irrigation_sources),
             "irrigation_zones": len(data.irrigation_zones),
-            "watering_events": len(data.watering_events),
-            "sensor_readings": len(data.sensor_readings)
+            "watering_events": len(data.watering_events)
+            # sensor_readings removed in Phase 6 of platform simplification
         }
 
         # Validate relationships
@@ -494,20 +492,6 @@ class ImportService:
             )
             db.add(new_event)
 
-        # Import sensor readings
-        for reading_data in data.sensor_readings:
-            new_reading = SensorReading(
-                user_id=user.id,
-                garden_id=garden_id_map[reading_data.garden_id],
-                reading_date=datetime.fromisoformat(reading_data.reading_date),
-                temperature_f=reading_data.temperature_f,
-                humidity_percent=reading_data.humidity_percent,
-                light_hours=reading_data.light_hours,
-                ph_level=reading_data.ph_level,
-                ec_ms_cm=reading_data.ec_ms_cm,
-                ppm=reading_data.ppm,
-                water_temp_f=reading_data.water_temp_f
-            )
-            db.add(new_reading)
+        # Sensor reading import removed in Phase 6 of platform simplification
 
         return id_mapping

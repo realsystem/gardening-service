@@ -9,10 +9,8 @@ from app.models.garden import Garden
 from app.models.tree import Tree
 from app.models.planting_event import PlantingEvent
 from app.models.soil_sample import SoilSample
-from app.models.irrigation_source import IrrigationSource
-from app.models.irrigation_zone import IrrigationZone
-from app.models.watering_event import WateringEvent
-from app.models.sensor_reading import SensorReading
+# SensorReading removed in Phase 6 of platform simplification
+# Irrigation models removed in Phase 1 of platform simplification
 from app.schemas.export_import import (
     ExportData,
     ExportMetadata,
@@ -22,10 +20,7 @@ from app.schemas.export_import import (
     ExportTree,
     ExportPlanting,
     ExportSoilSample,
-    ExportIrrigationSource,
-    ExportIrrigationZone,
-    ExportWateringEvent,
-    ExportSensorReading,
+    # ExportSensorReading removed in Phase 6 of platform simplification
     EXPORT_SCHEMA_VERSION,
 )
 
@@ -36,8 +31,7 @@ class ExportService:
     @staticmethod
     def export_user_data(
         db: Session,
-        user: User,
-        include_sensor_readings: bool = False
+        user: User
     ) -> ExportData:
         """
         Export all data for a user to a portable JSON format.
@@ -45,7 +39,6 @@ class ExportService:
         Args:
             db: Database session
             user: User whose data to export
-            include_sensor_readings: Whether to include sensor readings (can be large)
 
         Returns:
             ExportData object containing all user data
@@ -53,8 +46,7 @@ class ExportService:
         # Create metadata
         metadata = ExportMetadata(
             export_timestamp=datetime.utcnow(),
-            user_id=user.id,
-            include_sensor_readings=include_sensor_readings
+            user_id=user.id
         )
 
         # Export user profile (non-sensitive only)
@@ -113,7 +105,6 @@ class ExportService:
                 y=garden.y,
                 width=garden.width,
                 height=garden.height,
-                irrigation_zone_id=garden.irrigation_zone_id,
                 mulch_depth_inches=garden.mulch_depth_inches,
                 is_raised_bed=garden.is_raised_bed,
                 soil_texture_override=garden.soil_texture_override,
@@ -175,71 +166,8 @@ class ExportService:
             for sample in soil_samples
         ]
 
-        # Export irrigation sources
-        irrigation_sources = db.query(IrrigationSource).filter(IrrigationSource.user_id == user.id).all()
-        export_irrigation_sources = [
-            ExportIrrigationSource(
-                id=source.id,
-                name=source.name,
-                source_type=source.source_type.value if source.source_type else 'manual',
-                flow_capacity_lpm=source.flow_capacity_lpm,
-                notes=source.notes,
-                created_at=source.created_at
-            )
-            for source in irrigation_sources
-        ]
-
-        # Export irrigation zones
-        irrigation_zones = db.query(IrrigationZone).filter(IrrigationZone.user_id == user.id).all()
-        export_irrigation_zones = [
-            ExportIrrigationZone(
-                id=zone.id,
-                irrigation_source_id=zone.irrigation_source_id,
-                name=zone.name,
-                delivery_type=zone.delivery_type.value if zone.delivery_type else 'manual',
-                schedule=zone.schedule,
-                notes=zone.notes,
-                created_at=zone.created_at
-            )
-            for zone in irrigation_zones
-        ]
-
-        # Export watering events
-        watering_events = db.query(WateringEvent).filter(WateringEvent.user_id == user.id).all()
-        export_watering_events = [
-            ExportWateringEvent(
-                id=event.id,
-                irrigation_zone_id=event.irrigation_zone_id,
-                watered_at=event.watered_at.isoformat() if event.watered_at else None,
-                duration_minutes=event.duration_minutes,
-                estimated_volume_liters=event.estimated_volume_liters,
-                is_manual=event.is_manual,
-                notes=event.notes,
-                created_at=event.created_at
-            )
-            for event in watering_events
-        ]
-
-        # Export sensor readings (optional - can be large)
-        export_sensor_readings = []
-        if include_sensor_readings:
-            sensor_readings = db.query(SensorReading).filter(SensorReading.user_id == user.id).all()
-            export_sensor_readings = [
-                ExportSensorReading(
-                    id=reading.id,
-                    garden_id=reading.garden_id,
-                    reading_date=reading.reading_date.isoformat() if reading.reading_date else None,
-                    temperature_f=reading.temperature_f,
-                    humidity_percent=reading.humidity_percent,
-                    light_hours=reading.light_hours,
-                    ph_level=reading.ph_level,
-                    ec_ms_cm=reading.ec_ms_cm,
-                    ppm=reading.ppm,
-                    water_temp_f=reading.water_temp_f,
-                    created_at=reading.created_at
-                )
-                for reading in sensor_readings
-            ]
+        # Irrigation export removed in Phase 1 of platform simplification
+        # Sensor reading export removed in Phase 6 of platform simplification
 
         # Assemble export data
         export_data = ExportData(
@@ -249,11 +177,8 @@ class ExportService:
             gardens=export_gardens,
             trees=export_trees,
             plantings=export_plantings,
-            soil_samples=export_soil_samples,
-            irrigation_sources=export_irrigation_sources,
-            irrigation_zones=export_irrigation_zones,
-            watering_events=export_watering_events,
-            sensor_readings=export_sensor_readings
+            soil_samples=export_soil_samples
+            # sensor_readings removed in Phase 6 of platform simplification
         )
 
         return export_data

@@ -13,11 +13,11 @@ from app.schemas.garden_details import (
     GardenStatsResponse
 )
 from app.schemas.garden_layout import GardenLayoutUpdate
-from app.schemas.sensor_reading import SensorReadingResponse
+# SensorReadingResponse removed in Phase 6 of platform simplification
 from app.schemas.tree import GardenShadingInfo
 from app.schemas.nutrient_optimization import NutrientOptimizationResponse, ECRecommendation, PHRecommendation, ReplacementSchedule, NutrientWarning, ActivePlanting
 from app.repositories.garden_repository import GardenRepository
-from app.repositories.sensor_reading_repository import SensorReadingRepository
+# SensorReadingRepository removed in Phase 6 of platform simplification
 from app.repositories.land_repository import LandRepository
 from app.models.planting_event import PlantingEvent
 from app.models.care_task import CareTask, TaskStatus
@@ -62,9 +62,8 @@ def create_garden(
         default_land = land_repo.create(
             user_id=current_user.id,
             name="My Property",
-            width_ft=100,  # Default 100ft x 100ft
-            height_ft=100,
-            description="Auto-created during onboarding"
+            width=100,  # Default 100 units (abstract - user's preference)
+            height=100
         )
 
     # Convert Pydantic model to dict, excluding unset values
@@ -339,36 +338,7 @@ def delete_garden(
     repo.delete(garden)
 
 
-@router.get("/{garden_id}/sensor-readings", response_model=List[SensorReadingResponse])
-def get_garden_sensor_readings(
-    garden_id: int,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    """
-    Get all sensor readings for a specific garden.
-    Returns readings sorted by timestamp descending (most recent first).
-    """
-    repo = GardenRepository(db)
-    garden = repo.get_by_id(garden_id)
-
-    if not garden:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Garden not found"
-        )
-
-    if garden.user_id != current_user.id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not authorized to access this garden"
-        )
-
-    # Get all sensor readings for this garden, sorted by date descending
-    reading_repo = SensorReadingRepository(db)
-    readings = reading_repo.get_by_garden(garden_id)
-
-    return readings
+# Sensor reading endpoint removed in Phase 6 of platform simplification
 
 
 @router.put("/{garden_id}/layout", response_model=GardenResponse)

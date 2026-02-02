@@ -7,7 +7,7 @@ from app.models.seed_batch import SeedBatch
 from app.models.germination_event import GerminationEvent
 from app.models.planting_event import PlantingEvent
 from app.models.care_task import CareTask
-from app.models.sensor_reading import SensorReading
+# SensorReading removed in Phase 6 of platform simplification
 from app.models.soil_sample import SoilSample
 from app.models.password_reset_token import PasswordResetToken
 from app.models.tree import Tree
@@ -23,7 +23,7 @@ __all__ = [
     "GerminationEvent",
     "PlantingEvent",
     "CareTask",
-    "SensorReading",
+    # "SensorReading",  # Removed in Phase 6 of platform simplification
     "SoilSample",
     "PasswordResetToken",
     "Tree",

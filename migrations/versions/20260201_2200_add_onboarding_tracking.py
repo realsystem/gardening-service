@@ -1,7 +1,7 @@
 """Add onboarding tracking to users
 
 Revision ID: t1u2v3w4x5y6
-Revises: n5o6p7q8r9s0
+Revises: q1r2s3t4u5v6
 Create Date: 2026-02-01 22:00:00.000000
 
 Phase 3: Onboarding Simplification - Track whether users have completed
@@ -13,7 +13,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = 't1u2v3w4x5y6'
-down_revision = 'n5o6p7q8r9s0'
+down_revision = 'q1r2s3t4u5v6'
 branch_labels = None
 depends_on = None
 

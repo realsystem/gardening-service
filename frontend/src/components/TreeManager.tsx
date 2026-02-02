@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import type { Tree, TreeCreate, TreeUpdate, LandWithGardens } from '../types';
 import { useUnitSystem } from '../contexts/UnitSystemContext';
@@ -11,6 +11,18 @@ interface TreeManagerProps {
   onUpdate: () => void;
 }
 
+interface TreeSpecies {
+  id: number;
+  common_name: string;
+  scientific_name: string;
+  variety_name: string | null;
+  typical_height_ft: number | null;
+  typical_canopy_radius_ft: number | null;
+  growth_rate: string | null;
+  description: string | null;
+  tags: string[] | null;
+}
+
 export function TreeManager({ land, trees, onUpdate }: TreeManagerProps) {
   const { unitSystem } = useUnitSystem();
   const unitLabels = getUnitLabels(unitSystem);
@@ -18,14 +30,44 @@ export function TreeManager({ land, trees, onUpdate }: TreeManagerProps) {
   const [isAdding, setIsAdding] = useState(false);
   const [editingTree, setEditingTree] = useState<Tree | null>(null);
   const [errorMessage, setErrorMessage] = useState('');
+  const [treeSpecies, setTreeSpecies] = useState<TreeSpecies[]>([]);
+  const [loadingSpecies, setLoadingSpecies] = useState(true);
   const [formData, setFormData] = useState<Partial<TreeCreate>>({
     land_id: land.id,
     name: '',
+    species_id: undefined,
     x: 0,
     y: 0,
-    canopy_radius: convertDistance(3, unitSystem), // Default in user's units
-    height: convertDistance(10, unitSystem),
+    canopy_radius: undefined,
+    height: undefined,
   });
+
+  // Load tree species on component mount
+  useEffect(() => {
+    loadTreeSpecies();
+  }, []);
+
+  const loadTreeSpecies = async () => {
+    try {
+      const species = await api.getTreeSpecies();
+      setTreeSpecies(species);
+    } catch (error) {
+      setErrorMessage('Failed to load tree species');
+    } finally {
+      setLoadingSpecies(false);
+    }
+  };
+
+  const handleSpeciesChange = (speciesId: string) => {
+    const selectedSpecies = treeSpecies.find(s => s.id === parseInt(speciesId));
+    const autoName = selectedSpecies ? selectedSpecies.common_name : '';
+
+    setFormData({
+      ...formData,
+      species_id: speciesId ? parseInt(speciesId) : undefined,
+      name: autoName
+    });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,10 +98,11 @@ export function TreeManager({ land, trees, onUpdate }: TreeManagerProps) {
       setFormData({
         land_id: land.id,
         name: '',
+        species_id: undefined,
         x: 0,
         y: 0,
-        canopy_radius: convertDistance(3, unitSystem),
-        height: convertDistance(10, unitSystem),
+        canopy_radius: undefined,
+        height: undefined,
       });
       onUpdate();
     } catch (error) {
@@ -83,6 +126,7 @@ export function TreeManager({ land, trees, onUpdate }: TreeManagerProps) {
     // Convert tree's meter values to display units
     setFormData({
       name: tree.name,
+      species_id: tree.species_id || undefined,
       x: tree.x,
       y: tree.y,
       canopy_radius: convertDistance(tree.canopy_radius, unitSystem),
@@ -97,10 +141,11 @@ export function TreeManager({ land, trees, onUpdate }: TreeManagerProps) {
     setFormData({
       land_id: land.id,
       name: '',
+      species_id: undefined,
       x: 0,
       y: 0,
-      canopy_radius: convertDistance(3, unitSystem),
-      height: convertDistance(10, unitSystem),
+      canopy_radius: undefined,
+      height: undefined,
     });
     setErrorMessage('');
   };
@@ -124,16 +169,54 @@ export function TreeManager({ land, trees, onUpdate }: TreeManagerProps) {
         <form onSubmit={handleSubmit} className="tree-form">
           <h4>{editingTree ? 'Edit Tree' : 'Add New Tree'}</h4>
 
+          {editingTree && (
+            <div className="form-group">
+              <label htmlFor="tree-name">Tree Name *</label>
+              <input
+                id="tree-name"
+                type="text"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                placeholder="e.g., Oak in Backyard"
+                required
+              />
+            </div>
+          )}
+
           <div className="form-group">
-            <label htmlFor="tree-name">Tree Name *</label>
-            <input
-              id="tree-name"
-              type="text"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              placeholder="e.g., Oak in Backyard"
-              required
-            />
+            <label htmlFor="tree-species">Tree Species *</label>
+            {loadingSpecies ? (
+              <p>Loading species...</p>
+            ) : (
+              <select
+                id="tree-species"
+                value={formData.species_id || ''}
+                onChange={(e) => handleSpeciesChange(e.target.value)}
+                required
+              >
+                <option value="">-- Select a tree species --</option>
+                {treeSpecies.map((species) => {
+                  // Convert height from feet to user's preferred units
+                  const heightInMeters = species.typical_height_ft ? species.typical_height_ft * 0.3048 : null;
+                  const heightDisplay = heightInMeters
+                    ? ` - ${convertDistance(heightInMeters, unitSystem).toFixed(1)}${unitLabels.distanceShort} tall`
+                    : '';
+
+                  return (
+                    <option key={species.id} value={species.id}>
+                      {species.common_name}
+                      {species.variety_name && ` (${species.variety_name})`}
+                      {heightDisplay}
+                    </option>
+                  );
+                })}
+              </select>
+            )}
+            <small>
+              {editingTree
+                ? 'Dimensions will be auto-calculated from species defaults'
+                : 'Tree name and dimensions will be auto-generated from species'}
+            </small>
           </div>
 
           <div className="form-row">
@@ -168,17 +251,16 @@ export function TreeManager({ land, trees, onUpdate }: TreeManagerProps) {
 
           <div className="form-row">
             <div className="form-group">
-              <label htmlFor="tree-radius">Canopy Radius * ({unitLabels.distanceShort})</label>
+              <label htmlFor="tree-radius">Canopy Radius ({unitLabels.distanceShort})</label>
               <input
                 id="tree-radius"
                 type="number"
                 step={unitSystem === 'imperial' ? '1' : '0.5'}
                 min={unitSystem === 'imperial' ? '1' : '0.5'}
-                value={formData.canopy_radius}
-                onChange={(e) => setFormData({ ...formData, canopy_radius: parseFloat(e.target.value) })}
-                required
+                value={formData.canopy_radius || ''}
+                onChange={(e) => setFormData({ ...formData, canopy_radius: e.target.value ? parseFloat(e.target.value) : undefined })}
               />
-              <small>Radius of the tree's canopy (shade area)</small>
+              <small>Optional: Override species default canopy radius</small>
             </div>
 
             <div className="form-group">
@@ -191,7 +273,7 @@ export function TreeManager({ land, trees, onUpdate }: TreeManagerProps) {
                 value={formData.height || ''}
                 onChange={(e) => setFormData({ ...formData, height: e.target.value ? parseFloat(e.target.value) : undefined })}
               />
-              <small>Optional: Tree height for shadow calculations</small>
+              <small>Optional: Override species default height</small>
             </div>
           </div>
 

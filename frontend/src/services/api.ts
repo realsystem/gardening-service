@@ -97,10 +97,10 @@ class ApiClient {
   }
 
   // Auth
-  async register(email: string, password: string, zipCode: string): Promise<User> {
+  async register(email: string, password: string, zipCode: string, userGroup?: string): Promise<User> {
     return this.request<User>('/users', {
       method: 'POST',
-      body: JSON.stringify({ email, password, zip_code: zipCode }),
+      body: JSON.stringify({ email, password, zip_code: zipCode, user_group: userGroup }),
     });
   }
 
@@ -346,41 +346,7 @@ class ApiClient {
     });
   }
 
-  // Sensor Readings
-  async getSensorReadings(gardenId?: number, startDate?: string, endDate?: string): Promise<SensorReading[]> {
-    const params = new URLSearchParams();
-    if (gardenId) params.append('garden_id', gardenId.toString());
-    if (startDate) params.append('start_date', startDate);
-    if (endDate) params.append('end_date', endDate);
-    const query = params.toString() ? `?${params.toString()}` : '';
-    return this.request<SensorReading[]>(`/sensor-readings${query}`);
-  }
-
-  async createSensorReading(data: {
-    garden_id: number;
-    reading_date: string;
-    temperature_f?: number;
-    humidity_percent?: number;
-    light_hours?: number;
-    ph_level?: number;
-    ec_ms_cm?: number;
-    ppm?: number;
-    water_temp_f?: number;
-  }): Promise<SensorReading> {
-    return this.request<SensorReading>('/sensor-readings', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  }
-
-  async deleteSensorReading(readingId: number): Promise<void> {
-    await fetch(`${API_BASE_URL}/sensor-readings/${readingId}`, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${this.token}`,
-      },
-    });
-  }
+  // Sensor Readings removed in Phase 6 of platform simplification
 
   // Soil Samples
   async getSoilSamples(params?: {
@@ -656,6 +622,21 @@ class ApiClient {
   // ========================================================================
   // TREE SHADING
   // ========================================================================
+
+  // Tree Species
+  async getTreeSpecies(): Promise<Array<{
+    id: number;
+    common_name: string;
+    scientific_name: string;
+    variety_name: string | null;
+    typical_height_ft: number | null;
+    typical_canopy_radius_ft: number | null;
+    growth_rate: string | null;
+    description: string | null;
+    tags: string[] | null;
+  }>> {
+    return this.request<Array<any>>('/trees/species');
+  }
 
   // Trees
   async createTree(data: TreeCreate): Promise<Tree> {

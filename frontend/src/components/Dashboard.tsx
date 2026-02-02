@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { api } from '../services/api';
-import type { Task, User, SeedBatch, Garden, SensorReading, SystemStats } from '../types';
+import type { Task, User, SeedBatch, Garden, SystemStats } from '../types';
 import { TaskList } from './TaskList';
 import { CreateSeedBatch } from './CreateSeedBatch';
 import { CreatePlantingEvent } from './CreatePlantingEvent';
 import { CreateGarden } from './CreateGarden';
-import { CreateSensorReading } from './CreateSensorReading';
+// CreateSensorReading removed in Phase 6 of platform simplification
 import { CreateSoilSample } from './CreateSoilSample';
 import { Profile } from './Profile';
 import { PlantingsList } from './PlantingsList';
@@ -40,10 +40,10 @@ export function Dashboard({ user: initialUser, onLogout, onUserUpdate }: Dashboa
   const [tasks, setTasks] = useState<Task[]>([]);
   const [seedBatches, setSeedBatches] = useState<SeedBatch[]>([]);
   const [gardens, setGardens] = useState<Garden[]>([]);
-  const [sensorReadings, setSensorReadings] = useState<SensorReading[]>([]);
+  // sensorReadings removed in Phase 6 of platform simplification
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [activeModal, setActiveModal] = useState<'seed' | 'planting' | 'profile' | 'garden' | 'sensor' | 'soil' | null>(null);
+  const [activeModal, setActiveModal] = useState<'seed' | 'planting' | 'profile' | 'garden' | 'soil' | null>(null);
   const [priorityFilter, setPriorityFilter] = useState<'all' | 'high' | 'medium' | 'low'>('all');
   const [deletingGardenId, setDeletingGardenId] = useState<number | null>(null);
   const [confirmDeleteGardenId, setConfirmDeleteGardenId] = useState<number | null>(null);
@@ -77,16 +77,16 @@ export function Dashboard({ user: initialUser, onLogout, onUserUpdate }: Dashboa
   const loadData = async () => {
     try {
       setLoading(true);
-      const [tasksData, batchesData, gardensData, readingsData] = await Promise.all([
+      const [tasksData, batchesData, gardensData] = await Promise.all([
         api.getTasks('pending'),
         api.getSeedBatches(),
         api.getGardens(),
-        api.getSensorReadings(),
+        // api.getSensorReadings() removed in Phase 6 of platform simplification
       ]);
       setTasks(tasksData);
       setSeedBatches(batchesData);
       setGardens(gardensData);
-      setSensorReadings(readingsData);
+      // setSensorReadings removed in Phase 6 of platform simplification
       setError('');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load data');
@@ -139,10 +139,7 @@ export function Dashboard({ user: initialUser, onLogout, onUserUpdate }: Dashboa
     loadData();
   };
 
-  const handleSensorReadingCreated = () => {
-    setActiveModal(null);
-    loadData();
-  };
+  // handleSensorReadingCreated removed in Phase 6 of platform simplification
 
   const handleSoilSampleCreated = () => {
     setActiveModal(null);
@@ -242,19 +239,16 @@ export function Dashboard({ user: initialUser, onLogout, onUserUpdate }: Dashboa
               <button className="btn" onClick={() => setActiveModal('planting')}>
                 Create Planting
               </button>
-              <button className="btn" onClick={() => setActiveModal('sensor')}>
-                Add Sensor Reading
-              </button>
               <button
                 className="btn"
-                style={{ backgroundColor: viewMode === 'plantings' ? '#4a90e2' : undefined }}
+                style={viewMode === 'plantings' ? { backgroundColor: '#4a90e2', color: 'white' } : {}}
                 onClick={() => setViewMode(viewMode === 'plantings' ? 'dashboard' : 'plantings')}
               >
                 {viewMode === 'plantings' ? 'Back to Dashboard' : 'View Plantings'}
               </button>
               <button
                 className="btn"
-                style={{ backgroundColor: viewMode === 'land-layout' ? '#4a90e2' : undefined }}
+                style={viewMode === 'land-layout' ? { backgroundColor: '#4a90e2', color: 'white' } : {}}
                 onClick={() => setViewMode(viewMode === 'land-layout' ? 'dashboard' : 'land-layout')}
               >
                 {viewMode === 'land-layout' ? 'Back to Dashboard' : 'Land Layout'}
@@ -262,7 +256,7 @@ export function Dashboard({ user: initialUser, onLogout, onUserUpdate }: Dashboa
               {selectedGardenId && (
                 <button
                   className="btn"
-                  style={{ backgroundColor: viewMode === 'garden-details' ? '#4a90e2' : undefined }}
+                  style={viewMode === 'garden-details' ? { backgroundColor: '#4a90e2', color: 'white' } : {}}
                   onClick={() => setViewMode(viewMode === 'garden-details' ? 'dashboard' : 'garden-details')}
                 >
                   {viewMode === 'garden-details' ? 'Back to Dashboard' : 'Garden Details'}
@@ -458,45 +452,7 @@ export function Dashboard({ user: initialUser, onLogout, onUserUpdate }: Dashboa
                 )}
               </div>
 
-              {gardens.filter(g => g.garden_type === 'indoor').length > 0 && (
-                <div className="card">
-                  <h2>Recent Sensor Readings</h2>
-                  {sensorReadings.length === 0 ? (
-                    <p style={{ color: '#666', fontStyle: 'italic' }}>
-                      No sensor readings yet. Add readings to track your indoor garden environment.
-                    </p>
-                  ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                      {sensorReadings.slice(0, 5).map((reading) => {
-                        const garden = gardens.find(g => g.id === reading.garden_id);
-                        return (
-                          <div
-                            key={reading.id}
-                            style={{
-                              padding: '10px',
-                              border: '1px solid #ddd',
-                              borderRadius: '4px',
-                              backgroundColor: '#f0f8ff',
-                            }}
-                          >
-                            <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>
-                              {garden?.name || `Garden #${reading.garden_id}`}
-                              <span style={{ marginLeft: '10px', color: '#666', fontSize: '0.9em', fontWeight: 'normal' }}>
-                                {new Date(reading.reading_date).toLocaleDateString()}
-                              </span>
-                            </div>
-                            <div style={{ fontSize: '0.9em', color: '#555' }}>
-                              {reading.temperature_f && `Temperature: ${reading.temperature_f}°F`}
-                              {reading.humidity_percent && ` • Humidity: ${reading.humidity_percent}%`}
-                              {reading.light_hours && ` • Light: ${reading.light_hours}h`}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              )}
+              {/* Sensor Readings section removed in Phase 6 of platform simplification */}
 
               <div className="card">
                 <h2>Task Statistics</h2>
@@ -596,12 +552,7 @@ export function Dashboard({ user: initialUser, onLogout, onUserUpdate }: Dashboa
         />
       )}
 
-      {activeModal === 'sensor' && (
-        <CreateSensorReading
-          onClose={() => setActiveModal(null)}
-          onSuccess={handleSensorReadingCreated}
-        />
-      )}
+      {/* CreateSensorReading modal removed in Phase 6 of platform simplification */}
 
       {activeModal === 'soil' && (
         <CreateSoilSample
@@ -619,7 +570,7 @@ export function Dashboard({ user: initialUser, onLogout, onUserUpdate }: Dashboa
               Are you sure you want to delete <strong>{gardens.find(g => g.id === confirmDeleteGardenId)?.name}</strong>?
             </p>
             <p style={{ color: '#d32f2f', fontSize: '0.9em' }}>
-              ⚠️ This will permanently delete all plantings, sensor readings, soil samples, irrigation events, and tasks associated with this garden.
+              ⚠️ This will permanently delete all plantings, soil samples, and tasks associated with this garden.
             </p>
             <div className="form-actions">
               <button

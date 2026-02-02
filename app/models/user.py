@@ -1,5 +1,5 @@
 """User model"""
-from sqlalchemy import Column, Integer, String, DateTime, Float, Text, Boolean, Enum
+from sqlalchemy import Column, Integer, String, DateTime, Float, Text, Boolean, Enum as SQLEnum
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.database import Base
@@ -8,8 +8,8 @@ import enum
 
 class UnitSystem(str, enum.Enum):
     """Unit system preference"""
-    METRIC = "metric"  # meters, celsius
-    IMPERIAL = "imperial"  # feet, fahrenheit
+    METRIC = "METRIC"  # meters, celsius
+    IMPERIAL = "IMPERIAL"  # feet, fahrenheit
 
 
 class UserGroup(str, enum.Enum):
@@ -48,10 +48,10 @@ class User(Base):
     usda_zone = Column(String(10), nullable=True)  # e.g., "7a", "9b"
 
     # Unit preferences
-    unit_system = Column(Enum(UnitSystem), nullable=False, server_default='metric')
+    unit_system = Column(SQLEnum(UnitSystem, values_callable=lambda x: [e.value for e in x]), nullable=False, server_default='METRIC')
 
     # User group for progressive feature disclosure
-    user_group = Column(Enum(UserGroup), nullable=False, server_default='amateur_gardener')
+    user_group = Column(SQLEnum(UserGroup, values_callable=lambda x: [e.value for e in x]), nullable=False, server_default='amateur_gardener')
 
     # Feature toggles (amateur users control visibility)
     show_trees = Column(Boolean, default=False, nullable=False, server_default='false')
@@ -78,7 +78,7 @@ class User(Base):
     germination_events = relationship("GerminationEvent", back_populates="user", cascade="all, delete-orphan")
     planting_events = relationship("PlantingEvent", back_populates="user", cascade="all, delete-orphan")
     care_tasks = relationship("CareTask", back_populates="user", cascade="all, delete-orphan")
-    sensor_readings = relationship("SensorReading", back_populates="user", cascade="all, delete-orphan")
+    # sensor_readings relationship removed in Phase 6 of platform simplification
     soil_samples = relationship("SoilSample", back_populates="user", cascade="all, delete-orphan")
     password_reset_tokens = relationship("PasswordResetToken", back_populates="user", cascade="all, delete-orphan")
 

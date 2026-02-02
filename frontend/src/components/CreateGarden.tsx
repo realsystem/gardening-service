@@ -11,7 +11,6 @@ interface CreateGardenProps {
 export function CreateGarden({ user, onClose, onSuccess }: CreateGardenProps) {
   // Check if user has access to advanced features
   const isResearcher = user.user_group === 'scientific_researcher';
-  const canUseHydroponics = user.feature_flags?.hydroponics || false;
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [gardenType, setGardenType] = useState<'outdoor' | 'indoor'>('outdoor');
