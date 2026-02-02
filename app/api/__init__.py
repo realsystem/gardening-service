@@ -21,6 +21,7 @@ from app.api.system import router as system_router
 from app.api.admin import router as admin_router
 from app.api.admin_compliance import router as admin_compliance_router
 from app.api.companion_analysis import router as companion_analysis_router
+from app.api.metrics import router as metrics_router
 
 __all__ = [
     "users_router",
@@ -46,4 +47,5 @@ __all__ = [
     "admin_router",
     "admin_compliance_router",
     "companion_analysis_router",
+    "metrics_router",
 ]

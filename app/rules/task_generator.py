@@ -1,9 +1,11 @@
 """Main task generator orchestrator"""
+import time
 from typing import List, Dict, Any
 from sqlalchemy.orm import Session
 
 from app.rules.base_rule import BaseRule
 from app.rules.rules import HarvestRule, WateringRule, SeedViabilityRule
+from app.utils.metrics import MetricsCollector
 from app.rules.indoor_rules import (
     LightScheduleRule,
     TemperatureMonitoringRule,
@@ -140,15 +142,36 @@ class TaskGenerator:
         Returns:
             List of created CareTask instances
         """
+        # Track batch execution time
+        batch_start_time = time.time()
+
         task_repo = CareTaskRepository(db)
         created_tasks = []
 
         for rule in rules:
+            # Track individual rule execution time
+            rule_start_time = time.time()
             task_dicts = rule.generate_tasks(db, context)
+            rule_duration = time.time() - rule_start_time
+
+            # Determine if rule triggered (generated tasks)
+            triggered = len(task_dicts) > 0
+
+            # Track metrics for this rule
+            MetricsCollector.track_rule_evaluation(
+                rule_id=rule.name,
+                triggered=triggered,
+                duration=rule_duration,
+                severity='info' if triggered else None
+            )
 
             for task_dict in task_dicts:
                 # Create task in database
                 task = task_repo.create(**task_dict)
                 created_tasks.append(task)
+
+        # Track batch execution time
+        batch_duration = time.time() - batch_start_time
+        MetricsCollector.track_rule_engine_batch(batch_duration)
 
         return created_tasks

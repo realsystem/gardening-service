@@ -13,6 +13,7 @@ import json
 
 from app.models.user import User
 from app.compliance.deny_list import check_plant_restricted, get_user_facing_message, DENY_LIST_VERSION
+from app.utils.metrics import MetricsCollector
 
 
 class ComplianceService:
@@ -49,6 +50,9 @@ class ComplianceService:
         user.restricted_crop_reason = violation_reason
 
         self.db.commit()
+
+        # Track metrics for user flagging
+        MetricsCollector.track_user_flagged()
 
         # Log the violation securely
         self._log_violation(
@@ -147,7 +151,21 @@ class ComplianceService:
             notes=notes
         )
 
+        # Track compliance check metrics
+        endpoint = request_metadata.get("endpoint", "unknown") if request_metadata else "unknown"
+        MetricsCollector.track_compliance_check(
+            check_type="plant_restriction",
+            blocked=is_restricted
+        )
+
         if is_restricted:
+            # Track violation and block metrics
+            MetricsCollector.track_compliance_violation(
+                violation_type=reason,
+                endpoint=endpoint
+            )
+            MetricsCollector.track_compliance_block(endpoint=endpoint)
+
             # Flag the user
             self.flag_user_for_restricted_plant(
                 user=user,
@@ -182,6 +200,13 @@ class ComplianceService:
         from fastapi import HTTPException, status
 
         if not has_plantings:
+            # Track suspicious pattern detection
+            MetricsCollector.track_compliance_violation(
+                violation_type="parameter_only_optimization_attempt",
+                endpoint="nutrient_optimization"
+            )
+            MetricsCollector.track_compliance_block(endpoint="nutrient_optimization")
+
             # This is suspicious - requesting optimization with no plants
             # could be an attempt to reverse-engineer parameters
             self.flag_user_for_restricted_plant(

@@ -28,6 +28,7 @@ from app.api import (
     admin_router,
     admin_compliance_router,
     companion_analysis_router,
+    metrics_router,
 )
 from app.error_handlers import (
     http_exception_handler,
@@ -35,6 +36,7 @@ from app.error_handlers import (
     generic_exception_handler,
 )
 from app.middleware import CorrelationIDMiddleware
+from app.middleware.metrics_middleware import MetricsMiddleware
 from app.utils.structured_logging import configure_logging
 
 settings = get_settings()
@@ -52,6 +54,9 @@ app = FastAPI(
 
 # Add Correlation ID middleware (FIRST - so all logs have correlation ID)
 app.add_middleware(CorrelationIDMiddleware)
+
+# Add Metrics middleware (SECOND - after correlation ID, before CORS)
+app.add_middleware(MetricsMiddleware)
 
 # CORS middleware for web clients
 app.add_middleware(
@@ -91,6 +96,7 @@ app.include_router(system_router)
 app.include_router(admin_router)
 app.include_router(admin_compliance_router)
 app.include_router(companion_analysis_router)
+app.include_router(metrics_router)
 
 
 @app.get("/")
