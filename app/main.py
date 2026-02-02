@@ -38,6 +38,7 @@ from app.error_handlers import (
 from app.middleware import CorrelationIDMiddleware
 from app.middleware.metrics_middleware import MetricsMiddleware
 from app.middleware.security_headers import SecurityHeadersMiddleware
+from app.middleware.rate_limit import RateLimitMiddleware
 from app.utils.structured_logging import configure_logging
 from app.database import check_database_migrations
 
@@ -70,7 +71,12 @@ app.add_middleware(CorrelationIDMiddleware)
 # Add Metrics middleware (SECOND - after correlation ID)
 app.add_middleware(MetricsMiddleware)
 
-# Add Security Headers middleware (THIRD - before CORS)
+# Add Rate Limit middleware (THIRD - protect against abuse)
+# Enabled in production/staging, can be disabled via environment
+rate_limit_enabled = settings.APP_ENV in ("production", "staging")
+app.add_middleware(RateLimitMiddleware, enabled=rate_limit_enabled)
+
+# Add Security Headers middleware (FOURTH - after rate limiting)
 app.add_middleware(SecurityHeadersMiddleware, env=settings.APP_ENV)
 
 # CORS middleware for web clients
