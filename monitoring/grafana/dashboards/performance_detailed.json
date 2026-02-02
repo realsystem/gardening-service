@@ -1,0 +1,250 @@
+{
+  "dashboard": {
+    "id": null,
+    "uid": "performance-detailed",
+    "title": "API Performance - Detailed",
+    "tags": ["performance", "latency", "database"],
+    "timezone": "browser",
+    "schemaVersion": 27,
+    "version": 1,
+    "refresh": "10s",
+    "time": {
+      "from": "now-15m",
+      "to": "now"
+    },
+    "panels": [
+      {
+        "id": 1,
+        "title": "Request Rate by Endpoint",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+        "targets": [
+          {
+            "expr": "sum by (path, method) (rate(http_requests_total[1m]))",
+            "legendFormat": "{{ method }} {{ path }}",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"label": "Req/sec", "show": true},
+          {"show": false}
+        ],
+        "legend": {
+          "show": true,
+          "values": true,
+          "current": true,
+          "alignAsTable": true
+        }
+      },
+      {
+        "id": 2,
+        "title": "Response Time Distribution",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket[5m]))",
+            "legendFormat": "p99",
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))",
+            "legendFormat": "p95",
+            "refId": "B"
+          },
+          {
+            "expr": "histogram_quantile(0.50, rate(http_request_duration_seconds_bucket[5m]))",
+            "legendFormat": "p50 (median)",
+            "refId": "C"
+          }
+        ],
+        "yaxes": [
+          {"label": "Seconds", "format": "s", "show": true},
+          {"show": false}
+        ]
+      },
+      {
+        "id": 3,
+        "title": "Slowest Endpoints (Avg Latency)",
+        "type": "table",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+        "targets": [
+          {
+            "expr": "topk(10, avg by (path, method) (rate(http_request_duration_seconds_sum[5m]) / rate(http_request_duration_seconds_count[5m])))",
+            "format": "table",
+            "instant": true,
+            "refId": "A"
+          }
+        ],
+        "transformations": [
+          {
+            "id": "organize",
+            "options": {
+              "renameByName": {
+                "path": "Endpoint",
+                "method": "Method",
+                "Value": "Avg Latency (s)"
+              },
+              "excludeByName": {
+                "Time": true,
+                "__name__": true
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "title": "Request Duration Heatmap",
+        "type": "heatmap",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+        "targets": [
+          {
+            "expr": "sum(increase(http_request_duration_seconds_bucket[1m])) by (le)",
+            "format": "heatmap",
+            "refId": "A"
+          }
+        ],
+        "dataFormat": "tsbuckets",
+        "yAxis": {
+          "format": "s"
+        }
+      },
+      {
+        "id": 5,
+        "title": "Database Query Performance",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16},
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(db_query_duration_seconds_bucket[5m]))",
+            "legendFormat": "p95 query time",
+            "refId": "A"
+          },
+          {
+            "expr": "rate(db_query_duration_seconds_count[1m])",
+            "legendFormat": "Queries/sec",
+            "yAxisIndex": 1,
+            "refId": "B"
+          }
+        ],
+        "yaxes": [
+          {"label": "Latency (s)", "show": true},
+          {"label": "Queries/sec", "show": true}
+        ]
+      },
+      {
+        "id": 6,
+        "title": "Database Connections",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16},
+        "targets": [
+          {
+            "expr": "db_connections_active",
+            "legendFormat": "Active connections",
+            "refId": "A"
+          },
+          {
+            "expr": "db_connections_idle",
+            "legendFormat": "Idle connections",
+            "refId": "B"
+          }
+        ],
+        "yaxes": [
+          {"label": "Connections", "show": true},
+          {"show": false}
+        ]
+      },
+      {
+        "id": 7,
+        "title": "Throughput (Requests/min)",
+        "type": "stat",
+        "gridPos": {"h": 4, "w": 6, "x": 0, "y": 24},
+        "targets": [
+          {
+            "expr": "sum(rate(http_requests_total[1m])) * 60",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "graphMode": "area",
+          "colorMode": "value",
+          "orientation": "auto"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "rpm"
+          }
+        }
+      },
+      {
+        "id": 8,
+        "title": "Avg Response Time",
+        "type": "stat",
+        "gridPos": {"h": 4, "w": 6, "x": 6, "y": 24},
+        "targets": [
+          {
+            "expr": "rate(http_request_duration_seconds_sum[1m]) / rate(http_request_duration_seconds_count[1m])",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "graphMode": "area",
+          "colorMode": "value"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s"
+          }
+        },
+        "thresholds": {
+          "mode": "absolute",
+          "steps": [
+            {"value": null, "color": "green"},
+            {"value": 0.5, "color": "yellow"},
+            {"value": 1.0, "color": "red"}
+          ]
+        }
+      },
+      {
+        "id": 9,
+        "title": "Active Requests",
+        "type": "stat",
+        "gridPos": {"h": 4, "w": 6, "x": 12, "y": 24},
+        "targets": [
+          {
+            "expr": "http_requests_in_progress",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "graphMode": "area",
+          "colorMode": "value"
+        }
+      },
+      {
+        "id": 10,
+        "title": "Cache Hit Rate",
+        "type": "stat",
+        "gridPos": {"h": 4, "w": 6, "x": 18, "y": 24},
+        "targets": [
+          {
+            "expr": "(sum(rate(cache_hits_total[5m])) / (sum(rate(cache_hits_total[5m])) + sum(rate(cache_misses_total[5m])))) * 100",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "graphMode": "area",
+          "colorMode": "value"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "noValue": "N/A"
+          }
+        }
+      }
+    ]
+  },
+  "overwrite": true
+}
