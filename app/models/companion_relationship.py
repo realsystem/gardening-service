@@ -1,5 +1,5 @@
 """Companion Planting Relationship Model - Science-Based Plant Interactions"""
-from sqlalchemy import Column, Integer, String, Text, Enum as SQLEnum, Float, UniqueConstraint, Index
+from sqlalchemy import Column, Integer, String, Text, Enum as SQLEnum, Float, UniqueConstraint, Index, ForeignKey
 from sqlalchemy.orm import relationship
 from app.database import Base
 import enum
@@ -53,8 +53,8 @@ class CompanionRelationship(Base):
     id = Column(Integer, primary_key=True, index=True)
 
     # Normalized plant pair (plant_a_id < plant_b_id enforced at application level)
-    plant_a_id = Column(Integer, nullable=False, index=True)  # ForeignKey to plant_varieties.id
-    plant_b_id = Column(Integer, nullable=False, index=True)  # ForeignKey to plant_varieties.id
+    plant_a_id = Column(Integer, ForeignKey('plant_varieties.id', ondelete='CASCADE'), nullable=False, index=True)
+    plant_b_id = Column(Integer, ForeignKey('plant_varieties.id', ondelete='CASCADE'), nullable=False, index=True)
 
     # Relationship classification
     relationship_type = Column(
