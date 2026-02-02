@@ -45,3 +45,7 @@ frontend/coverage/
 # Admin Scripts (SECURITY: Never commit admin assignment scripts)
 assign_admin.py
 **/assign_admin*.py
+
+# Monitoring data
+monitoring/prometheus/data/
+monitoring/grafana/data/
