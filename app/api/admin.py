@@ -8,6 +8,7 @@ from app.database import get_db
 from app.api.dependencies import get_current_admin_user
 from app.models.user import User
 from app.repositories.user_repository import UserRepository
+from app.utils.feature_flags import reload_feature_flags, get_feature_flag_status
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -164,4 +165,57 @@ def revoke_admin_privileges(
         "is_admin": False,
         "revoked_by": admin.email,
         "revoked_at": datetime.utcnow().isoformat()
+    }
+
+
+@router.get("/feature-flags")
+def get_feature_flags(
+    admin: User = Depends(get_current_admin_user)
+):
+    """
+    Get current feature flag status.
+
+    **Admin-only endpoint** - View all feature flags and their current state.
+
+    Returns:
+        Dictionary with:
+        - flags: Current flag states (enabled/disabled)
+        - last_reload: When flags were last reloaded
+        - definitions: Flag metadata and descriptions
+    """
+    logger.info(
+        f"Feature flags queried by admin {admin.id} ({admin.email}) at {datetime.utcnow().isoformat()}"
+    )
+
+    return get_feature_flag_status()
+
+
+@router.post("/feature-flags/reload")
+def reload_feature_flags_endpoint(
+    admin: User = Depends(get_current_admin_user)
+):
+    """
+    Reload feature flags from environment/config.
+
+    **Admin-only endpoint** - Reload feature flags without restarting the service.
+
+    Use cases:
+    - Apply feature flag changes from environment variables
+    - Quick incident response (disable broken features)
+    - Runtime configuration updates
+
+    Returns:
+        Dictionary with reloaded flags and reload timestamp
+    """
+    logger.warning(
+        f"FEATURE FLAGS RELOAD: Triggered by admin {admin.id} ({admin.email}) at {datetime.utcnow().isoformat()}"
+    )
+
+    reloaded_flags = reload_feature_flags()
+
+    return {
+        "message": "Feature flags reloaded successfully",
+        "flags": reloaded_flags,
+        "reloaded_by": admin.email,
+        "reloaded_at": datetime.utcnow().isoformat()
     }
