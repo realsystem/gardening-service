@@ -1,0 +1,184 @@
+# Prometheus Alerting Rules for Gardening Service API
+#
+# Defines alerts for:
+# - High error rates
+# - High latency
+# - Rate limiting
+# - Service availability
+
+groups:
+  - name: api_availability
+    interval: 30s
+    rules:
+      - alert: APIDown
+        expr: up{job="gardening-api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: api
+        annotations:
+          summary: "Gardening API is down"
+          description: "The Gardening Service API ({{ $labels.instance }}) has been down for more than 1 minute."
+          runbook_url: "https://docs.example.com/runbooks/api-down"
+
+      - alert: HighErrorRate
+        expr: |
+          (
+            rate(http_requests_total{status=~"5.."}[5m])
+            /
+            rate(http_requests_total[5m])
+          ) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          component: api
+        annotations:
+          summary: "High API error rate detected"
+          description: "API error rate is {{ $value | humanizePercentage }} over the last 5 minutes (threshold: 5%)."
+          runbook_url: "https://docs.example.com/runbooks/high-error-rate"
+
+      - alert: CriticalErrorRate
+        expr: |
+          (
+            rate(http_requests_total{status=~"5.."}[5m])
+            /
+            rate(http_requests_total[5m])
+          ) > 0.10
+        for: 2m
+        labels:
+          severity: critical
+          component: api
+        annotations:
+          summary: "Critical API error rate detected"
+          description: "API error rate is {{ $value | humanizePercentage }} over the last 5 minutes (threshold: 10%)."
+          runbook_url: "https://docs.example.com/runbooks/critical-error-rate"
+
+  - name: api_performance
+    interval: 30s
+    rules:
+      - alert: HighLatency
+        expr: |
+          histogram_quantile(0.95,
+            rate(http_request_duration_seconds_bucket[5m])
+          ) > 1.0
+        for: 5m
+        labels:
+          severity: warning
+          component: api
+        annotations:
+          summary: "High API latency detected"
+          description: "95th percentile latency is {{ $value }}s over the last 5 minutes (threshold: 1s)."
+          runbook_url: "https://docs.example.com/runbooks/high-latency"
+
+      - alert: VeryHighLatency
+        expr: |
+          histogram_quantile(0.95,
+            rate(http_request_duration_seconds_bucket[5m])
+          ) > 3.0
+        for: 2m
+        labels:
+          severity: critical
+          component: api
+        annotations:
+          summary: "Very high API latency detected"
+          description: "95th percentile latency is {{ $value }}s over the last 5 minutes (threshold: 3s)."
+          runbook_url: "https://docs.example.com/runbooks/very-high-latency"
+
+      - alert: SlowDatabaseQueries
+        expr: |
+          histogram_quantile(0.95,
+            rate(db_query_duration_seconds_bucket[5m])
+          ) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+          component: database
+        annotations:
+          summary: "Slow database queries detected"
+          description: "95th percentile database query duration is {{ $value }}s (threshold: 0.5s)."
+          runbook_url: "https://docs.example.com/runbooks/slow-queries"
+
+  - name: rate_limiting
+    interval: 30s
+    rules:
+      - alert: HighRateLimitHitRate
+        expr: |
+          rate(http_requests_total{status="429"}[5m]) > 10
+        for: 5m
+        labels:
+          severity: warning
+          component: rate_limiting
+        annotations:
+          summary: "High rate of rate-limited requests"
+          description: "Rate limiting is blocking {{ $value }} requests/second over the last 5 minutes."
+          runbook_url: "https://docs.example.com/runbooks/rate-limiting"
+
+      - alert: PossibleDDoSAttack
+        expr: |
+          rate(http_requests_total{status="429"}[1m]) > 100
+        for: 2m
+        labels:
+          severity: critical
+          component: security
+        annotations:
+          summary: "Possible DDoS attack detected"
+          description: "Very high rate of rate-limited requests: {{ $value }} requests/second. Possible DDoS attack."
+          runbook_url: "https://docs.example.com/runbooks/ddos-attack"
+
+  - name: business_metrics
+    interval: 1m
+    rules:
+      - alert: NoRecentActivity
+        expr: |
+          rate(http_requests_total[10m]) == 0
+        for: 15m
+        labels:
+          severity: info
+          component: api
+        annotations:
+          summary: "No API activity detected"
+          description: "No HTTP requests have been received in the last 15 minutes. This might indicate a problem with load balancer or client connectivity."
+          runbook_url: "https://docs.example.com/runbooks/no-activity"
+
+      - alert: UnusualTrafficPattern
+        expr: |
+          rate(http_requests_total[5m]) > 2 * avg_over_time(rate(http_requests_total[5m])[1h:5m])
+        for: 10m
+        labels:
+          severity: info
+          component: api
+        annotations:
+          summary: "Unusual traffic pattern detected"
+          description: "Request rate is {{ $value }} req/s, which is 2x higher than the 1-hour average."
+          runbook_url: "https://docs.example.com/runbooks/traffic-spike"
+
+  - name: authentication
+    interval: 30s
+    rules:
+      - alert: HighAuthenticationFailureRate
+        expr: |
+          (
+            rate(http_requests_total{path="/token",status="401"}[5m])
+            /
+            rate(http_requests_total{path="/token"}[5m])
+          ) > 0.20
+        for: 5m
+        labels:
+          severity: warning
+          component: authentication
+        annotations:
+          summary: "High authentication failure rate"
+          description: "Authentication failure rate is {{ $value | humanizePercentage }} over the last 5 minutes (threshold: 20%)."
+          runbook_url: "https://docs.example.com/runbooks/auth-failures"
+
+      - alert: PossibleBruteForceAttack
+        expr: |
+          rate(http_requests_total{path="/token",status="401"}[1m]) > 5
+        for: 3m
+        labels:
+          severity: critical
+          component: security
+        annotations:
+          summary: "Possible brute force attack detected"
+          description: "High rate of failed authentication attempts: {{ $value }} failures/second."
+          runbook_url: "https://docs.example.com/runbooks/brute-force"

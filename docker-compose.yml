@@ -1,11 +1,14 @@
 # Docker Compose configuration for running services
-# Provides: PostgreSQL database + API service + Frontend UI
+# Provides: PostgreSQL database + API service + Frontend UI + Monitoring (Prometheus + Grafana)
 #
 # IMPORTANT: Docker is for running SERVICES only, not for running tests
 # - Run tests locally with: pytest
 # - Run frontend tests with: npm test
 #
-# Usage: docker-compose up
+# Usage:
+# - Full stack: docker-compose up
+# - Without monitoring: docker-compose up db api frontend
+# - Monitoring only: docker-compose up prometheus grafana
 
 version: '3.8'
 
@@ -64,3 +67,46 @@ services:
       - "3000:3000"
     depends_on:
       - api
+
+  # Prometheus metrics collection
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./monitoring/prometheus/alerts:/etc/prometheus/alerts
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.enable-lifecycle'
+    depends_on:
+      - api
+    restart: unless-stopped
+
+  # Grafana visualization dashboard
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3001:3000"  # Port 3001 on host to avoid conflict with frontend
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin  # Change in production!
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_ROOT_URL=http://localhost:3001
+      - GF_INSTALL_PLUGINS=grafana-piechart-panel
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - grafana-data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+volumes:
+  prometheus-data:
+  grafana-data:
