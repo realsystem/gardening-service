@@ -435,13 +435,14 @@ class TestIrrigationSystemAPI:
 
     def test_cannot_access_other_users_zones(self, client, user_token, test_db, irrigation_zone):
         """Test that users cannot access other users' zones."""
-        from app.models.user import User
+        from app.models.user import User, UnitSystem
         from app.services.auth_service import AuthService
 
         # Create another user
         other_user = User(
             email="other@example.com",
-            hashed_password=AuthService.hash_password("password")
+            hashed_password=AuthService.hash_password("password"),
+            unit_system=UnitSystem.METRIC
         )
         test_db.add(other_user)
         test_db.commit()

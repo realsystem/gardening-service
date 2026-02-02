@@ -1,6 +1,7 @@
 """Pytest configuration and fixtures for testing"""
 import pytest
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
+from freezegun import freeze_time
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
@@ -16,6 +17,33 @@ from app.models.planting_event import PlantingEvent, PlantingMethod, PlantHealth
 from app.models.sensor_reading import SensorReading
 from app.models.care_task import CareTask, TaskType, TaskPriority, TaskStatus, TaskSource
 from app.services.auth_service import AuthService
+
+
+# Freeze time globally for all tests to ensure determinism
+# All tests will run as if it's 2026-01-15 12:00:00 UTC
+@pytest.fixture(scope="session", autouse=True)
+def frozen_time():
+    """Freeze time globally for all tests to ensure determinism"""
+    with freeze_time("2026-01-15 12:00:00"):
+        yield
+
+
+@pytest.fixture
+def reference_date():
+    """
+    Provide the frozen reference date for tests that need explicit date access.
+    Returns: 2026-01-15 (the frozen date from frozen_time fixture)
+    """
+    return date(2026, 1, 15)
+
+
+@pytest.fixture
+def reference_datetime():
+    """
+    Provide the frozen reference datetime for tests that need explicit datetime access.
+    Returns: 2026-01-15 12:00:00 (the frozen datetime from frozen_time fixture)
+    """
+    return datetime(2026, 1, 15, 12, 0, 0)
 
 
 @pytest.fixture(scope="function")

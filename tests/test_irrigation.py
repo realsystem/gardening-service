@@ -201,10 +201,14 @@ class TestIrrigationEventCRUD:
     def test_cannot_access_other_users_events(self, client, sample_user, outdoor_garden, user_token, test_db):
         """Test that users cannot delete other users' irrigation events."""
         # Create another user
-        from app.models.user import User
+        from app.models.user import User, UnitSystem
         from app.services.auth_service import AuthService
 
-        other_user = User(email="other@example.com", hashed_password=AuthService.hash_password("testpass123"))
+        other_user = User(
+            email="other@example.com",
+            hashed_password=AuthService.hash_password("testpass123"),
+            unit_system=UnitSystem.METRIC
+        )
         test_db.add(other_user)
         test_db.commit()
 
