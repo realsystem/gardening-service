@@ -18,6 +18,7 @@ import { LandList } from './LandList';
 import { IrrigationDashboard } from './IrrigationDashboard';
 import { IrrigationZoneManager } from './IrrigationZoneManager';
 import { GardenDetails } from './GardenDetails';
+import { Onboarding } from './Onboarding';
 
 interface DashboardProps {
   user: User;
@@ -26,6 +27,19 @@ interface DashboardProps {
 }
 
 export function Dashboard({ user: initialUser, onLogout, onUserUpdate }: DashboardProps) {
+  // Show onboarding wizard for new users
+  if (!initialUser.has_completed_onboarding) {
+    return (
+      <Onboarding
+        user={initialUser}
+        onComplete={(updatedUser) => {
+          if (onUserUpdate) {
+            onUserUpdate(updatedUser);
+          }
+        }}
+      />
+    );
+  }
   const [user, setUser] = useState(initialUser);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [seedBatches, setSeedBatches] = useState<SeedBatch[]>([]);
@@ -601,6 +615,7 @@ export function Dashboard({ user: initialUser, onLogout, onUserUpdate }: Dashboa
 
       {activeModal === 'garden' && (
         <CreateGarden
+          user={user}
           onClose={() => setActiveModal(null)}
           onSuccess={handleGardenCreated}
         />

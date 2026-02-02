@@ -1,0 +1,245 @@
+.onboarding-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 20px;
+}
+
+.onboarding-card {
+  background: white;
+  border-radius: 12px;
+  padding: 40px;
+  max-width: 600px;
+  width: 100%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.onboarding-card h1 {
+  margin: 0 0 10px 0;
+  font-size: 2em;
+  color: #333;
+  text-align: center;
+}
+
+.onboarding-card h2 {
+  margin: 0 0 10px 0;
+  font-size: 1.75em;
+  color: #333;
+}
+
+.subtitle {
+  color: #666;
+  margin: 0 0 30px 0;
+  font-size: 1.1em;
+  line-height: 1.5;
+}
+
+.text-center {
+  text-align: center;
+}
+
+/* Progress Indicator */
+.progress-indicator {
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+  margin-bottom: 30px;
+}
+
+.progress-indicator .step {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #e0e0e0;
+  color: #999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 1.1em;
+  transition: all 0.3s ease;
+}
+
+.progress-indicator .step.active {
+  background: #667eea;
+  color: white;
+  transform: scale(1.1);
+}
+
+.progress-indicator .step.completed {
+  background: #4caf50;
+  color: white;
+}
+
+/* Climate Info */
+.climate-info {
+  background: #f5f5f5;
+  padding: 20px;
+  border-radius: 8px;
+  margin: 30px 0;
+  text-align: center;
+}
+
+.zone-badge {
+  font-size: 1.1em;
+  margin-bottom: 10px;
+}
+
+.zone-badge strong {
+  color: #667eea;
+}
+
+.location {
+  color: #666;
+  font-size: 0.95em;
+}
+
+/* Plant Grid */
+.plant-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 15px;
+  margin: 20px 0 30px 0;
+}
+
+.plant-card {
+  position: relative;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 10px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: white;
+}
+
+.plant-card:hover {
+  border-color: #667eea;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+}
+
+.plant-card.selected {
+  border-color: #667eea;
+  background: #f0f4ff;
+}
+
+.plant-card img {
+  width: 100%;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 4px;
+  margin-bottom: 8px;
+}
+
+.plant-name {
+  font-size: 0.9em;
+  font-weight: 500;
+  color: #333;
+  margin-top: 5px;
+}
+
+.plant-card .checkmark {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  background: #4caf50;
+  color: white;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+/* Buttons */
+.btn-large {
+  width: 100%;
+  padding: 15px;
+  font-size: 1.1em;
+  margin-top: 10px;
+}
+
+.button-group {
+  display: flex;
+  gap: 15px;
+  margin-top: 20px;
+}
+
+.button-group .btn {
+  flex: 1;
+  padding: 12px;
+}
+
+.btn-secondary {
+  background: #e0e0e0;
+  color: #666;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1em;
+  transition: all 0.2s ease;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: #d0d0d0;
+}
+
+/* Success Icon */
+.success-icon {
+  width: 80px;
+  height: 80px;
+  background: #4caf50;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3em;
+  margin: 0 auto 20px auto;
+  animation: successPop 0.5s ease;
+}
+
+@keyframes successPop {
+  0% {
+    transform: scale(0);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Form Hint */
+.hint {
+  display: block;
+  margin-top: 5px;
+  color: #999;
+  font-size: 0.9em;
+}
+
+/* Error Message */
+.error {
+  background: #ffebee;
+  color: #c62828;
+  padding: 12px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  border-left: 4px solid #c62828;
+}
+
+/* Loading State */
+.loading {
+  text-align: center;
+  padding: 40px;
+  color: #666;
+  font-size: 1.1em;
+}

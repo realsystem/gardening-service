@@ -45,11 +45,27 @@ def create_garden(
     """
     Create a new garden.
 
+    **Auto-creates Land**: If user has no lands, automatically creates a default land
+    for simplified onboarding.
+
     **Feature Gating**:
     - Amateur users: Cannot create hydroponic gardens
     - Researchers: Full access to all garden types
     """
     repo = GardenRepository(db)
+    land_repo = LandRepository(db)
+
+    # AUTO-CREATE LAND: If user has no lands, create a default one
+    # This simplifies onboarding - users don't need to manually create a land first
+    existing_lands = land_repo.get_user_lands(current_user.id)
+    if not existing_lands:
+        default_land = land_repo.create(
+            user_id=current_user.id,
+            name="My Property",
+            width_ft=100,  # Default 100ft x 100ft
+            height_ft=100,
+            description="Auto-created during onboarding"
+        )
 
     # Convert Pydantic model to dict, excluding unset values
     garden_dict = garden_data.model_dump(exclude_unset=True)

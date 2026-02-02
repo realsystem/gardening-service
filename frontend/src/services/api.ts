@@ -160,6 +160,12 @@ class ApiClient {
     });
   }
 
+  async completeOnboarding(): Promise<User> {
+    return this.request<User>('/users/me/complete-onboarding', {
+      method: 'POST',
+    });
+  }
+
   // Gardens
   async getGardens(): Promise<Garden[]> {
     return this.request<Garden[]>('/gardens');

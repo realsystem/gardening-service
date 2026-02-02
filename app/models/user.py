@@ -57,6 +57,9 @@ class User(Base):
     show_trees = Column(Boolean, default=False, nullable=False, server_default='false')
     enable_alerts = Column(Boolean, default=False, nullable=False, server_default='false')
 
+    # Onboarding tracking
+    has_completed_onboarding = Column(Boolean, default=False, nullable=False, server_default='false')
+
     # Compliance audit fields (immutable, admin-only visibility)
     restricted_crop_flag = Column(Boolean, default=False, nullable=False, server_default='false')
     restricted_crop_count = Column(Integer, default=0, nullable=False, server_default='0')
