@@ -9,8 +9,40 @@ from app.repositories.tree_repository import TreeRepository
 from app.repositories.land_repository import LandRepository
 from app.api.dependencies import get_current_user
 from app.models.user import User
+from app.models.plant_variety import PlantVariety
 
 router = APIRouter(prefix="/trees", tags=["trees"])
+
+
+@router.get("/species", response_model=List[dict])
+def get_tree_species(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Get list of available tree species for selection.
+
+    Returns all plant varieties where is_tree = true, with their default dimensions.
+    Used by frontend to populate tree species dropdown.
+    """
+    tree_species = db.query(PlantVariety).filter(
+        PlantVariety.is_tree == True
+    ).order_by(PlantVariety.common_name).all()
+
+    return [
+        {
+            "id": species.id,
+            "common_name": species.common_name,
+            "scientific_name": species.scientific_name,
+            "variety_name": species.variety_name,
+            "typical_height_ft": species.typical_height_ft,
+            "typical_canopy_radius_ft": species.typical_canopy_radius_ft,
+            "growth_rate": species.growth_rate,
+            "description": species.description,
+            "tags": species.tags
+        }
+        for species in tree_species
+    ]
 
 
 @router.post("", response_model=TreeResponse, status_code=status.HTTP_201_CREATED)
@@ -21,6 +53,9 @@ def create_tree(
 ):
     """
     Create a new tree on a land plot.
+
+    **Phase 4 Simplification**: Tree dimensions (canopy_radius, height) are
+    auto-calculated from species defaults. Users only specify species and position.
 
     Trees cast shade on nearby gardens based on their canopy radius.
     Coordinate system matches the land plot (top-left origin).
@@ -41,9 +76,41 @@ def create_tree(
             detail="Not authorized to add trees to this land"
         )
 
-    # Create tree
-    tree_repo = TreeRepository(db)
+    # Look up tree species to get default dimensions
+    species = db.query(PlantVariety).filter(PlantVariety.id == tree_data.species_id).first()
+
+    if not species:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Tree species with ID {tree_data.species_id} not found"
+        )
+
+    # Validate that this is actually a tree species
+    if not species.is_tree:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"{species.common_name} is not a tree species. Please select a tree from the species list."
+        )
+
+    # AUTO-CALCULATE DIMENSIONS: Use species defaults if not provided
     tree_dict = tree_data.model_dump(exclude_unset=True)
+
+    if 'canopy_radius' not in tree_dict or tree_dict['canopy_radius'] is None:
+        if species.typical_canopy_radius_ft:
+            tree_dict['canopy_radius'] = species.typical_canopy_radius_ft
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Tree species {species.common_name} has no default canopy radius. Please specify canopy_radius manually."
+            )
+
+    if 'height' not in tree_dict or tree_dict['height'] is None:
+        if species.typical_height_ft:
+            tree_dict['height'] = species.typical_height_ft
+        # Height can remain None - it's optional
+
+    # Create tree with auto-calculated dimensions
+    tree_repo = TreeRepository(db)
     tree = tree_repo.create(
         user_id=current_user.id,
         **tree_dict

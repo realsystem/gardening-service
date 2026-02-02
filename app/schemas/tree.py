@@ -5,14 +5,20 @@ from datetime import datetime
 
 
 class TreeCreate(BaseModel):
-    """Schema for creating a new tree"""
+    """
+    Schema for creating a new tree.
+
+    **Simplified in Phase 4**: Users only specify species and position.
+    Tree dimensions (canopy_radius, height) are auto-calculated from species defaults.
+    """
     land_id: int = Field(..., description="ID of the land plot where tree is located")
-    name: str = Field(..., min_length=1, max_length=100, description="User-friendly tree name")
-    species_id: Optional[int] = Field(None, description="ID of plant variety (tree species)")
+    name: str = Field(..., min_length=1, max_length=100, description="User-friendly tree name (e.g., 'Oak in backyard')")
+    species_id: int = Field(..., description="ID of plant variety (tree species) - REQUIRED for auto-dimension calculation")
     x: float = Field(..., description="X-coordinate on land (trunk center)")
     y: float = Field(..., description="Y-coordinate on land (trunk center)")
-    canopy_radius: float = Field(..., gt=0, description="Canopy radius in land units")
-    height: Optional[float] = Field(None, gt=0, description="Tree height (optional, for future sun angle calcs)")
+    # Dimensions now optional - auto-calculated from species if not provided
+    canopy_radius: Optional[float] = Field(None, gt=0, description="Canopy radius override (uses species default if omitted)")
+    height: Optional[float] = Field(None, gt=0, description="Tree height override (uses species default if omitted)")
 
 
 class TreeUpdate(BaseModel):

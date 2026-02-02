@@ -77,6 +77,13 @@ class PlantVariety(Base):
     solution_change_days_min = Column(Integer, nullable=True)  # Minimum days between full changes
     solution_change_days_max = Column(Integer, nullable=True)  # Maximum days between full changes
 
+    # Tree-specific dimensions (for shade modeling)
+    # Only populated for tree species; null for vegetables/herbs/flowers
+    is_tree = Column(Boolean, default=False, nullable=False)  # Flag indicating this is a tree species
+    typical_height_ft = Column(Float, nullable=True)  # Typical mature height in feet
+    typical_canopy_radius_ft = Column(Float, nullable=True)  # Typical canopy radius in feet
+    growth_rate = Column(String(20), nullable=True)  # "slow", "moderate", "fast"
+
     # Relationships
     seed_batches = relationship("SeedBatch", back_populates="plant_variety")
     germination_events = relationship("GerminationEvent", back_populates="plant_variety")
