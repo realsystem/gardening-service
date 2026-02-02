@@ -22,6 +22,11 @@ class Settings(BaseSettings):
     APP_NAME: str = "Gardening Helper Service"
     DEBUG: bool = True
 
+    # Feature Flags (runtime toggles for production safety)
+    FEATURE_RULE_ENGINE_ENABLED: bool = True
+    FEATURE_COMPLIANCE_ENFORCEMENT_ENABLED: bool = True
+    FEATURE_OPTIMIZATION_ENGINES_ENABLED: bool = True
+
     class Config:
         # Auto-detect environment-specific .env file
         # Priority: .env.{APP_ENV} > .env > defaults

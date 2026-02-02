@@ -23,6 +23,7 @@ from app.models.companion_relationship import (
     ConfidenceLevel
 )
 from app.api.dependencies import get_current_user
+from app.utils.feature_flags import is_optimization_engines_enabled
 
 router = APIRouter(prefix="/gardens", tags=["Companion Planting"])
 
@@ -52,7 +53,22 @@ def get_companion_analysis(
         - Beneficial pairs: Plants that are helping each other
         - Conflicts: Antagonistic plants that are too close
         - Suggestions: Recommendations for improving plant placement
+
+    Feature Flag:
+        If optimization engines are disabled, returns empty analysis
+        without error. This allows graceful degradation during incidents.
     """
+    # Check feature flag
+    if not is_optimization_engines_enabled():
+        return {
+            "garden_id": garden_id,
+            "feature_disabled": True,
+            "message": "Optimization engines are currently disabled",
+            "beneficial_pairs": [],
+            "conflicts": [],
+            "suggestions": []
+        }
+
     # Verify garden ownership
     garden = db.query(Garden).filter(
         Garden.id == garden_id,

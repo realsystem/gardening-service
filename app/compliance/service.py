@@ -14,6 +14,7 @@ import json
 from app.models.user import User
 from app.compliance.deny_list import check_plant_restricted, get_user_facing_message, DENY_LIST_VERSION
 from app.utils.metrics import MetricsCollector
+from app.utils.feature_flags import is_compliance_enforcement_enabled
 
 
 class ComplianceService:
@@ -127,7 +128,15 @@ class ComplianceService:
     ) -> None:
         """Check if plant is restricted and enforce blocking if needed.
 
-        Raises HTTPException if plant is restricted.
+        Raises HTTPException if plant is restricted AND enforcement is enabled.
+
+        Feature Flag Behavior:
+            If FEATURE_COMPLIANCE_ENFORCEMENT_ENABLED is False:
+            - Violations are still detected and logged
+            - Users are still flagged
+            - Metrics are still tracked
+            - BUT requests are NOT blocked (no 403 response)
+            This allows graceful degradation during incidents.
 
         Args:
             user: User attempting the operation
@@ -139,7 +148,7 @@ class ComplianceService:
             request_metadata: Sanitized request metadata for logging
 
         Raises:
-            HTTPException: 403 Forbidden if plant is restricted
+            HTTPException: 403 Forbidden if plant is restricted (only if enforcement enabled)
         """
         from fastapi import HTTPException, status
 
@@ -153,27 +162,41 @@ class ComplianceService:
 
         # Track compliance check metrics
         endpoint = request_metadata.get("endpoint", "unknown") if request_metadata else "unknown"
+        enforcement_enabled = is_compliance_enforcement_enabled()
+
         MetricsCollector.track_compliance_check(
             check_type="plant_restriction",
-            blocked=is_restricted
+            blocked=is_restricted and enforcement_enabled
         )
 
         if is_restricted:
-            # Track violation and block metrics
+            # Track violation metrics (always tracked, regardless of enforcement)
             MetricsCollector.track_compliance_violation(
                 violation_type=reason,
                 endpoint=endpoint
             )
-            MetricsCollector.track_compliance_block(endpoint=endpoint)
 
-            # Flag the user
+            # Flag the user (always flagged, regardless of enforcement)
             self.flag_user_for_restricted_plant(
                 user=user,
                 violation_reason=reason,
                 request_metadata=request_metadata
             )
 
-            # Block the request with generic message
+            # Check feature flag - only block if enforcement is enabled
+            if not enforcement_enabled:
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.warning(
+                    f"COMPLIANCE ENFORCEMENT DISABLED: Violation detected but not blocked. "
+                    f"User {user.id} ({user.email}), reason: {reason}, endpoint: {endpoint}"
+                )
+                # Return without blocking - graceful degradation
+                return
+
+            # Enforcement is enabled - block the request
+            MetricsCollector.track_compliance_block(endpoint=endpoint)
+
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail=get_user_facing_message()
@@ -205,10 +228,8 @@ class ComplianceService:
                 violation_type="parameter_only_optimization_attempt",
                 endpoint="nutrient_optimization"
             )
-            MetricsCollector.track_compliance_block(endpoint="nutrient_optimization")
 
-            # This is suspicious - requesting optimization with no plants
-            # could be an attempt to reverse-engineer parameters
+            # Flag the user
             self.flag_user_for_restricted_plant(
                 user=user,
                 violation_reason="parameter_only_optimization_attempt",
@@ -219,7 +240,20 @@ class ComplianceService:
                 }
             )
 
-            # Block with generic message
+            # Check feature flag - only block if enforcement is enabled
+            enforcement_enabled = is_compliance_enforcement_enabled()
+            if not enforcement_enabled:
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.warning(
+                    f"COMPLIANCE ENFORCEMENT DISABLED: Parameter-only optimization attempt detected but not blocked. "
+                    f"User {user.id} ({user.email}), garden_id: {garden_id}"
+                )
+                return
+
+            # Enforcement is enabled - block the request
+            MetricsCollector.track_compliance_block(endpoint="nutrient_optimization")
+
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail=get_user_facing_message()

@@ -1,11 +1,15 @@
 """Main task generator orchestrator"""
 import time
+import logging
 from typing import List, Dict, Any
 from sqlalchemy.orm import Session
 
 from app.rules.base_rule import BaseRule
 from app.rules.rules import HarvestRule, WateringRule, SeedViabilityRule
 from app.utils.metrics import MetricsCollector
+from app.utils.feature_flags import is_rule_engine_enabled
+
+logger = logging.getLogger(__name__)
 from app.rules.indoor_rules import (
     LightScheduleRule,
     TemperatureMonitoringRule,
@@ -141,7 +145,19 @@ class TaskGenerator:
 
         Returns:
             List of created CareTask instances
+
+        Note:
+            If rule engine is disabled via feature flag, returns empty list
+            without error. This allows graceful degradation during incidents.
         """
+        # Check feature flag - fail safe by returning empty list
+        if not is_rule_engine_enabled():
+            logger.info(
+                "Rule engine disabled via feature flag - skipping task generation",
+                extra={'context': context}
+            )
+            return []
+
         # Track batch execution time
         batch_start_time = time.time()
 
