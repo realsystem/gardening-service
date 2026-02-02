@@ -167,6 +167,27 @@ def update_planting_event(
         )
 
     update_data = event_data.model_dump(exclude_unset=True)
+
+    # SECURITY: Compliance check if plant_notes is being updated
+    # Prevents bypass where users create legitimate plantings then update notes with restricted terms
+    if "plant_notes" in update_data and update_data["plant_notes"]:
+        variety_repo = PlantVarietyRepository(db)
+        variety = variety_repo.get_by_id(event.plant_variety_id)
+
+        if variety:
+            compliance_service = get_compliance_service(db)
+            compliance_service.check_and_enforce_plant_restriction(
+                user=current_user,
+                common_name=variety.common_name,
+                scientific_name=variety.scientific_name,
+                notes=update_data["plant_notes"],
+                request_metadata={
+                    "endpoint": "planting_events_update",
+                    "event_id": event_id,
+                    "variety_id": variety.id
+                }
+            )
+
     event = repo.update(event, **update_data)
 
     return event
