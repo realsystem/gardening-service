@@ -37,6 +37,7 @@ from app.error_handlers import (
 )
 from app.middleware import CorrelationIDMiddleware
 from app.middleware.metrics_middleware import MetricsMiddleware
+from app.middleware.security_headers import SecurityHeadersMiddleware
 from app.utils.structured_logging import configure_logging
 from app.database import check_database_migrations
 
@@ -66,8 +67,11 @@ app = FastAPI(
 # Add Correlation ID middleware (FIRST - so all logs have correlation ID)
 app.add_middleware(CorrelationIDMiddleware)
 
-# Add Metrics middleware (SECOND - after correlation ID, before CORS)
+# Add Metrics middleware (SECOND - after correlation ID)
 app.add_middleware(MetricsMiddleware)
+
+# Add Security Headers middleware (THIRD - before CORS)
+app.add_middleware(SecurityHeadersMiddleware, env=settings.APP_ENV)
 
 # CORS middleware for web clients
 app.add_middleware(
