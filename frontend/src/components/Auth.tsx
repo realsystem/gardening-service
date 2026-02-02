@@ -11,6 +11,7 @@ export function Auth({ onLogin, onForgotPassword }: AuthProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [zipCode, setZipCode] = useState('');
+  const [userGroup, setUserGroup] = useState('amateur_gardener');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -24,7 +25,7 @@ export function Auth({ onLogin, onForgotPassword }: AuthProps) {
         const response = await api.login(email, password);
         onLogin(response.access_token);
       } else {
-        await api.register(email, password, zipCode);
+        await api.register(email, password, zipCode, userGroup);
         const response = await api.login(email, password);
         onLogin(response.access_token);
       }
@@ -94,17 +95,35 @@ export function Auth({ onLogin, onForgotPassword }: AuthProps) {
         </div>
 
         {!isLogin && (
-          <div className="form-group">
-            <label>ZIP Code</label>
-            <input
-              type="text"
-              value={zipCode}
-              onChange={(e) => setZipCode(e.target.value)}
-              required
-              disabled={loading}
-              placeholder="e.g. 94102"
-            />
-          </div>
+          <>
+            <div className="form-group">
+              <label>ZIP Code</label>
+              <input
+                type="text"
+                value={zipCode}
+                onChange={(e) => setZipCode(e.target.value)}
+                required
+                disabled={loading}
+                placeholder="e.g. 94102"
+              />
+            </div>
+
+            <div className="form-group">
+              <label>I am a...</label>
+              <select
+                value={userGroup}
+                onChange={(e) => setUserGroup(e.target.value)}
+                disabled={loading}
+              >
+                <option value="amateur_gardener">Amateur Gardener (Home Gardening)</option>
+                <option value="farmer">Farmer (Commercial Growing)</option>
+                <option value="scientific_researcher">Scientific Researcher (Full Features)</option>
+              </select>
+              <div style={{ fontSize: '0.85em', color: '#666', marginTop: '5px' }}>
+                This determines which features you'll see in the app.
+              </div>
+            </div>
+          </>
         )}
 
         <button type="submit" className="btn" disabled={loading} style={{ width: '100%' }}>

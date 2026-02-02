@@ -23,8 +23,19 @@ export function Onboarding({ user, onComplete }: OnboardingProps) {
   const loadPopularPlants = async () => {
     try {
       const plants = await api.getPlantVarieties();
-      // Show first 8 plants as "popular"
-      setAvailablePlants(plants.slice(0, 8));
+
+      // Deduplicate by common_name - show only one variety per plant
+      const seenNames = new Set<string>();
+      const uniquePlants = plants.filter(plant => {
+        if (seenNames.has(plant.common_name)) {
+          return false;
+        }
+        seenNames.add(plant.common_name);
+        return true;
+      });
+
+      // Show first 8 unique plants as "popular"
+      setAvailablePlants(uniquePlants.slice(0, 8));
     } catch (err) {
       console.error('Failed to load plants:', err);
       // Non-critical error, continue anyway
@@ -77,7 +88,8 @@ export function Onboarding({ user, onComplete }: OnboardingProps) {
               garden_id: createdGardenId,
               plant_variety_id: plantId,
               planting_date: new Date().toISOString().split('T')[0],
-              quantity: 1,
+              planting_method: 'transplant',
+              plant_count: 1,
             })
           )
         );
@@ -112,13 +124,81 @@ export function Onboarding({ user, onComplete }: OnboardingProps) {
     }
   };
 
+  // Customize content based on user group
+  const getWelcomeContent = () => {
+    switch (user.user_group) {
+      case 'farmer':
+        return {
+          title: 'Welcome to Garden Tracker for Farmers!',
+          subtitle: "Let's set up your farm tracking in just 2 quick steps.",
+        };
+      case 'scientific_researcher':
+        return {
+          title: 'Welcome to Garden Tracker Research Edition!',
+          subtitle: "Let's configure your experimental plots in just 2 quick steps.",
+        };
+      default: // amateur_gardener
+        return {
+          title: 'Welcome to Garden Tracker!',
+          subtitle: "Let's get your garden set up in just 2 quick steps.",
+        };
+    }
+  };
+
+  const getGardenStepContent = () => {
+    switch (user.user_group) {
+      case 'farmer':
+        return {
+          title: 'Create your first growing area',
+          subtitle: 'Give it a name - you can add more details later like acreage and crop rotations.',
+          placeholder: 'North Field A',
+          hint: 'For example: "North Field", "Greenhouse 1", "High Tunnel", etc.',
+        };
+      case 'scientific_researcher':
+        return {
+          title: 'Create your first experimental plot',
+          subtitle: 'Give it a name - you can add detailed parameters and controls later.',
+          placeholder: 'Plot A - Control Group',
+          hint: 'For example: "Plot A", "Greenhouse Trial 1", "Field Experiment", etc.',
+        };
+      default: // amateur_gardener
+        return {
+          title: 'Create your first garden',
+          subtitle: 'Give it a name - you can add more details later if you want.',
+          placeholder: 'My Backyard Garden',
+          hint: 'For example: "Backyard", "Front Yard", "Patio", etc.',
+        };
+    }
+  };
+
+  const getPlantStepContent = () => {
+    switch (user.user_group) {
+      case 'farmer':
+        return {
+          title: 'What crops are you growing?',
+          subtitle: 'Select crops to track. You can add more later and track yields.',
+        };
+      case 'scientific_researcher':
+        return {
+          title: 'What species are you studying?',
+          subtitle: 'Select plants for your research. You can add controls and variants later.',
+        };
+      default: // amateur_gardener
+        return {
+          title: 'What are you growing?',
+          subtitle: 'Select plants to track. You can add more later.',
+        };
+    }
+  };
+
   if (step === 'welcome') {
+    const content = getWelcomeContent();
     return (
       <div className="onboarding-container">
         <div className="onboarding-card">
-          <h1>Welcome to Garden Tracker!</h1>
+          <h1>{content.title}</h1>
           <p className="subtitle">
-            Let's get your garden set up in just 2 quick steps.
+            {content.subtitle}
           </p>
 
           <div className="climate-info">
@@ -146,6 +226,7 @@ export function Onboarding({ user, onComplete }: OnboardingProps) {
   }
 
   if (step === 'garden') {
+    const content = getGardenStepContent();
     return (
       <div className="onboarding-container">
         <div className="onboarding-card">
@@ -154,26 +235,30 @@ export function Onboarding({ user, onComplete }: OnboardingProps) {
             <span className="step">2</span>
           </div>
 
-          <h2>Create your first garden</h2>
+          <h2>{content.title}</h2>
           <p className="subtitle">
-            Give it a name - you can add more details later if you want.
+            {content.subtitle}
           </p>
 
           {error && <div className="error">{error}</div>}
 
           <form onSubmit={handleCreateGarden}>
             <div className="form-group">
-              <label>Garden Name</label>
+              <label>
+                {user.user_group === 'farmer' ? 'Growing Area Name' :
+                 user.user_group === 'scientific_researcher' ? 'Plot Name' :
+                 'Garden Name'}
+              </label>
               <input
                 type="text"
                 value={gardenName}
                 onChange={(e) => setGardenName(e.target.value)}
-                placeholder="My Backyard Garden"
+                placeholder={content.placeholder}
                 disabled={loading}
                 autoFocus
               />
               <small className="hint">
-                For example: "Backyard", "Front Yard", "Patio", etc.
+                {content.hint}
               </small>
             </div>
 
@@ -191,6 +276,7 @@ export function Onboarding({ user, onComplete }: OnboardingProps) {
   }
 
   if (step === 'plants') {
+    const content = getPlantStepContent();
     return (
       <div className="onboarding-container">
         <div className="onboarding-card">
@@ -199,9 +285,9 @@ export function Onboarding({ user, onComplete }: OnboardingProps) {
             <span className="step active">2</span>
           </div>
 
-          <h2>What are you growing?</h2>
+          <h2>{content.title}</h2>
           <p className="subtitle">
-            Select plants to track. You can add more later.
+            {content.subtitle}
           </p>
 
           {error && <div className="error">{error}</div>}

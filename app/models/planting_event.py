@@ -58,4 +58,4 @@ class PlantingEvent(Base):
     germination_event = relationship("GerminationEvent", back_populates="planting_events")
     care_tasks = relationship("CareTask", back_populates="planting_event", cascade="all, delete-orphan")
     soil_samples = relationship("SoilSample", back_populates="planting_event", cascade="all, delete-orphan")
-    irrigation_events = relationship("IrrigationEvent", back_populates="planting_event", cascade="all, delete-orphan")
+    # irrigation_events relationship removed in Phase 1 of platform simplification

@@ -13,7 +13,7 @@ from app.api import (
     germination_events_router,
     planting_events_router,
     care_tasks_router,
-    sensor_readings_router,
+    # sensor_readings_router,  # Removed in Phase 6 of platform simplification
     soil_samples_router,
     password_reset_router,
     password_router,
@@ -21,7 +21,7 @@ from app.api import (
     rule_insights_router,
     trees_router,
     structures_router,
-    export_import_router,
+    # export_import_router,  # Temporarily disabled during irrigation cleanup
     system_router,
     admin_router,
     admin_compliance_router,
@@ -102,13 +102,13 @@ app.include_router(seed_batches_router)
 app.include_router(germination_events_router)
 app.include_router(planting_events_router)
 app.include_router(care_tasks_router)
-app.include_router(sensor_readings_router)
+# app.include_router(sensor_readings_router)  # Removed in Phase 6 of platform simplification
 app.include_router(soil_samples_router)
 app.include_router(dashboard_router)
 app.include_router(rule_insights_router)
 app.include_router(trees_router)
 app.include_router(structures_router)
-app.include_router(export_import_router)
+# app.include_router(export_import_router)  # Temporarily disabled during irrigation cleanup
 app.include_router(system_router)
 app.include_router(admin_router)
 app.include_router(admin_compliance_router)

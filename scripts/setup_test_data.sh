@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Setup Comprehensive Test Data
-# Creates gardens, land layout, irrigation system, and soil samples
-# Includes data that triggers irrigation alerts
+# Creates gardens, land layout, trees, soil samples, and plantings
+# Demonstrates companion planting analysis and nutrient optimization
 
 set -e
 
@@ -37,28 +37,6 @@ echo ""
 
 # Step 2: Cleanup existing resources (idempotent)
 echo "Step 2: Cleaning up existing resources..."
-
-# Get and delete all irrigation zones
-ZONES=$(curl -s -X GET "${API_URL}/irrigation-system/zones" \
-  -H "Authorization: Bearer ${TOKEN}" | python3 -c "import sys, json; data=json.load(sys.stdin); print(' '.join([str(z['id']) for z in data]))" 2>/dev/null || echo "")
-if [ ! -z "$ZONES" ]; then
-  for ZONE_ID in $ZONES; do
-    curl -s -X DELETE "${API_URL}/irrigation-system/zones/${ZONE_ID}" \
-      -H "Authorization: Bearer ${TOKEN}" > /dev/null 2>&1
-  done
-  echo "✓ Deleted $(echo $ZONES | wc -w | tr -d ' ') irrigation zone(s)"
-fi
-
-# Get and delete all irrigation sources
-SOURCES=$(curl -s -X GET "${API_URL}/irrigation-system/sources" \
-  -H "Authorization: Bearer ${TOKEN}" | python3 -c "import sys, json; data=json.load(sys.stdin); print(' '.join([str(s['id']) for s in data]))" 2>/dev/null || echo "")
-if [ ! -z "$SOURCES" ]; then
-  for SOURCE_ID in $SOURCES; do
-    curl -s -X DELETE "${API_URL}/irrigation-system/sources/${SOURCE_ID}" \
-      -H "Authorization: Bearer ${TOKEN}" > /dev/null 2>&1
-  done
-  echo "✓ Deleted $(echo $SOURCES | wc -w | tr -d ' ') irrigation source(s)"
-fi
 
 # Get and delete all gardens
 GARDENS=$(curl -s -X GET "${API_URL}/gardens" \
@@ -370,141 +348,27 @@ echo "  • Toggle 'Show Seasonal Shadows' to see Winter/Equinox/Summer projecti
 echo "  • Gardens will be color-coded: Green (Full Sun), Orange (Partial), Gray (Shade)"
 echo ""
 
-# Step 7: Create Irrigation Sources
-echo "Step 6: Creating irrigation sources..."
+# Step 7: Add Soil Samples
+echo "Step 7: Creating soil samples..."
 
-SOURCE1_RESPONSE=$(curl -s -X POST "${API_URL}/irrigation-system/sources" \
-  -H "Authorization: Bearer ${TOKEN}" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "City Water - Main Line",
-    "source_type": "city",
-    "flow_capacity_lpm": 60,
-    "notes": "Main water supply"
-  }')
-SOURCE1_ID=$(echo "$SOURCE1_RESPONSE" | grep -o '"id":[0-9]*' | head -1 | cut -d':' -f2)
-echo "✓ City water source created (ID: $SOURCE1_ID, 60 L/min)"
-
-SOURCE2_RESPONSE=$(curl -s -X POST "${API_URL}/irrigation-system/sources" \
-  -H "Authorization: Bearer ${TOKEN}" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "Rain Barrel Collection",
-    "source_type": "well",
-    "flow_capacity_lpm": 20,
-    "notes": "Rainwater collection system"
-  }')
-SOURCE2_ID=$(echo "$SOURCE2_RESPONSE" | grep -o '"id":[0-9]*' | head -1 | cut -d':' -f2)
-echo "✓ Rain barrel source created (ID: $SOURCE2_ID, 20 L/min)"
-echo ""
-
-# Step 7: Create Irrigation Zones
-echo "Step 7: Creating irrigation zones..."
-
-ZONE1_RESPONSE=$(curl -s -X POST "${API_URL}/irrigation-system/zones" \
+# Create soil samples for Herb Garden
+curl -s -X POST "${API_URL}/soil-samples" \
   -H "Authorization: Bearer ${TOKEN}" \
   -H "Content-Type: application/json" \
   -d "{
-    \"name\": \"Vegetable Zone\",
-    \"delivery_type\": \"drip\",
-    \"water_source_id\": ${SOURCE1_ID},
-    \"schedule\": {
-      \"frequency_days\": 3,
-      \"duration_minutes\": 30
-    },
-    \"notes\": \"Drip irrigation for vegetables\"
-  }")
-ZONE1_ID=$(echo "$ZONE1_RESPONSE" | grep -o '"id":[0-9]*' | head -1 | cut -d':' -f2)
-echo "✓ Vegetable Zone created (ID: $ZONE1_ID) - Drip, every 3 days, 30 min"
-
-ZONE2_RESPONSE=$(curl -s -X POST "${API_URL}/irrigation-system/zones" \
-  -H "Authorization: Bearer ${TOKEN}" \
-  -H "Content-Type: application/json" \
-  -d "{
-    \"name\": \"Herb & Flower Zone\",
-    \"delivery_type\": \"drip\",
-    \"water_source_id\": ${SOURCE2_ID},
-    \"schedule\": {
-      \"frequency_days\": 2,
-      \"duration_minutes\": 20
-    },
-    \"notes\": \"Combined zone for herbs and flowers\"
-  }")
-ZONE2_ID=$(echo "$ZONE2_RESPONSE" | grep -o '"id":[0-9]*' | head -1 | cut -d':' -f2)
-echo "✓ Herb & Flower Zone created (ID: $ZONE2_ID) - Drip, every 2 days, 20 min"
-echo ""
-
-# Step 8: Assign Gardens to Zones
-echo "Step 8: Assigning gardens to irrigation zones..."
-
-curl -s -X POST "${API_URL}/irrigation-system/gardens/${GARDEN1_ID}/assign-zone?zone_id=${ZONE1_ID}" \
-  -H "Authorization: Bearer ${TOKEN}" > /dev/null
-echo "✓ Vegetable Garden → Vegetable Zone"
-
-curl -s -X POST "${API_URL}/irrigation-system/gardens/${GARDEN2_ID}/assign-zone?zone_id=${ZONE2_ID}" \
-  -H "Authorization: Bearer ${TOKEN}" > /dev/null
-echo "✓ Herb Garden → Herb & Flower Zone"
-
-curl -s -X POST "${API_URL}/irrigation-system/gardens/${GARDEN3_ID}/assign-zone?zone_id=${ZONE2_ID}" \
-  -H "Authorization: Bearer ${TOKEN}" > /dev/null
-echo "✓ Flower Garden → Herb & Flower Zone"
-echo ""
-
-# Step 9: Create Watering Events (to trigger frequency alert)
-echo "Step 9: Creating watering history (will trigger FREQ_001 alert)..."
-
-# Create daily watering events for the past 7 days on Herb & Flower Zone
-# This will trigger FREQ_001 (watering too frequently)
-for i in {0..6}; do
-  WATERED_AT=$(date -u -v-${i}d +"%Y-%m-%dT12:00:00.000Z" 2>/dev/null || date -u -d "${i} days ago" +"%Y-%m-%dT12:00:00.000Z")
-  curl -s -X POST "${API_URL}/irrigation-system/events" \
-    -H "Authorization: Bearer ${TOKEN}" \
-    -H "Content-Type: application/json" \
-    -d "{
-      \"irrigation_zone_id\": ${ZONE2_ID},
-      \"watered_at\": \"${WATERED_AT}\",
-      \"duration_minutes\": 8,
-      \"is_manual\": false
-    }" > /dev/null
-done
-echo "✓ Created 7 daily watering events (8 min each) - will trigger FREQ_001 & DUR_001"
-
-# Create proper watering events for Vegetable Zone
-curl -s -X POST "${API_URL}/irrigation-system/events" \
-  -H "Authorization: Bearer ${TOKEN}" \
-  -H "Content-Type: application/json" \
-  -d "{
-    \"irrigation_zone_id\": ${ZONE1_ID},
-    \"watered_at\": \"$(date -u -v-3d +"%Y-%m-%dT12:00:00.000Z" 2>/dev/null || date -u -d '3 days ago' +"%Y-%m-%dT12:00:00.000Z")\",
-    \"duration_minutes\": 30,
-    \"is_manual\": false
+    \"garden_id\": ${GARDEN2_ID},
+    \"ph\": 6.8,
+    \"nitrogen_ppm\": 45,
+    \"phosphorus_ppm\": 30,
+    \"potassium_ppm\": 150,
+    \"moisture_percent\": 35,
+    \"organic_matter_percent\": 4.2,
+    \"date_collected\": \"$(date -u +"%Y-%m-%d")\",
+    \"notes\": \"Sandy soil - good drainage\"
   }" > /dev/null
-echo "✓ Created proper watering event for Vegetable Zone"
-echo ""
+echo "✓ Created soil sample for Herb Garden (healthy)"
 
-# Step 10: Add Soil Samples (with low moisture to trigger alert)
-echo "Step 10: Creating soil samples (will trigger RESPONSE_001 alert)..."
-
-# Create 3 low-moisture samples for Herb Garden to trigger RESPONSE_001
-for i in {0..2}; do
-  SAMPLE_DATE=$(date -u -v-${i}d +"%Y-%m-%d" 2>/dev/null || date -u -d "${i} days ago" +"%Y-%m-%d")
-  curl -s -X POST "${API_URL}/soil-samples" \
-    -H "Authorization: Bearer ${TOKEN}" \
-    -H "Content-Type: application/json" \
-    -d "{
-      \"garden_id\": ${GARDEN2_ID},
-      \"ph\": 6.8,
-      \"nitrogen_ppm\": 45,
-      \"phosphorus_ppm\": 30,
-      \"potassium_ppm\": 150,
-      \"moisture_percent\": 12,
-      \"date_collected\": \"${SAMPLE_DATE}\",
-      \"notes\": \"Low moisture despite recent watering\"
-    }" > /dev/null
-done
-echo "✓ Created 3 soil samples for Herb Garden (12% moisture) - will trigger RESPONSE_001"
-
-# Create normal soil samples for other gardens
+# Create soil samples for other gardens
 curl -s -X POST "${API_URL}/soil-samples" \
   -H "Authorization: Bearer ${TOKEN}" \
   -H "Content-Type: application/json" \
@@ -538,8 +402,8 @@ curl -s -X POST "${API_URL}/soil-samples" \
 echo "✓ Created soil sample for Flower Garden (healthy)"
 echo ""
 
-# Step 11: Create Plantings with Different Varieties
-echo "Step 11: Creating plantings for gardens..."
+# Step 8: Create Plantings with Different Varieties
+echo "Step 8: Creating plantings with companion planting demonstrations..."
 
 # Get plant variety IDs (query first few to find IDs)
 VARIETIES=$(curl -s -X GET "${API_URL}/plant-varieties" \
@@ -763,10 +627,10 @@ curl -s -X POST "${API_URL}/planting-events" \
     \"planting_method\": \"transplant\",
     \"plant_count\": 8,
     \"location_in_garden\": \"Center rows\",
-    \"health_status\": \"stressed\",
-    \"notes\": \"Showing signs of water stress despite irrigation\"
+    \"health_status\": \"healthy\",
+    \"notes\": \"Sweet basil for culinary use\"
   }" > /dev/null
-echo "✓ Planted Basil in Herb Garden (8 plants, showing stress)"
+echo "✓ Planted Basil in Herb Garden (8 plants)"
 
 curl -s -X POST "${API_URL}/planting-events" \
   -H "Authorization: Bearer ${TOKEN}" \
@@ -969,73 +833,6 @@ curl -s -X POST "${API_URL}/planting-events" \
 echo "✓ Planted Basil in Container Garden (8 plants, vegetative - LOW EC)"
 echo ""
 
-# Step 12: Add More Irrigation Events for Variety
-echo "Step 12: Adding varied irrigation events across gardens..."
-
-# Add some manual watering events for indoor gardens
-curl -s -X POST "${API_URL}/irrigation-system/events" \
-  -H "Authorization: Bearer ${TOKEN}" \
-  -H "Content-Type: application/json" \
-  -d "{
-    \"garden_id\": ${GARDEN4_ID},
-    \"watered_at\": \"$(date -u -v-2d +"%Y-%m-%dT10:00:00.000Z" 2>/dev/null || date -u -d '2 days ago' +"%Y-%m-%dT10:00:00.000Z")\",
-    \"duration_minutes\": 5,
-    \"is_manual\": true,
-    \"notes\": \"Hand watered indoor herbs\"
-  }" > /dev/null
-
-curl -s -X POST "${API_URL}/irrigation-system/events" \
-  -H "Authorization: Bearer ${TOKEN}" \
-  -H "Content-Type: application/json" \
-  -d "{
-    \"garden_id\": ${GARDEN4_ID},
-    \"watered_at\": \"$(date -u +"%Y-%m-%dT09:00:00.000Z")\",
-    \"duration_minutes\": 5,
-    \"is_manual\": true,
-    \"notes\": \"Morning watering\"
-  }" > /dev/null
-echo "✓ Added 2 manual watering events for Indoor Herb Garden"
-
-# Add hydroponic nutrient changes (counted as watering events)
-curl -s -X POST "${API_URL}/irrigation-system/events" \
-  -H "Authorization: Bearer ${TOKEN}" \
-  -H "Content-Type: application/json" \
-  -d "{
-    \"garden_id\": ${GARDEN5_ID},
-    \"watered_at\": \"$(date -u -v-7d +"%Y-%m-%dT08:00:00.000Z" 2>/dev/null || date -u -d '7 days ago' +"%Y-%m-%dT08:00:00.000Z")\",
-    \"duration_minutes\": 15,
-    \"is_manual\": true,
-    \"notes\": \"Reservoir refill and nutrient adjustment\"
-  }" > /dev/null
-
-curl -s -X POST "${API_URL}/irrigation-system/events" \
-  -H "Authorization: Bearer ${TOKEN}" \
-  -H "Content-Type: application/json" \
-  -d "{
-    \"garden_id\": ${GARDEN5_ID},
-    \"watered_at\": \"$(date -u +"%Y-%m-%dT08:00:00.000Z")\",
-    \"duration_minutes\": 15,
-    \"is_manual\": true,
-    \"notes\": \"Weekly reservoir maintenance\"
-  }" > /dev/null
-echo "✓ Added 2 hydroponic maintenance events for Hydroponic Greens"
-
-# Add more zone watering events for better history
-for i in {10..14}; do
-  WATERED_AT=$(date -u -v-${i}d +"%Y-%m-%dT12:00:00.000Z" 2>/dev/null || date -u -d "${i} days ago" +"%Y-%m-%dT12:00:00.000Z")
-  curl -s -X POST "${API_URL}/irrigation-system/events" \
-    -H "Authorization: Bearer ${TOKEN}" \
-    -H "Content-Type: application/json" \
-    -d "{
-      \"irrigation_zone_id\": ${ZONE1_ID},
-      \"watered_at\": \"${WATERED_AT}\",
-      \"duration_minutes\": 30,
-      \"is_manual\": false
-    }" > /dev/null
-done
-echo "✓ Added 5 historical watering events for Vegetable Zone"
-echo ""
-
 # Summary
 echo "================================================"
 echo "Test Data Setup Complete!"
@@ -1057,13 +854,7 @@ echo "    - Indoor Herb Garden (Indoor) - ID: $GARDEN4_ID"
 echo "    - Hydroponic Greens (NFT, 50L) - ID: $GARDEN5_ID"
 echo "    - Hydroponic Tomatoes (DWC, 80L) - ID: $GARDEN6_ID"
 echo "    - Patio Container Garden (Container, 30L) - ID: $GARDEN7_ID"
-echo "  • 2 Water Sources:"
-echo "    - City Water - ID: $SOURCE1_ID"
-echo "    - Rain Barrel - ID: $SOURCE2_ID"
-echo "  • 2 Irrigation Zones:"
-echo "    - Vegetable Zone - ID: $ZONE1_ID"
-echo "    - Herb & Flower Zone - ID: $ZONE2_ID"
-echo "  • 27 Planting Events (with companion planting and nutrient optimization scenarios):"
+echo "  • 27 Planting Events (with companion planting demonstrations):"
 echo "    - Vegetable Garden: 10 varieties with positions demonstrating:"
 echo "      ✓ Tomato + Basil (beneficial pair at 0.4m)"
 echo "      ✓ Carrot + Onion (beneficial pair at 0.3m)"
@@ -1074,50 +865,58 @@ echo "    - Herb Garden: 3 varieties (Basil, Cilantro, Mint)"
 echo "    - Flower Garden: 3 varieties (Marigold, Zinnia, Sunflower)"
 echo "    - Indoor Herb Garden: 2 varieties (Basil, Parsley)"
 echo "    - Hydroponic Greens: 3 varieties (Romaine, Butterhead, Microgreens)"
-echo "  • 22 Watering/Irrigation Events (zone + manual + hydroponic)"
-echo "  • 5 Soil Samples"
+echo "    - Hydroponic Tomatoes: Cherry tomatoes in fruiting stage"
+echo "    - Container Garden: Bell peppers + Basil (mixed EC demands)"
+echo "  • 3 Soil Samples (healthy data for outdoor gardens)"
 echo ""
-echo "Companion Planting Analysis:"
-echo "  🌱 Beneficial Pairs Demonstrated:"
-echo "     • Tomato + Basil: Basil deters aphids and improves tomato flavor"
-echo "     • Carrot + Onion: Onion scent confuses carrot fly"
-echo "     • Lettuce + Radish: Radishes loosen soil for lettuce roots"
-echo "  ⚠️  Conflicts Demonstrated:"
-echo "     • Tomato + Broccoli: Competition for nutrients"
-echo "     • Bean + Onion: Onions inhibit bean growth"
+echo "🌱 Companion Planting Analysis:"
+echo "  Test companion planting insights for Vegetable Garden (ID: $GARDEN1_ID)"
+echo "  View beneficial pairs and conflicts:"
+echo "    curl -s http://localhost:8080/gardens/${GARDEN1_ID}/companion-planting-analysis \\"
+echo "      -H \"Authorization: Bearer \$TOKEN\" | python3 -m json.tool"
 echo ""
-echo "Nutrient Optimization (Hydroponic/Fertigation/Container Systems):"
-echo "  🧪 Three systems demonstrating different EC/pH requirements:"
-echo "     • Hydroponic Greens (NFT): Lettuce (low EC 0.8-1.2 mS/cm, pH 5.5-6.5)"
-echo "     • Hydroponic Tomatoes (DWC): Fruiting stage (HIGH EC 2.5-3.0 mS/cm, pH 5.5-6.5)"
-echo "     • Container Garden (Fertigation): Mixed EC demands (peppers + basil)"
-echo "  📊 View nutrient recommendations:"
-echo "     curl -s http://localhost:8080/gardens/${GARDEN5_ID}/nutrient-optimization -H \"Authorization: Bearer \$TOKEN\" | python3 -m json.tool"
-echo "     curl -s http://localhost:8080/gardens/${GARDEN6_ID}/nutrient-optimization -H \"Authorization: Bearer \$TOKEN\" | python3 -m json.tool"
-echo "     curl -s http://localhost:8080/gardens/${GARDEN7_ID}/nutrient-optimization -H \"Authorization: Bearer \$TOKEN\" | python3 -m json.tool"
-echo "  💡 Features demonstrated:"
+echo "  Beneficial Pairs Demonstrated:"
+echo "     • Tomato + Basil (0.4m): Basil deters aphids, improves tomato flavor"
+echo "     • Carrot + Onion (0.3m): Onion scent confuses carrot fly"
+echo "     • Lettuce + Radish (0.3m): Radishes loosen soil for lettuce roots"
+echo ""
+echo "  Conflicts Demonstrated:"
+echo "     • Tomato + Broccoli (~1.8m, within 3m threshold): Competition for nutrients"
+echo "     • Bean + Onion (~0.5m, within 2m threshold): Onions inhibit bean growth"
+echo ""
+echo "🧪 Nutrient Optimization (Hydroponic/Fertigation/Container Systems):"
+echo "  Three systems demonstrating different EC/pH requirements:"
+echo "     • Hydroponic Greens (NFT): Lettuce in vegetative stage"
+echo "       → Low EC 0.8-1.2 mS/cm, pH 5.5-6.5"
+echo "     • Hydroponic Tomatoes (DWC): Fruiting stage (45 days old)"
+echo "       → HIGH EC 2.5-3.0 mS/cm, pH 5.5-6.5"
+echo "     • Container Garden (Fertigation): Mixed crops (peppers flowering + basil vegetative)"
+echo "       → Medium EC 1.5-2.0 mS/cm (max demand wins)"
+echo ""
+echo "  View nutrient recommendations:"
+echo "    curl -s http://localhost:8080/gardens/${GARDEN5_ID}/nutrient-optimization \\"
+echo "      -H \"Authorization: Bearer \$TOKEN\" | python3 -m json.tool"
+echo ""
+echo "    curl -s http://localhost:8080/gardens/${GARDEN6_ID}/nutrient-optimization \\"
+echo "      -H \"Authorization: Bearer \$TOKEN\" | python3 -m json.tool"
+echo ""
+echo "    curl -s http://localhost:8080/gardens/${GARDEN7_ID}/nutrient-optimization \\"
+echo "      -H \"Authorization: Bearer \$TOKEN\" | python3 -m json.tool"
+echo ""
+echo "  Features demonstrated:"
 echo "     - Growth stage-dependent EC recommendations (seedling→vegetative→flowering→fruiting)"
 echo "     - pH optimization for nutrient availability"
 echo "     - Solution replacement schedules based on reservoir size"
-echo "     - Mixed-crop EC calculation (max demand wins)"
+echo "     - Mixed-crop EC calculation (highest demand wins)"
 echo ""
-echo "Expected Irrigation Alerts:"
-echo "  ⚠️  FREQ_001: Watering too frequently (Herb & Flower Zone - daily watering)"
-echo "  ⚠️  DUR_001: Short duration watering (Herb & Flower Zone - 8 min)"
-echo "  🔴 RESPONSE_001: Low moisture despite watering (Herb Garden - 12% moisture)"
+echo "☀️  Sun-Path & Seasonal Shadow Analysis:"
+echo "  Go to Layout view and enable 'Show Seasonal Shadows'"
+echo "  Select Winter/Equinox/Summer to see shadow projections"
+echo "  Gardens color-coded: Green=Full Sun, Orange=Partial, Gray=Shade"
+echo "  Click gardens to view detailed seasonal sun exposure data"
+echo "  Note: Trees to the south cast shadows northward (Northern Hemisphere)"
 echo ""
-echo "Sun-Path Features to Test:"
-echo "  ☀️  Go to Layout view and enable 'Show Seasonal Shadows'"
-echo "  🌲 Select Winter/Equinox/Summer to see shadow projections"
-echo "  🎨 Gardens color-coded: Green=Full Sun, Orange=Partial, Gray=Shade"
-echo "  📊 Click gardens to view detailed seasonal sun exposure data"
-echo "  ⚠️  Trees to the south cast shadows northward (Northern Hemisphere)"
-echo ""
-echo "View in app: http://localhost:3000"
+echo "🌍 View in app: http://localhost:3000"
 echo ""
 echo "🔄 IMPORTANT: Refresh your browser (Cmd+R / Ctrl+R) to see the updated land layout!"
-echo ""
-echo "Check irrigation insights:"
-echo "  curl -s http://localhost:8080/irrigation-system/insights \\"
-echo "    -H \"Authorization: Bearer $TOKEN\" | python3 -m json.tool"
 echo ""

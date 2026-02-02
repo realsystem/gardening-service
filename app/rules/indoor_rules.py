@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session
 from app.rules.base_rule import BaseRule
 from app.models.care_task import TaskType, TaskSource, TaskPriority
 from app.models.garden import GardenType
-from app.repositories.sensor_reading_repository import SensorReadingRepository
+# SensorReadingRepository removed in Phase 6 of platform simplification
 
 
 class LightScheduleRule(BaseRule):
@@ -70,110 +70,112 @@ class LightScheduleRule(BaseRule):
         return [task]
 
 
-class TemperatureMonitoringRule(BaseRule):
-    """
-    Generates warning task if temperature is outside acceptable range.
-    Based on latest sensor reading.
-    """
+# TemperatureMonitoringRule removed in Phase 6 - requires sensor readings
+# class TemperatureMonitoringRule(BaseRule):
+#     """
+#     Generates warning task if temperature is outside acceptable range.
+#     Based on latest sensor reading.
+#     """
+#
+#     @property
+#     def name(self) -> str:
+#         return "Indoor Temperature Monitoring"
+#
+#     def generate_tasks(self, db: Session, context: Dict[str, Any]) -> List[Dict[str, Any]]:
+#         """
+#         Generate temperature warning task if out of range.
+#
+#         Required context:
+#             - sensor_reading: SensorReading instance
+#             - user_id: int
+#         """
+#         sensor_reading = context.get("sensor_reading")
+#         user_id = context.get("user_id")
+#
+#         if not sensor_reading or not user_id:
+#             return []
+#
+#         garden = sensor_reading.garden
+#         if not garden or garden.garden_type != GardenType.INDOOR:
+#             return []
+#
+#         if not garden.temp_min_f or not garden.temp_max_f or not sensor_reading.temperature_f:
+#             return []
+#
+#         # Check if temperature is out of range
+#         temp = sensor_reading.temperature_f
+#         if temp < garden.temp_min_f or temp > garden.temp_max_f:
+#             task = {
+#                 "user_id": user_id,
+#                 "planting_event_id": None,
+#                 "task_type": TaskType.ADJUST_TEMPERATURE,
+#                 "title": f"Temperature Alert - {garden.name}",
+#                 "description": (
+#                     f"Temperature is {temp}°F, outside acceptable range "
+#                     f"({garden.temp_min_f}°F - {garden.temp_max_f}°F). "
+#                     f"Adjust climate control as needed."
+#                 ),
+#                 "due_date": date.today(),
+#                 "priority": TaskPriority.HIGH,
+#                 "task_source": TaskSource.AUTO_GENERATED,
+#             }
+#             return [task]
+#
+#         return []
 
-    @property
-    def name(self) -> str:
-        return "Indoor Temperature Monitoring"
 
-    def generate_tasks(self, db: Session, context: Dict[str, Any]) -> List[Dict[str, Any]]:
-        """
-        Generate temperature warning task if out of range.
-
-        Required context:
-            - sensor_reading: SensorReading instance
-            - user_id: int
-        """
-        sensor_reading = context.get("sensor_reading")
-        user_id = context.get("user_id")
-
-        if not sensor_reading or not user_id:
-            return []
-
-        garden = sensor_reading.garden
-        if not garden or garden.garden_type != GardenType.INDOOR:
-            return []
-
-        if not garden.temp_min_f or not garden.temp_max_f or not sensor_reading.temperature_f:
-            return []
-
-        # Check if temperature is out of range
-        temp = sensor_reading.temperature_f
-        if temp < garden.temp_min_f or temp > garden.temp_max_f:
-            task = {
-                "user_id": user_id,
-                "planting_event_id": None,
-                "task_type": TaskType.ADJUST_TEMPERATURE,
-                "title": f"Temperature Alert - {garden.name}",
-                "description": (
-                    f"Temperature is {temp}°F, outside acceptable range "
-                    f"({garden.temp_min_f}°F - {garden.temp_max_f}°F). "
-                    f"Adjust climate control as needed."
-                ),
-                "due_date": date.today(),
-                "priority": TaskPriority.HIGH,
-                "task_source": TaskSource.AUTO_GENERATED,
-            }
-            return [task]
-
-        return []
-
-
-class HumidityMonitoringRule(BaseRule):
-    """
-    Generates warning task if humidity is outside acceptable range.
-    Based on latest sensor reading.
-    """
-
-    @property
-    def name(self) -> str:
-        return "Indoor Humidity Monitoring"
-
-    def generate_tasks(self, db: Session, context: Dict[str, Any]) -> List[Dict[str, Any]]:
-        """
-        Generate humidity warning task if out of range.
-
-        Required context:
-            - sensor_reading: SensorReading instance
-            - user_id: int
-        """
-        sensor_reading = context.get("sensor_reading")
-        user_id = context.get("user_id")
-
-        if not sensor_reading or not user_id:
-            return []
-
-        garden = sensor_reading.garden
-        if not garden or garden.garden_type != GardenType.INDOOR:
-            return []
-
-        if not garden.humidity_min_percent or not garden.humidity_max_percent or not sensor_reading.humidity_percent:
-            return []
-
-        # Check if humidity is out of range
-        humidity = sensor_reading.humidity_percent
-        if humidity < garden.humidity_min_percent or humidity > garden.humidity_max_percent:
-            task = {
-                "user_id": user_id,
-                "planting_event_id": None,
-                "task_type": TaskType.ADJUST_HUMIDITY,
-                "title": f"Humidity Alert - {garden.name}",
-                "description": (
-                    f"Humidity is {humidity}%, outside acceptable range "
-                    f"({garden.humidity_min_percent}% - {garden.humidity_max_percent}%). "
-                    f"Adjust humidifier/dehumidifier as needed."
-                ),
-                "due_date": date.today(),
-                "priority": TaskPriority.HIGH,
-                "task_source": TaskSource.AUTO_GENERATED,
-            }
-            return [task]
-
-        return []
+# HumidityMonitoringRule removed in Phase 6 - requires sensor readings
+# class HumidityMonitoringRule(BaseRule):
+#     """
+#     Generates warning task if humidity is outside acceptable range.
+#     Based on latest sensor reading.
+#     """
+#
+#     @property
+#     def name(self) -> str:
+#         return "Indoor Humidity Monitoring"
+#
+#     def generate_tasks(self, db: Session, context: Dict[str, Any]) -> List[Dict[str, Any]]:
+#         """
+#         Generate humidity warning task if out of range.
+#
+#         Required context:
+#             - sensor_reading: SensorReading instance
+#             - user_id: int
+#         """
+#         sensor_reading = context.get("sensor_reading")
+#         user_id = context.get("user_id")
+#
+#         if not sensor_reading or not user_id:
+#             return []
+#
+#         garden = sensor_reading.garden
+#         if not garden or garden.garden_type != GardenType.INDOOR:
+#             return []
+#
+#         if not garden.humidity_min_percent or not garden.humidity_max_percent or not sensor_reading.humidity_percent:
+#             return []
+#
+#         # Check if humidity is out of range
+#         humidity = sensor_reading.humidity_percent
+#         if humidity < garden.humidity_min_percent or humidity > garden.humidity_max_percent:
+#             task = {
+#                 "user_id": user_id,
+#                 "planting_event_id": None,
+#                 "task_type": TaskType.ADJUST_HUMIDITY,
+#                 "title": f"Humidity Alert - {garden.name}",
+#                 "description": (
+#                     f"Humidity is {humidity}%, outside acceptable range "
+#                     f"({garden.humidity_min_percent}% - {garden.humidity_max_percent}%). "
+#                     f"Adjust humidifier/dehumidifier as needed."
+#                 ),
+#                 "due_date": date.today(),
+#                 "priority": TaskPriority.HIGH,
+#                 "task_source": TaskSource.AUTO_GENERATED,
+#             }
+#             return [task]
+#
+#         return []
 
 
 class NutrientScheduleRule(BaseRule):

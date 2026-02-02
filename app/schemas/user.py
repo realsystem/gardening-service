@@ -12,6 +12,7 @@ class UserCreate(BaseModel):
     zip_code: Optional[str] = None
     latitude: Optional[float] = None
     longitude: Optional[float] = None
+    user_group: Optional[UserGroup] = Field(UserGroup.AMATEUR_GARDENER, description="Amateur, Farmer, or Scientific Researcher")
 
 
 class UserLogin(BaseModel):
