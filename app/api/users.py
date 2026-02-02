@@ -121,6 +121,7 @@ def get_current_user_info(current_user: User = Depends(get_current_user)):
         "user_group": current_user.user_group,
         "show_trees": current_user.show_trees,
         "enable_alerts": current_user.enable_alerts,
+        "has_completed_onboarding": current_user.has_completed_onboarding,
         "created_at": current_user.created_at,
         "feature_flags": get_feature_flags(current_user)
     }
@@ -165,6 +166,47 @@ def update_user_profile(
     user = repo.update(current_user, **update_data)
 
     return user
+
+
+@router.post("/me/complete-onboarding", response_model=UserResponse)
+def complete_onboarding(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Mark user's onboarding as completed.
+
+    This is called after the user completes the 3-screen onboarding wizard:
+    1. ZIP Code (already captured in registration)
+    2. First Garden creation
+    3. Initial plant selection
+    """
+    repo = UserRepository(db)
+    user = repo.update(current_user, has_completed_onboarding=True)
+
+    # Return updated user with feature flags
+    user_dict = {
+        "id": user.id,
+        "email": user.email,
+        "display_name": user.display_name,
+        "avatar_url": user.avatar_url,
+        "city": user.city,
+        "gardening_preferences": user.gardening_preferences,
+        "zip_code": user.zip_code,
+        "latitude": user.latitude,
+        "longitude": user.longitude,
+        "usda_zone": user.usda_zone,
+        "unit_system": user.unit_system,
+        "is_admin": user.is_admin,
+        "user_group": user.user_group,
+        "show_trees": user.show_trees,
+        "enable_alerts": user.enable_alerts,
+        "has_completed_onboarding": user.has_completed_onboarding,
+        "created_at": user.created_at,
+        "feature_flags": get_feature_flags(user)
+    }
+
+    return user_dict
 
 
 @router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)

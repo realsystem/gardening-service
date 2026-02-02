@@ -1,12 +1,17 @@
 import { useState } from 'react';
 import { api } from '../services/api';
+import type { User } from '../types';
 
 interface CreateGardenProps {
+  user: User;
   onClose: () => void;
   onSuccess: () => void;
 }
 
-export function CreateGarden({ onClose, onSuccess }: CreateGardenProps) {
+export function CreateGarden({ user, onClose, onSuccess }: CreateGardenProps) {
+  // Check if user has access to advanced features
+  const isResearcher = user.user_group === 'scientific_researcher';
+  const canUseHydroponics = user.feature_flags?.hydroponics || false;
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [gardenType, setGardenType] = useState<'outdoor' | 'indoor'>('outdoor');
@@ -104,20 +109,30 @@ export function CreateGarden({ onClose, onSuccess }: CreateGardenProps) {
             />
           </div>
 
-          <div className="form-group">
-            <label>Garden Type *</label>
-            <select
-              value={gardenType}
-              onChange={(e) => setGardenType(e.target.value as 'outdoor' | 'indoor')}
-              required
-              disabled={loading}
-            >
-              <option value="outdoor">Outdoor Garden</option>
-              <option value="indoor">Indoor Garden</option>
-            </select>
-          </div>
+          {/* Amateur users: Simple form with outdoor only */}
+          {!isResearcher ? (
+            <div className="form-group">
+              <small className="hint" style={{ color: '#999', fontSize: '0.9em' }}>
+                Creating outdoor garden. More options available with Scientific Researcher account.
+              </small>
+            </div>
+          ) : (
+            /* Researchers: Full form with indoor/hydroponic */
+            <div className="form-group">
+              <label>Garden Type *</label>
+              <select
+                value={gardenType}
+                onChange={(e) => setGardenType(e.target.value as 'outdoor' | 'indoor')}
+                required
+                disabled={loading}
+              >
+                <option value="outdoor">Outdoor Garden</option>
+                <option value="indoor">Indoor Garden</option>
+              </select>
+            </div>
+          )}
 
-          {gardenType === 'indoor' && (
+          {isResearcher && gardenType === 'indoor' && (
             <>
               <div className="form-group">
                 <label>Location</label>

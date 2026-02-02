@@ -14,6 +14,11 @@ export interface User {
   longitude?: number;
   unit_system: UnitSystem;
   is_admin: boolean;
+  user_group?: 'amateur_gardener' | 'farmer' | 'scientific_researcher';
+  show_trees?: boolean;
+  enable_alerts?: boolean;
+  has_completed_onboarding?: boolean;
+  feature_flags?: Record<string, boolean>;
 }
 
 export interface LoginResponse {

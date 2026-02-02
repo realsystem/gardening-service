@@ -32,6 +32,8 @@ class UserProfileUpdate(BaseModel):
     user_group: Optional[UserGroup] = Field(None, description="Amateur, Farmer, or Scientific Researcher")
     show_trees: Optional[bool] = Field(None, description="Show trees on layout (amateur users)")
     enable_alerts: Optional[bool] = Field(None, description="Enable rule-based alerts and recommendations")
+    # Onboarding tracking
+    has_completed_onboarding: Optional[bool] = Field(None, description="Has completed initial onboarding wizard")
 
 
 class UserResponse(BaseModel):
@@ -52,6 +54,8 @@ class UserResponse(BaseModel):
     user_group: UserGroup = UserGroup.AMATEUR_GARDENER
     show_trees: bool = False
     enable_alerts: bool = False
+    # Onboarding
+    has_completed_onboarding: bool = False
     # Feature flags (computed)
     feature_flags: Optional[Dict[str, Any]] = Field(None, description="Available features for this user")
     created_at: datetime
