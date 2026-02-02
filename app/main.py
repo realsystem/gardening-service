@@ -34,8 +34,13 @@ from app.error_handlers import (
     validation_exception_handler,
     generic_exception_handler,
 )
+from app.middleware import CorrelationIDMiddleware
+from app.utils.structured_logging import configure_logging
 
 settings = get_settings()
+
+# Configure structured logging with redaction
+configure_logging()
 
 # Create FastAPI app
 app = FastAPI(
@@ -44,6 +49,9 @@ app = FastAPI(
     version="0.1.0",
     debug=settings.DEBUG
 )
+
+# Add Correlation ID middleware (FIRST - so all logs have correlation ID)
+app.add_middleware(CorrelationIDMiddleware)
 
 # CORS middleware for web clients
 app.add_middleware(
