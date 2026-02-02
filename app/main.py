@@ -38,11 +38,22 @@ from app.error_handlers import (
 from app.middleware import CorrelationIDMiddleware
 from app.middleware.metrics_middleware import MetricsMiddleware
 from app.utils.structured_logging import configure_logging
+from app.database import check_database_migrations
 
 settings = get_settings()
 
 # Configure structured logging with redaction
 configure_logging()
+
+# Check database migrations on startup (production/staging only)
+try:
+    check_database_migrations()
+except RuntimeError as e:
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.critical(f"Database migration check failed: {e}")
+    logger.critical("Application startup aborted. Please run pending migrations.")
+    raise
 
 # Create FastAPI app
 app = FastAPI(
