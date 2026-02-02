@@ -7,16 +7,12 @@ import { CreatePlantingEvent } from './CreatePlantingEvent';
 import { CreateGarden } from './CreateGarden';
 import { CreateSensorReading } from './CreateSensorReading';
 import { CreateSoilSample } from './CreateSoilSample';
-import { CreateIrrigationEvent } from './CreateIrrigationEvent';
 import { Profile } from './Profile';
 import { PlantingsList } from './PlantingsList';
 import { SoilHealthCard } from './SoilHealthCard';
 import { SoilSampleList } from './SoilSampleList';
-import { IrrigationOverviewCard } from './IrrigationOverviewCard';
 import { RuleInsightsCard } from './RuleInsightsCard';
 import { LandList } from './LandList';
-import { IrrigationDashboard } from './IrrigationDashboard';
-import { IrrigationZoneManager } from './IrrigationZoneManager';
 import { GardenDetails } from './GardenDetails';
 import { Onboarding } from './Onboarding';
 
@@ -47,11 +43,11 @@ export function Dashboard({ user: initialUser, onLogout, onUserUpdate }: Dashboa
   const [sensorReadings, setSensorReadings] = useState<SensorReading[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [activeModal, setActiveModal] = useState<'seed' | 'planting' | 'profile' | 'garden' | 'sensor' | 'soil' | 'irrigation' | null>(null);
+  const [activeModal, setActiveModal] = useState<'seed' | 'planting' | 'profile' | 'garden' | 'sensor' | 'soil' | null>(null);
   const [priorityFilter, setPriorityFilter] = useState<'all' | 'high' | 'medium' | 'low'>('all');
   const [deletingGardenId, setDeletingGardenId] = useState<number | null>(null);
   const [confirmDeleteGardenId, setConfirmDeleteGardenId] = useState<number | null>(null);
-  const [viewMode, setViewMode] = useState<'dashboard' | 'plantings' | 'land-layout' | 'irrigation-system' | 'garden-details'>('dashboard');
+  const [viewMode, setViewMode] = useState<'dashboard' | 'plantings' | 'land-layout' | 'garden-details'>('dashboard');
   const [selectedGardenId, setSelectedGardenId] = useState<number | undefined>(undefined);
   const [systemStats, setSystemStats] = useState<SystemStats | null>(null);
 
@@ -149,11 +145,6 @@ export function Dashboard({ user: initialUser, onLogout, onUserUpdate }: Dashboa
   };
 
   const handleSoilSampleCreated = () => {
-    setActiveModal(null);
-    loadData();
-  };
-
-  const handleIrrigationEventCreated = () => {
     setActiveModal(null);
     loadData();
   };
@@ -268,13 +259,6 @@ export function Dashboard({ user: initialUser, onLogout, onUserUpdate }: Dashboa
               >
                 {viewMode === 'land-layout' ? 'Back to Dashboard' : 'Land Layout'}
               </button>
-              <button
-                className="btn"
-                style={{ backgroundColor: viewMode === 'irrigation-system' ? '#4a90e2' : undefined }}
-                onClick={() => setViewMode(viewMode === 'irrigation-system' ? 'dashboard' : 'irrigation-system')}
-              >
-                {viewMode === 'irrigation-system' ? 'Back to Dashboard' : 'Irrigation System'}
-              </button>
               {selectedGardenId && (
                 <button
                   className="btn"
@@ -320,11 +304,6 @@ export function Dashboard({ user: initialUser, onLogout, onUserUpdate }: Dashboa
             <PlantingsList />
           ) : viewMode === 'land-layout' ? (
             <LandList />
-          ) : viewMode === 'irrigation-system' ? (
-            <>
-              <IrrigationDashboard />
-              <IrrigationZoneManager />
-            </>
           ) : (
             <>
               <div className="card">
@@ -337,10 +316,6 @@ export function Dashboard({ user: initialUser, onLogout, onUserUpdate }: Dashboa
 
               <div className="card">
                 <RuleInsightsCard gardenId={selectedGardenId} />
-              </div>
-
-              <div className="card">
-                <IrrigationOverviewCard gardenId={selectedGardenId} onLogWatering={() => setActiveModal('irrigation')} />
               </div>
 
               <div className="card">
@@ -632,13 +607,6 @@ export function Dashboard({ user: initialUser, onLogout, onUserUpdate }: Dashboa
         <CreateSoilSample
           onClose={() => setActiveModal(null)}
           onSuccess={handleSoilSampleCreated}
-        />
-      )}
-
-      {activeModal === 'irrigation' && (
-        <CreateIrrigationEvent
-          onClose={() => setActiveModal(null)}
-          onSuccess={handleIrrigationEventCreated}
         />
       )}
 
