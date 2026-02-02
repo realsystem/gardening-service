@@ -102,7 +102,7 @@ services:
       - GF_INSTALL_PLUGINS=grafana-piechart-panel
     volumes:
       - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
-      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./monitoring/grafana/dashboards-json:/etc/grafana/dashboards
       - grafana-data:/var/lib/grafana
     depends_on:
       - prometheus
