@@ -21,6 +21,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image locally
+        run: |
+          echo "🔨 Building Docker image locally..."
+          docker build -t gardening-service:latest .
+
       - name: Setup Fly CLI
         uses: superfly/flyctl-actions/setup-flyctl@master
 
@@ -28,7 +36,7 @@ jobs:
         run: |
           echo "🚀 Deploying API to staging..."
           # If you have a staging app, use: flyctl deploy --app gardening-service-api-staging
-          flyctl deploy --app gardening-service-api --remote-only
+          flyctl deploy --app gardening-service-api --local-only
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
 

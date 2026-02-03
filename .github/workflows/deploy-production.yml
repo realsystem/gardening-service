@@ -1,5 +1,6 @@
 name: Deploy to Production (Fly.io)
 
+# Temporarily disabled
 on:
   # Manual trigger
   workflow_dispatch:
@@ -13,13 +14,13 @@ on:
         required: false
         default: 'yes'
 
-  # Automatic on push to main
-  push:
-    branches: [main]
-    paths-ignore:
-      - 'docs/**'
-      - '**.md'
-      - '.gitignore'
+  # Automatic on push to main - DISABLED
+  # push:
+  #   branches: [main]
+  #   paths-ignore:
+  #     - 'docs/**'
+  #     - '**.md'
+  #     - '.gitignore'
 
 jobs:
   deploy-api:
@@ -31,13 +32,21 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image locally
+        run: |
+          echo "🔨 Building Docker image locally..."
+          docker build -t gardening-service:latest .
+
       - name: Setup Fly CLI
         uses: superfly/flyctl-actions/setup-flyctl@master
 
       - name: Deploy API
         run: |
           echo "🚀 Deploying API to Fly.io..."
-          flyctl deploy --app gardening-service-api --remote-only
+          flyctl deploy --app gardening-service-api --local-only
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
 
@@ -74,6 +83,15 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image locally
+        run: |
+          echo "🔨 Building Docker image locally..."
+          cd frontend
+          docker build -t gardening-service-ui:latest .
+
       - name: Setup Fly CLI
         uses: superfly/flyctl-actions/setup-flyctl@master
 
@@ -81,7 +99,7 @@ jobs:
         run: |
           echo "🚀 Deploying Frontend to Fly.io..."
           cd frontend
-          flyctl deploy --app gardening-service-ui --remote-only
+          flyctl deploy --app gardening-service-ui --local-only
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
 

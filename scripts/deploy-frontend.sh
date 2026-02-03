@@ -145,10 +145,22 @@ if [ "$AUTO_MODE" = false ]; then
 fi
 
 echo ""
-echo "=== Step 4: Deploying Frontend ==="
+echo "=== Step 4: Building Docker Image Locally ==="
 
-# Deploy
-if flyctl deploy --app "$APP_NAME"; then
+# Build Docker image locally to avoid network issues
+if docker build -t gardening-service-ui:latest . ; then
+    echo -e "${GREEN}✓ Docker image built successfully${NC}"
+else
+    echo -e "${RED}✗ Failed to build Docker image${NC}"
+    cd ..
+    exit 1
+fi
+
+echo ""
+echo "=== Step 5: Deploying Frontend ==="
+
+# Deploy using local image (bypasses remote builder)
+if flyctl deploy --app "$APP_NAME" --local-only; then
     echo ""
     echo -e "${GREEN}╔═══════════════════════════════════════════════════════╗${NC}"
     echo -e "${GREEN}║       FRONTEND DEPLOYMENT SUCCESSFUL! 🎉              ║${NC}"
@@ -164,7 +176,7 @@ if flyctl deploy --app "$APP_NAME"; then
     echo ""
 
     # Test if frontend loads
-    echo "=== Step 5: Frontend Check ==="
+    echo "=== Step 6: Frontend Check ==="
     echo -n "Testing frontend... "
     sleep 3  # Wait for app to start
 
