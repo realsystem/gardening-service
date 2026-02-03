@@ -107,60 +107,62 @@ export function LandList() {
 
   return (
     <div className="land-list-container">
-      <div className="land-list-header">
-        <h2>Land Layout Management</h2>
-        <button
-          className="btn-primary"
-          onClick={() => setShowCreateForm(!showCreateForm)}
-        >
-          {showCreateForm ? 'Cancel' : '+ Create Land'}
-        </button>
-      </div>
-
-      {error && <div className="error-message">{error}</div>}
-
-      {showCreateForm && (
-        <CreateLand
-          onCreated={handleLandCreated}
-          onCancel={() => setShowCreateForm(false)}
-        />
-      )}
-
-      {lands.length === 0 ? (
-        <div className="empty-state">
-          <p>No lands created yet. Create your first land to start organizing your gardens.</p>
+      <div className="lands-section">
+        <div className="land-list-header">
+          <h2>Land Layout Management</h2>
+          <button
+            className="btn-primary"
+            onClick={() => setShowCreateForm(!showCreateForm)}
+          >
+            {showCreateForm ? 'Cancel' : '+ Create Land'}
+          </button>
         </div>
-      ) : (
-        <div className="lands-grid">
-          {lands.map((land) => (
-            <div
-              key={land.id}
-              className={`land-card ${selectedLand?.id === land.id ? 'selected' : ''}`}
-            >
-              <div className="land-card-header">
-                <h3>{land.name}</h3>
+
+        {error && <div className="error-message">{error}</div>}
+
+        {showCreateForm && (
+          <CreateLand
+            onCreated={handleLandCreated}
+            onCancel={() => setShowCreateForm(false)}
+          />
+        )}
+
+        {lands.length === 0 ? (
+          <div className="empty-state">
+            <p>No lands created yet. Create your first land to start organizing your gardens.</p>
+          </div>
+        ) : (
+          <div className="lands-grid">
+            {lands.map((land) => (
+              <div
+                key={land.id}
+                className={`land-card ${selectedLand?.id === land.id ? 'selected' : ''}`}
+              >
+                <div className="land-card-header">
+                  <h3>{land.name}</h3>
+                  <button
+                    className="btn-delete"
+                    onClick={() => handleDeleteLand(land.id)}
+                    title="Delete land"
+                  >
+                    🗑️
+                  </button>
+                </div>
+                <p className="land-info">{convertDistance(land.width, unitSystem).toFixed(1)} × {convertDistance(land.height, unitSystem).toFixed(1)} {unitLabels.distanceShort}</p>
                 <button
-                  className="btn-delete"
-                  onClick={() => handleDeleteLand(land.id)}
-                  title="Delete land"
+                  className="btn-secondary"
+                  style={selectedLand?.id === land.id
+                    ? { backgroundColor: '#3498db', color: 'white' }
+                    : { backgroundColor: 'white', color: '#3498db' }}
+                  onClick={() => handleToggleLand(land.id)}
                 >
-                  🗑️
+                  {selectedLand?.id === land.id ? 'Viewing' : 'View Layout'}
                 </button>
               </div>
-              <p className="land-info">{convertDistance(land.width, unitSystem).toFixed(1)} × {convertDistance(land.height, unitSystem).toFixed(1)} {unitLabels.distanceShort}</p>
-              <button
-                className="btn-secondary"
-                style={selectedLand?.id === land.id
-                  ? { backgroundColor: '#3498db', color: 'white' }
-                  : { backgroundColor: 'white', color: '#3498db' }}
-                onClick={() => handleToggleLand(land.id)}
-              >
-                {selectedLand?.id === land.id ? 'Viewing' : 'View Layout'}
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
+      </div>
 
       {selectedLand && (
         <div className="land-canvas-section">
