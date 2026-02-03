@@ -169,12 +169,13 @@ def get_garden(
         ))
 
     # Get tasks for this garden (via planting events)
-    planting_ids = [p.id for p in planting_events]
-    tasks_query = db.query(CareTask).filter(
-        CareTask.planting_event_id.in_(planting_ids)
-    ) if planting_ids else db.query(CareTask).filter(False)
-
-    all_tasks = tasks_query.order_by(CareTask.due_date.asc()).all()
+    # Use JOIN instead of IN for better performance with many plantings
+    all_tasks = db.query(CareTask).join(
+        PlantingEvent,
+        CareTask.planting_event_id == PlantingEvent.id
+    ).filter(
+        PlantingEvent.garden_id == garden_id
+    ).order_by(CareTask.due_date.asc()).all()
 
     task_summaries = [
         TaskSummaryInGarden(
