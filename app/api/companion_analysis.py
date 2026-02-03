@@ -6,7 +6,7 @@ based on documented plant-to-plant relationships.
 """
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import or_
 from typing import List, Dict, Any, Optional
 from datetime import datetime
@@ -83,7 +83,11 @@ def get_companion_analysis(
     # Analyzing all 500+ plantings would take 5+ seconds
     MAX_PLANTINGS_FOR_ANALYSIS = 100
 
-    plantings = db.query(PlantingEvent).join(PlantVariety).filter(
+    # CRITICAL: Use joinedload to prevent N+1 lazy loading queries
+    # NOTE: Don't use .join() here as it can interfere with LIMIT
+    plantings = db.query(PlantingEvent).options(
+        joinedload(PlantingEvent.plant_variety)
+    ).filter(
         PlantingEvent.garden_id == garden_id,
         PlantingEvent.x.isnot(None),  # Has position
         PlantingEvent.y.isnot(None)
