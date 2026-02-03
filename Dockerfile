@@ -16,9 +16,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Copy requirements first for better layer caching
 COPY requirements.txt .
 
-# Install Python dependencies
+# Install Python dependencies with retry logic and timeout
+# Use multiple attempts with fallback mirrors for reliability
 RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
+    pip install --no-cache-dir \
+        --retries 10 \
+        --timeout 120 \
+        --index-url https://pypi.org/simple \
+        --extra-index-url https://pypi.python.org/simple \
+        -r requirements.txt
 
 
 # Production stage - minimal image
