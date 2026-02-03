@@ -1,6 +1,7 @@
 """Application configuration"""
 import os
 from pydantic_settings import BaseSettings
+from pydantic import field_validator
 from functools import lru_cache
 
 
@@ -12,6 +13,18 @@ class Settings(BaseSettings):
 
     # Database
     DATABASE_URL: str = "postgresql://gardener:password@localhost:5432/gardening_db"
+
+    @field_validator('DATABASE_URL')
+    @classmethod
+    def convert_postgres_to_postgresql(cls, v: str) -> str:
+        """Convert postgres:// to postgresql:// for SQLAlchemy 2.0 compatibility.
+
+        Fly.io Postgres sets DATABASE_URL with postgres:// scheme,
+        but SQLAlchemy 2.0 requires postgresql:// scheme.
+        """
+        if v.startswith("postgres://"):
+            return v.replace("postgres://", "postgresql://", 1)
+        return v
 
     # Security
     SECRET_KEY: str = "dev-secret-key-change-in-production"
