@@ -7,9 +7,11 @@ WORKDIR /app
 
 # Install system dependencies needed for Python packages
 # - gcc: for building Python extensions (passlib, psycopg2)
+# - libpq-dev: PostgreSQL development libraries for psycopg2
 # - postgresql-client: for database connectivity
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
+    libpq-dev \
     postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 
