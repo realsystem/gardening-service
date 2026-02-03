@@ -13,9 +13,7 @@ from app.models.garden import Garden, GardenType
 from app.models.tree import Tree
 from app.models.planting_event import PlantingEvent, PlantingMethod
 from app.models.soil_sample import SoilSample
-from app.models.irrigation_source import IrrigationSource
-from app.models.irrigation_zone import IrrigationZone
-# WateringEvent and SensorReading models removed in platform simplification
+# IrrigationSource, IrrigationZone, WateringEvent and SensorReading models removed in platform simplification
 from app.models.plant_variety import PlantVariety, WaterRequirement, SunRequirement
 from app.schemas.export_import import (
     ExportData,
