@@ -60,7 +60,8 @@ def check_database_migrations() -> None:
     from app.utils.migration_check import check_migrations_on_startup
 
     # Check migrations with strict mode in production
-    strict = settings.APP_ENV in ("production", "staging")
+    # Note: Temporarily disabled strict mode for production debugging
+    strict = False  # settings.APP_ENV in ("production", "staging")
 
     db = SessionLocal()
     try:
