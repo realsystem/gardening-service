@@ -74,10 +74,7 @@
 }
 
 .lands-section {
-  position: sticky;
-  top: 0;
   background: #ffffff;
-  z-index: 100;
   padding-bottom: 20px;
   margin-bottom: 30px;
   border-bottom: 2px solid #e0e0e0;
