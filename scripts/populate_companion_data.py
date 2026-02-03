@@ -195,19 +195,15 @@ def populate_companion_relationships(db: Session):
 
     # Get all plant varieties for name lookups
     varieties = db.query(PlantVariety).all()
-    variety_map = {v.common_name.lower(): v.id for v in varieties}
 
-    def find_plant_id(plant_name: str) -> int | None:
-        """Find plant ID by exact match or prefix match (e.g., 'Tomato' matches 'Tomato - Cherry')."""
+    def find_all_varieties(plant_name: str) -> list[PlantVariety]:
+        """Find ALL varieties matching a common name."""
         plant_lower = plant_name.lower()
-        # Try exact match first
-        if plant_lower in variety_map:
-            return variety_map[plant_lower]
-        # Try prefix match (e.g., 'tomato' matches 'tomato - cherry')
-        for variety_name, variety_id in variety_map.items():
-            if variety_name.startswith(plant_lower + ' ') or variety_name.startswith(plant_lower + '-'):
-                return variety_id
-        return None
+        matching = [v for v in varieties if v.common_name.lower() == plant_lower]
+        if matching:
+            return matching
+        # No exact matches - could expand search if needed
+        return []
 
     added_count = 0
     skipped_count = 0
@@ -215,52 +211,59 @@ def populate_companion_relationships(db: Session):
     for (plant_a_name, plant_b_name, rel_type, mechanism, confidence,
          effective_dist, optimal_dist, source, notes) in COMPANION_DATA:
 
-        # Look up plant IDs with flexible matching
-        plant_a_id = find_plant_id(plant_a_name)
-        plant_b_id = find_plant_id(plant_b_name)
+        # Find ALL varieties for each common name
+        plant_a_varieties = find_all_varieties(plant_a_name)
+        plant_b_varieties = find_all_varieties(plant_b_name)
 
-        if not plant_a_id or not plant_b_id:
+        if not plant_a_varieties or not plant_b_varieties:
             print(f"⚠️  SKIPPED: {plant_a_name} + {plant_b_name} - Plant(s) not found in database")
             skipped_count += 1
             continue
 
-        # Normalize pair
-        norm_a, norm_b = normalize_plant_pair(plant_a_id, plant_b_id)
+        # Create relationships for ALL variety combinations
+        for var_a in plant_a_varieties:
+            for var_b in plant_b_varieties:
+                # Normalize pair
+                norm_a, norm_b = normalize_plant_pair(var_a.id, var_b.id)
 
-        # Check if relationship already exists
-        existing = db.query(CompanionRelationship).filter(
-            CompanionRelationship.plant_a_id == norm_a,
-            CompanionRelationship.plant_b_id == norm_b
-        ).first()
+                # Check if relationship already exists
+                existing = db.query(CompanionRelationship).filter(
+                    CompanionRelationship.plant_a_id == norm_a,
+                    CompanionRelationship.plant_b_id == norm_b
+                ).first()
 
-        if existing:
-            print(f"⏭️  EXISTS: {plant_a_name} + {plant_b_name}")
-            skipped_count += 1
-            continue
+                if existing:
+                    if len(plant_a_varieties) == 1 and len(plant_b_varieties) == 1:
+                        # Only print if this is the only combination
+                        print(f"⏭️  EXISTS: {plant_a_name} ({var_a.variety_name}) + {plant_b_name} ({var_b.variety_name})")
+                    skipped_count += 1
+                    continue
 
-        # Create relationship
-        relationship = CompanionRelationship(
-            plant_a_id=norm_a,
-            plant_b_id=norm_b,
-            relationship_type=rel_type,
-            mechanism=mechanism,
-            confidence_level=confidence,
-            effective_distance_m=effective_dist,
-            optimal_distance_m=optimal_dist,
-            source_reference=source,
-            notes=notes
-        )
+                # Create relationship
+                relationship = CompanionRelationship(
+                    plant_a_id=norm_a,
+                    plant_b_id=norm_b,
+                    relationship_type=rel_type,
+                    mechanism=mechanism,
+                    confidence_level=confidence,
+                    effective_distance_m=effective_dist,
+                    optimal_distance_m=optimal_dist,
+                    source_reference=source,
+                    notes=notes
+                )
 
-        db.add(relationship)
-        added_count += 1
+                db.add(relationship)
+                added_count += 1
 
-        # Display with appropriate icon
-        icon = "✅" if rel_type == RelationshipType.BENEFICIAL else "❌" if rel_type == RelationshipType.ANTAGONISTIC else "➖"
-        conf_label = f"[{confidence.value.upper()}]"
-        print(f"{icon} {plant_a_name} + {plant_b_name} ({rel_type.value}) {conf_label}")
-        print(f"   Mechanism: {mechanism[:100]}...")
-        print(f"   Source: {source[:80]}...")
-        print()
+                # Display with appropriate icon
+                icon = "✅" if rel_type == RelationshipType.BENEFICIAL else "❌" if rel_type == RelationshipType.ANTAGONISTIC else "➖"
+                conf_label = f"[{confidence.value.upper()}]"
+                variety_info = f"({var_a.variety_name}) + ({var_b.variety_name})" if len(plant_a_varieties) > 1 or len(plant_b_varieties) > 1 else ""
+                print(f"{icon} {plant_a_name} + {plant_b_name} {variety_info} ({rel_type.value}) {conf_label}")
+                if len(plant_a_varieties) == 1 and len(plant_b_varieties) == 1:
+                    print(f"   Mechanism: {mechanism[:100]}...")
+                    print(f"   Source: {source[:80]}...")
+                    print()
 
     db.commit()
 
