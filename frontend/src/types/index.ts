@@ -645,35 +645,6 @@ export interface IrrigationZoneUpdate {
   notes?: string;
 }
 
-export interface WateringEvent {
-  id: number;
-  user_id: number;
-  irrigation_zone_id: number;
-  watered_at: string;
-  duration_minutes: number;
-  estimated_volume_liters?: number;
-  is_manual: boolean;
-  notes?: string;
-  created_at: string;
-}
-
-export interface WateringEventCreate {
-  irrigation_zone_id: number;
-  watered_at: string;
-  duration_minutes: number;
-  estimated_volume_liters?: number;
-  is_manual?: boolean;
-  notes?: string;
-}
-
-export interface WateringEventUpdate {
-  watered_at?: string;
-  duration_minutes?: number;
-  estimated_volume_liters?: number;
-  is_manual?: boolean;
-  notes?: string;
-}
-
 export interface IrrigationInsight {
   rule_id: string;
   severity: 'info' | 'warning' | 'critical';
@@ -709,7 +680,6 @@ export interface IrrigationOverview {
     garden_count: number;
   }>;
   sources: IrrigationSource[];
-  recent_events: WateringEvent[];
   upcoming_waterings: UpcomingWatering[];
 }
 
@@ -724,7 +694,6 @@ export interface ZoneStatistics {
 export interface IrrigationZoneDetails {
   zone: IrrigationZone;
   gardens: Garden[];
-  recent_events: WateringEvent[];
   statistics: ZoneStatistics;
 }
 
@@ -754,7 +723,6 @@ export interface ExportData {
   soil_samples: any[];
   irrigation_sources: any[];
   irrigation_zones: any[];
-  watering_events: any[];
   sensor_readings: any[];
 }
 

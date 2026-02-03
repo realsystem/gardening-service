@@ -139,18 +139,6 @@ class ExportIrrigationZone(BaseModel):
     created_at: datetime
 
 
-class ExportWateringEvent(BaseModel):
-    """Watering event data for export"""
-    id: int
-    irrigation_zone_id: int
-    watered_at: str
-    duration_minutes: int
-    estimated_volume_liters: Optional[float] = None
-    is_manual: bool
-    notes: Optional[str] = None
-    created_at: datetime
-
-
 class ExportSensorReading(BaseModel):
     """Sensor reading data for export (optional - can be large)"""
     id: int
@@ -177,7 +165,6 @@ class ExportData(BaseModel):
     soil_samples: List[ExportSoilSample] = Field(default_factory=list)
     irrigation_sources: List[ExportIrrigationSource] = Field(default_factory=list)
     irrigation_zones: List[ExportIrrigationZone] = Field(default_factory=list)
-    watering_events: List[ExportWateringEvent] = Field(default_factory=list)
     sensor_readings: List[ExportSensorReading] = Field(default_factory=list)
 
 

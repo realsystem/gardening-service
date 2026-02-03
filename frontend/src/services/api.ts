@@ -33,9 +33,6 @@ import type {
   IrrigationZoneCreate,
   IrrigationZoneUpdate,
   IrrigationZoneDetails,
-  WateringEvent,
-  WateringEventCreate,
-  WateringEventUpdate,
   IrrigationOverview,
   IrrigationInsightsResponse,
   Tree,
@@ -565,42 +562,6 @@ class ApiClient {
 
   async getIrrigationZoneDetails(zoneId: number): Promise<IrrigationZoneDetails> {
     return this.request<IrrigationZoneDetails>(`/irrigation-system/zones/${zoneId}/details`);
-  }
-
-  // Watering Events
-  async createWateringEvent(data: WateringEventCreate): Promise<WateringEvent> {
-    return this.request<WateringEvent>('/irrigation-system/events', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  }
-
-  async getWateringEvents(zoneId?: number, days?: number): Promise<WateringEvent[]> {
-    const params = new URLSearchParams();
-    if (zoneId !== undefined) params.append('zone_id', zoneId.toString());
-    if (days !== undefined) params.append('days', days.toString());
-    const query = params.toString() ? `?${params.toString()}` : '';
-    return this.request<WateringEvent[]>(`/irrigation-system/events${query}`);
-  }
-
-  async getWateringEvent(eventId: number): Promise<WateringEvent> {
-    return this.request<WateringEvent>(`/irrigation-system/events/${eventId}`);
-  }
-
-  async updateWateringEvent(eventId: number, data: WateringEventUpdate): Promise<WateringEvent> {
-    return this.request<WateringEvent>(`/irrigation-system/events/${eventId}`, {
-      method: 'PATCH',
-      body: JSON.stringify(data),
-    });
-  }
-
-  async deleteWateringEvent(eventId: number): Promise<void> {
-    await fetch(`${API_BASE_URL}/irrigation-system/events/${eventId}`, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${this.token}`,
-      },
-    });
   }
 
   // High-level operations

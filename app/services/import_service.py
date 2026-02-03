@@ -63,9 +63,9 @@ class ImportService:
             "plantings": len(data.plantings),
             "soil_samples": len(data.soil_samples),
             "irrigation_sources": len(data.irrigation_sources),
-            "irrigation_zones": len(data.irrigation_zones),
-            "watering_events": len(data.watering_events)
+            "irrigation_zones": len(data.irrigation_zones)
             # sensor_readings removed in Phase 6 of platform simplification
+            # watering_events removed with watering event tracking
         }
 
         # Validate relationships
@@ -234,15 +234,6 @@ class ImportService:
             if zone.irrigation_source_id and zone.irrigation_source_id not in irrigation_source_ids:
                 warnings.append(f"Irrigation zone '{zone.name}' references non-existent source_id {zone.irrigation_source_id}")
 
-        # Check watering event -> zone references
-        for event in data.watering_events:
-            if event.irrigation_zone_id not in irrigation_zone_ids:
-                issues.append(ImportValidationIssue(
-                    severity="error",
-                    category="relationships",
-                    message=f"Watering event references non-existent zone_id {event.irrigation_zone_id}"
-                ))
-
     @staticmethod
     def _validate_data_types(data: ExportData, issues: List[ImportValidationIssue]):
         """Validate data types and required fields"""
@@ -274,9 +265,8 @@ class ImportService:
             db.query(PlantingEvent).filter(PlantingEvent.user_id == user.id).count() +
             db.query(SoilSample).filter(SoilSample.user_id == user.id).count() +
             db.query(IrrigationSource).filter(IrrigationSource.user_id == user.id).count() +
-            db.query(IrrigationZone).filter(IrrigationZone.user_id == user.id).count() +
-            db.query(WateringEvent).filter(WateringEvent.user_id == user.id).count() +
-            db.query(SensorReading).filter(SensorReading.user_id == user.id).count()
+            db.query(IrrigationZone).filter(IrrigationZone.user_id == user.id).count()
+            # WateringEvent and SensorReading removed in platform simplification
         )
         return counts
 
@@ -290,8 +280,7 @@ class ImportService:
         # Delete in correct order to respect foreign key constraints
         # Count deletions
         count = 0
-        count += db.query(WateringEvent).filter(WateringEvent.user_id == user.id).delete()
-        count += db.query(SensorReading).filter(SensorReading.user_id == user.id).delete()
+        # WateringEvent and SensorReading removed in platform simplification
         count += db.query(SoilSample).filter(SoilSample.user_id == user.id).delete()
         count += db.query(PlantingEvent).filter(PlantingEvent.user_id == user.id).delete()
         count += db.query(Tree).filter(Tree.user_id == user.id).delete()
@@ -479,19 +468,7 @@ class ImportService:
             )
             db.add(new_sample)
 
-        # Import watering events
-        for event_data in data.watering_events:
-            new_event = WateringEvent(
-                user_id=user.id,
-                irrigation_zone_id=irrigation_zone_id_map[event_data.irrigation_zone_id],
-                watered_at=datetime.fromisoformat(event_data.watered_at),
-                duration_minutes=event_data.duration_minutes,
-                estimated_volume_liters=event_data.estimated_volume_liters,
-                is_manual=event_data.is_manual,
-                notes=event_data.notes
-            )
-            db.add(new_event)
-
+        # Watering event import removed with watering event tracking feature
         # Sensor reading import removed in Phase 6 of platform simplification
 
         return id_mapping
