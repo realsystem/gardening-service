@@ -293,6 +293,23 @@
   opacity: 0.6;
 }
 
+.tree-name-label {
+  position: absolute;
+  color: #2d5016;
+  font-weight: 600;
+  font-size: 0.75em;
+  text-align: center;
+  padding: 2px 6px;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(34, 139, 34, 0.3);
+  border-radius: 4px;
+  white-space: nowrap;
+  transform: translateX(-50%); /* Center horizontally */
+  pointer-events: none;
+  z-index: 51; /* Above trunk marker */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
 /* Structure Rendering */
 .structure-rect {
   position: absolute;

@@ -683,9 +683,7 @@ export function LandCanvas({ land, gardens, trees = [], structures = [], onUpdat
                     height: `${canopyDiameter}px`,
                   }}
                   title={`${tree.name} (canopy: ${convertDistance(tree.canopy_radius, unitSystem).toFixed(1)} ${unitLabels.distanceShort})`}
-                >
-                  <span className="tree-label">{tree.name}</span>
-                </div>
+                />
                 {/* Tree trunk marker */}
                 <div
                   className="tree-trunk"
@@ -696,6 +694,16 @@ export function LandCanvas({ land, gardens, trees = [], structures = [], onUpdat
                   onMouseDown={(e) => handleTreeMouseDown(e, tree)}
                   title={`Drag to move ${tree.name}`}
                 />
+                {/* Tree name label (below trunk) */}
+                <div
+                  className="tree-name-label"
+                  style={{
+                    left: `${centerX}px`,
+                    top: `${centerY + 10}px`,
+                  }}
+                >
+                  {tree.name}
+                </div>
               </div>
             );
           })}
