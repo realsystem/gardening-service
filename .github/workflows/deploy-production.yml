@@ -1,0 +1,135 @@
+name: Deploy to Production (Fly.io)
+
+on:
+  # Manual trigger
+  workflow_dispatch:
+    inputs:
+      deploy_frontend:
+        description: 'Deploy frontend (yes/no)'
+        required: false
+        default: 'yes'
+      deploy_api:
+        description: 'Deploy API (yes/no)'
+        required: false
+        default: 'yes'
+
+  # Automatic on push to main
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'docs/**'
+      - '**.md'
+      - '.gitignore'
+
+jobs:
+  deploy-api:
+    name: Deploy API to Fly.io
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.deploy_api != 'no' }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Fly CLI
+        uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Deploy API
+        run: |
+          echo "🚀 Deploying API to Fly.io..."
+          flyctl deploy --app gardening-service-api --remote-only
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+
+      - name: Verify API Health
+        run: |
+          echo "⏳ Waiting for API to be ready..."
+          sleep 10
+
+          echo "🔍 Checking API health..."
+          HEALTH_CHECK=$(curl -s https://gardening-service-api.fly.dev/health || echo "failed")
+
+          if echo "$HEALTH_CHECK" | grep -q "healthy"; then
+            echo "✅ API is healthy!"
+            echo "$HEALTH_CHECK"
+          else
+            echo "❌ API health check failed!"
+            echo "$HEALTH_CHECK"
+            exit 1
+          fi
+
+      - name: Check API logs (if failed)
+        if: failure()
+        run: flyctl logs --app gardening-service-api
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+
+  deploy-frontend:
+    name: Deploy Frontend to Fly.io
+    runs-on: ubuntu-latest
+    needs: deploy-api
+    if: ${{ always() && github.event.inputs.deploy_frontend != 'no' }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Fly CLI
+        uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Deploy Frontend
+        run: |
+          echo "🚀 Deploying Frontend to Fly.io..."
+          cd frontend
+          flyctl deploy --app gardening-service-ui --remote-only
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+
+      - name: Verify Frontend
+        run: |
+          echo "⏳ Waiting for Frontend to be ready..."
+          sleep 5
+
+          echo "🔍 Checking Frontend..."
+          FRONTEND_CHECK=$(curl -s https://gardening-service-ui.fly.dev || echo "failed")
+
+          if echo "$FRONTEND_CHECK" | grep -q "<title>"; then
+            echo "✅ Frontend is serving!"
+          else
+            echo "❌ Frontend check failed!"
+            echo "$FRONTEND_CHECK"
+            exit 1
+          fi
+
+      - name: Check Frontend logs (if failed)
+        if: failure()
+        run: flyctl logs --app gardening-service-ui
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+
+  smoke-tests:
+    name: Run Smoke Tests
+    runs-on: ubuntu-latest
+    needs: [deploy-api, deploy-frontend]
+    if: success()
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Run smoke tests
+        run: |
+          echo "🧪 Running smoke tests..."
+          chmod +x ./scripts/smoke-test.sh
+          ./scripts/smoke-test.sh https://gardening-service-api.fly.dev || true
+
+      - name: Deployment summary
+        run: |
+          echo "✅ Deployment Complete!"
+          echo ""
+          echo "📍 Application URLs:"
+          echo "   API:      https://gardening-service-api.fly.dev"
+          echo "   Docs:     https://gardening-service-api.fly.dev/docs"
+          echo "   Frontend: https://gardening-service-ui.fly.dev"
+          echo ""
+          echo "📊 Metrics:  https://gardening-service-api.fly.dev/metrics"

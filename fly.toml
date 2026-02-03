@@ -1,23 +1,48 @@
-# Fly.io deployment configuration for Gardening Helper Service
-# This file is created during `fly launch` and configures the deployment
+# Fly.io deployment configuration for Gardening Service API
+# Documentation: https://fly.io/docs/reference/configuration/
+# Production-ready configuration with migrations, health checks, and resource limits
 
-# Application name (will be set during fly launch)
-app = ""
+# Application name (set during `fly launch` or manually before first deploy)
+app = "gardening-service-api"
 
-# Assign to prevent using a custom domain
-primary_region = "lax"  # Los Angeles - change to nearest region
+# Primary region - deploy closest to your users
+# Options: sjc (San Jose), lax (LA), ord (Chicago), iad (Virginia), lhr (London)
+primary_region = "sjc"
 
-# Build configuration - uses Dockerfile
+# Automatically stop/start machines to save costs
+# When receiving traffic, machines will start within ~1-2 seconds
+auto_stop_machines = true
+auto_start_machines = true
+min_machines_running = 0  # Scale to zero when idle
+
+# Graceful shutdown configuration
+kill_signal = "SIGINT"  # uvicorn handles SIGINT gracefully
+kill_timeout = "5s"
+
+# Build configuration
 [build]
+  # Uses Dockerfile in project root
+  # No additional build args needed - all config via environment
 
-# Environment variables (non-secret)
+# Environment variables (non-secret configuration)
 [env]
-  APP_NAME = "Gardening Helper Service"
   APP_ENV = "production"
-  DEBUG = "False"
+  APP_NAME = "Gardening Helper Service"
+  PORT = "8080"
+  DEBUG = "false"
   ALGORITHM = "HS256"
   ACCESS_TOKEN_EXPIRE_MINUTES = "10080"  # 7 days
-  PORT = "8080"
+
+  # Feature flags - production defaults
+  FEATURE_RULE_ENGINE_ENABLED = "true"
+  FEATURE_COMPLIANCE_ENFORCEMENT_ENABLED = "true"
+  FEATURE_OPTIMIZATION_ENGINES_ENABLED = "true"
+
+# Release command - runs database migrations BEFORE deploying new instances
+# Critical: Ensures schema is up-to-date before code changes are deployed
+[deploy]
+  release_command = "alembic upgrade head"
+  strategy = "rolling"  # Deploy one instance at a time to maintain availability
 
 # HTTP service configuration
 [http_service]
@@ -25,21 +50,42 @@ primary_region = "lax"  # Los Angeles - change to nearest region
   force_https = true
   auto_stop_machines = true
   auto_start_machines = true
-  min_machines_running = 0  # Scale to zero when idle (free tier optimization)
+  min_machines_running = 0
   processes = ["app"]
 
-  # Health check configuration
-  [http_service.checks]
-    [http_service.checks.alive]
-      type = "http"
-      path = "/health"
-      interval = "30s"
-      timeout = "5s"
-      grace_period = "10s"
+  # Concurrency limits (connections per machine)
+  [http_service.concurrency]
+    type = "connections"
+    hard_limit = 25
+    soft_limit = 20
 
-# VM resource allocation
-# Keep minimal for cost optimization
-[[vm]]
+  # Health check configuration
+  # Fly.io probes these endpoints to determine app health
+  [[http_service.checks]]
+    type = "http"
+    method = "get"
+    path = "/health"
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "10s"  # Time to wait after deploy before failing checks
+
+# VM resources
+# 512MB minimum for FastAPI + SQLAlchemy + Postgres connections
+# shared-cpu-1x: ~$1.94/month if running 24/7 (or ~$0 with auto-stop)
+[vm]
   cpu_kind = "shared"
   cpus = 1
-  memory_mb = 256  # Minimum viable - increase to 512 if experiencing issues
+  memory_mb = 512
+
+# Metrics endpoint (Prometheus format)
+# Free tier: 10M series, 13-month retention
+[metrics]
+  port = 8080
+  path = "/metrics"
+
+# Secrets (set via `fly secrets set NAME=value`)
+# Required secrets (do NOT commit these to git):
+#   - DATABASE_URL: Auto-set when attaching Fly Postgres via `fly postgres attach`
+#   - SECRET_KEY: JWT signing key (generate with: openssl rand -hex 32)
+# Optional secrets:
+#   - ADMIN_BOOTSTRAP_EMAIL: Email for initial admin user
