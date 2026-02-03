@@ -208,9 +208,21 @@ if [ "$AUTO_MODE" = false ]; then
 fi
 
 echo ""
-echo "=== Step 7: Deploying Application ==="
+echo "=== Step 7: Building Docker Image Locally ==="
 
-if flyctl deploy --app "$APP_NAME"; then
+# Build Docker image locally to avoid PyPI network issues
+if docker build -t gardening-service:latest . ; then
+    echo -e "${GREEN}✓ Docker image built successfully${NC}"
+else
+    echo -e "${RED}✗ Failed to build Docker image${NC}"
+    exit 1
+fi
+
+echo ""
+echo "=== Step 8: Deploying Application ==="
+
+# Deploy using local image (bypasses remote builder and PyPI issues)
+if flyctl deploy --app "$APP_NAME" --local-only; then
     echo ""
     echo -e "${GREEN}╔═══════════════════════════════════════════════════════╗${NC}"
     echo -e "${GREEN}║           DEPLOYMENT SUCCESSFUL! 🚀                   ║${NC}"
@@ -230,7 +242,7 @@ if flyctl deploy --app "$APP_NAME"; then
     echo ""
 
     # Test health endpoint
-    echo "=== Step 8: Health Check ==="
+    echo "=== Step 9: Health Check ==="
     echo -n "Testing health endpoint... "
     sleep 5  # Wait for app to start
 
