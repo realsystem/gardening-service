@@ -105,8 +105,7 @@ class TestPhase1ForeignKeys:
         garden = Garden(
             user_id=test_user.id,
             name="Test Garden",
-            garden_type="outdoor",
-            size_sq_ft=100
+            garden_type="outdoor"
         )
         db.add(garden)
         db.commit()
@@ -119,30 +118,7 @@ class TestPhase1ForeignKeys:
         # Garden should be gone
         assert db.query(Garden).filter_by(id=garden_id).first() is None
 
-    def test_sensor_reading_unique_per_day(self, db, test_user, test_garden):
-        """Test that only one sensor reading per garden per day is allowed"""
-        reading1 = SensorReading(
-            user_id=test_user.id,
-            garden_id=test_garden.id,
-            reading_date=date.today(),
-            temperature_f=70.0
-        )
-        db.add(reading1)
-        db.commit()
-
-        # Try to add another reading for the same garden on the same day
-        with pytest.raises(IntegrityError) as exc_info:
-            reading2 = SensorReading(
-                user_id=test_user.id,
-                garden_id=test_garden.id,
-                reading_date=date.today(),  # Same date
-                temperature_f=71.0
-            )
-            db.add(reading2)
-            db.commit()
-
-        assert "unique" in str(exc_info.value).lower()
-        db.rollback()
+    # test_sensor_reading_unique_per_day removed - SensorReading model deleted in Phase 6
 
 
 @pytest.mark.database_constraints
@@ -321,8 +297,7 @@ class TestPhase2UniqueConstraints:
             user_id=test_user.id,
             name="My Garden",
             garden_type="outdoor",
-            size_sq_ft=100
-        )
+                    )
         db.add(garden1)
         db.commit()
 
@@ -331,8 +306,7 @@ class TestPhase2UniqueConstraints:
                 user_id=test_user.id,
                 name="my garden",  # Case-insensitive duplicate
                 garden_type="indoor",
-                size_sq_ft=50
-            )
+                            )
             db.add(garden2)
             db.commit()
 
@@ -379,7 +353,6 @@ class TestPhase3RangeConstraints:
                 user_id=test_user.id,
                 name="Test Garden",
                 garden_type="outdoor",
-                size_sq_ft=100,
                 ph_min=15.0,  # Invalid: pH > 14
                 ph_max=16.0
             )
@@ -389,8 +362,10 @@ class TestPhase3RangeConstraints:
         assert "check_garden_ph_range" in str(exc_info.value).lower()
         db.rollback()
 
-    def test_sensor_reading_humidity_percentage_enforced(self, db, test_user, test_garden):
-        """Test that humidity must be between 0 and 100"""
+    # test_sensor_reading_humidity_percentage_enforced removed - SensorReading model deleted in Phase 6
+
+    def _test_sensor_reading_humidity_percentage_enforced(self, db, test_user, test_garden):
+        """DISABLED: Test that humidity must be between 0 and 100 - SensorReading removed"""
         with pytest.raises(IntegrityError) as exc_info:
             reading = SensorReading(
                 user_id=test_user.id,
@@ -423,20 +398,11 @@ class TestPhase3RangeConstraints:
 class TestPhase3PositiveConstraints:
     """Test Phase 3: Positive value CHECK constraints"""
 
-    def test_garden_size_positive_enforced(self, db, test_user):
-        """Test that garden size must be > 0"""
-        with pytest.raises(IntegrityError) as exc_info:
-            garden = Garden(
-                user_id=test_user.id,
-                name="Test Garden",
-                garden_type="outdoor",
-                size_sq_ft=0  # Must be > 0
-            )
-            db.add(garden)
-            db.commit()
+    # test_garden_size_positive_enforced removed - size_sq_ft field no longer exists on Garden model
 
-        assert "check_garden_size_positive" in str(exc_info.value).lower()
-        db.rollback()
+    def _test_garden_size_positive_enforced(self, db, test_user):
+        """DISABLED: Test that garden size must be > 0 - size_sq_ft field removed"""
+        pass
 
     def test_planting_event_plant_count_positive_enforced(self, db, test_user, test_garden, test_plant_variety):
         """Test that plant_count must be > 0"""
@@ -483,8 +449,7 @@ class TestPhase3ConditionalConstraints:
                 user_id=test_user.id,
                 name="Test Hydro Garden",
                 garden_type="indoor",
-                size_sq_ft=100,
-                is_hydroponic=True,
+                                is_hydroponic=True,
                 hydro_system_type=None  # Required when is_hydroponic=True
             )
             db.add(garden)
@@ -556,8 +521,7 @@ def test_garden(db, test_user):
         user_id=test_user.id,
         name="Test Garden",
         garden_type="outdoor",
-        size_sq_ft=100
-    )
+            )
     db.add(garden)
     db.commit()
     return garden

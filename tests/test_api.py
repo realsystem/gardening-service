@@ -418,68 +418,7 @@ class TestPlantingEventEndpoints:
         assert response.status_code == 404
 
 
-class TestSensorReadingEndpoints:
-    """Test sensor reading endpoints"""
-
-    def test_create_indoor_sensor_reading(self, client, sample_user, indoor_garden, user_token):
-        """Test creating an indoor sensor reading"""
-        response = client.post(
-            "/sensor-readings/",
-            headers={"Authorization": f"Bearer {user_token}"},
-            json={
-                "garden_id": indoor_garden.id,
-                "reading_date": str(date.today()),
-                "temperature_f": 72.0,
-                "humidity_percent": 58.0,
-                "light_hours": 16.0
-            }
-        )
-        assert response.status_code == 201
-        data = response.json()
-        assert data["temperature_f"] == 72.0
-        assert data["humidity_percent"] == 58.0
-
-    def test_create_hydroponic_sensor_reading(self, client, sample_user, hydroponic_garden, user_token):
-        """Test creating a hydroponic sensor reading"""
-        response = client.post(
-            "/sensor-readings/",
-            headers={"Authorization": f"Bearer {user_token}"},
-            json={
-                "garden_id": hydroponic_garden.id,
-                "reading_date": str(date.today()),
-                "temperature_f": 70.0,
-                "humidity_percent": 60.0,
-                "light_hours": 18.0,
-                "ph_level": 6.2,
-                "ec_ms_cm": 1.6,
-                "ppm": 1120,
-                "water_temp_f": 68.0
-            }
-        )
-        assert response.status_code == 201
-        data = response.json()
-        assert data["ph_level"] == 6.2
-        assert data["ec_ms_cm"] == 1.6
-        assert data["ppm"] == 1120
-
-    def test_get_user_sensor_readings(self, client, sample_user, indoor_sensor_reading, user_token):
-        """Test getting user's sensor readings"""
-        response = client.get(
-            "/sensor-readings/",
-            headers={"Authorization": f"Bearer {user_token}"}
-        )
-        assert response.status_code == 200
-        data = response.json()
-        assert len(data) >= 1
-
-    def test_delete_sensor_reading(self, client, sample_user, indoor_sensor_reading, user_token):
-        """Test deleting a sensor reading"""
-        reading_id = indoor_sensor_reading.id
-        response = client.delete(
-            f"/sensor-readings/{reading_id}",
-            headers={"Authorization": f"Bearer {user_token}"}
-        )
-        assert response.status_code == 204
+# TestSensorReadingEndpoints removed - SensorReading model and API endpoints deleted in Phase 6
 
 
 class TestCareTaskEndpoints:
@@ -686,69 +625,7 @@ class TestPlantingEventDeletion:
         assert response.status_code == 403
 
 
-class TestGardenSensorReadings:
-    """Test garden sensor readings endpoint"""
-
-    def test_get_garden_sensor_readings_success(self, client, sample_user, hydroponic_garden, user_token, test_db):
-        """Test getting sensor readings for a specific garden"""
-        # Create sensor readings
-        from app.models.sensor_reading import SensorReading
-        reading1 = SensorReading(
-            user_id=sample_user.id,
-            garden_id=hydroponic_garden.id,
-            reading_date=date.today(),
-            temperature_f=72.0,
-            humidity_percent=60.0,
-            ph_level=6.5
-        )
-        reading2 = SensorReading(
-            user_id=sample_user.id,
-            garden_id=hydroponic_garden.id,
-            reading_date=date.today() - timedelta(days=1),
-            temperature_f=70.0,
-            humidity_percent=55.0,
-            ph_level=6.3
-        )
-        test_db.add_all([reading1, reading2])
-        test_db.commit()
-
-        response = client.get(
-            f"/gardens/{hydroponic_garden.id}/sensor-readings",
-            headers={"Authorization": f"Bearer {user_token}"}
-        )
-        assert response.status_code == 200
-        data = response.json()
-        assert len(data) == 2
-        assert data[0]["temperature_f"] == 72.0 or data[1]["temperature_f"] == 72.0
-
-    def test_get_garden_sensor_readings_empty(self, client, sample_user, outdoor_garden, user_token):
-        """Test getting sensor readings for garden with no readings"""
-        response = client.get(
-            f"/gardens/{outdoor_garden.id}/sensor-readings",
-            headers={"Authorization": f"Bearer {user_token}"}
-        )
-        assert response.status_code == 200
-        data = response.json()
-        assert len(data) == 0
-
-    def test_get_garden_sensor_readings_unauthorized(self, client, sample_user, second_user, hydroponic_garden):
-        """Test that user cannot access another user's garden sensor readings"""
-        from app.services.auth_service import AuthService
-        second_token = AuthService.create_access_token(second_user.id, second_user.email)
-
-        response = client.get(
-            f"/gardens/{hydroponic_garden.id}/sensor-readings",
-            headers={"Authorization": f"Bearer {second_token}"}
-        )
-        assert response.status_code == 403
-
-    def test_get_sensor_readings_nonexistent_garden(self, client, user_token):
-        """Test getting sensor readings for non-existent garden"""
-        response = client.get(
-            "/gardens/99999/sensor-readings",
-            headers={"Authorization": f"Bearer {user_token}"}
-        )
-        assert response.status_code == 404
+# TestGardenSensorReadings removed - SensorReading model and API endpoints deleted in Phase 6
 
 
 class TestGardenDeletionCascade:
