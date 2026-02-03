@@ -292,7 +292,6 @@ export function Dashboard({ user: initialUser, onLogout, onUserUpdate }: Dashboa
           ) : viewMode === 'garden-details' && selectedGardenId ? (
             <GardenDetails
               gardenId={selectedGardenId}
-              onBack={() => setViewMode('dashboard')}
             />
           ) : viewMode === 'plantings' ? (
             <PlantingsList />
