@@ -249,6 +249,34 @@ if flyctl deploy --app "$APP_NAME" --local-only; then
     if curl -s "https://$APP_NAME.fly.dev/health" | grep -q "healthy"; then
         echo -e "${GREEN}✓ API is healthy!${NC}"
         echo ""
+
+        # Load plant catalog
+        echo "=== Step 10: Plant Catalog Loading ==="
+        echo -n "Checking catalog... "
+
+        # Get variety count from API
+        VARIETY_COUNT=$(curl -s "https://$APP_NAME.fly.dev/api/plant-varieties" | grep -o '"id"' | wc -l | tr -d ' ')
+
+        if [ "$VARIETY_COUNT" -ge 200 ]; then
+            echo -e "${GREEN}✓ Catalog already loaded ($VARIETY_COUNT varieties)${NC}"
+        else
+            echo -e "${YELLOW}⚠ Catalog needs loading (found $VARIETY_COUNT varieties)${NC}"
+            echo "Loading plant catalog from CSV files..."
+
+            if flyctl ssh console --app "$APP_NAME" --command "python -m seed_data.load_catalog_csv"; then
+                echo -e "${GREEN}✓ Catalog loaded successfully${NC}"
+
+                # Verify the load
+                NEW_COUNT=$(curl -s "https://$APP_NAME.fly.dev/api/plant-varieties" | grep -o '"id"' | wc -l | tr -d ' ')
+                echo "  Loaded $NEW_COUNT plant varieties"
+            else
+                echo -e "${RED}✗ Failed to load catalog${NC}"
+                echo "  You may need to load it manually:"
+                echo "  flyctl ssh console --app $APP_NAME --command \"python -m seed_data.load_catalog_csv\""
+            fi
+        fi
+        echo ""
+
         echo -e "${GREEN}Next steps:${NC}"
         echo "  1. Deploy frontend: ./scripts/deploy-frontend.sh"
         echo "  2. Run smoke tests: ./scripts/smoke-test.sh https://$APP_NAME.fly.dev"
