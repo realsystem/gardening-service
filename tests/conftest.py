@@ -360,10 +360,10 @@ def sample_care_task(test_db, sample_user, outdoor_planting_event):
     task = CareTask(
         user_id=sample_user.id,
         planting_event_id=outdoor_planting_event.id,
-        task_type=TaskType.WATER,
+        task_type=TaskType.HARVEST,
         task_source=TaskSource.AUTO_GENERATED,
-        title="Water Tomato - Beefsteak",
-        description="Water plants in Bed 1, Row 2",
+        title="Harvest Tomato - Beefsteak",
+        description="Harvest plants in Bed 1, Row 2",
         priority=TaskPriority.MEDIUM,
         due_date=date.today(),
         is_recurring=False,
