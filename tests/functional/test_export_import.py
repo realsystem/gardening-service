@@ -35,7 +35,7 @@ class TestExportEndpoint:
         assert "soil_samples" in data
         assert "irrigation_sources" in data
         assert "irrigation_zones" in data
-        assert "watering_events" in data
+        # watering_events removed with watering event tracking feature
         assert "sensor_readings" in data
 
         # Verify metadata
@@ -133,7 +133,6 @@ class TestImportPreview:
                 "soil_samples": [],
                 "irrigation_sources": [],
                 "irrigation_zones": [],
-                "watering_events": [],
                 "sensor_readings": []
             }
         )
@@ -155,7 +154,6 @@ class TestImportPreview:
             "soil_samples": [],
             "irrigation_sources": [],
             "irrigation_zones": [],
-            "watering_events": [],
             "sensor_readings": []
         }
 
@@ -199,7 +197,6 @@ class TestImportPreview:
             "soil_samples": [],
             "irrigation_sources": [],
             "irrigation_zones": [],
-            "watering_events": [],
             "sensor_readings": []
         }
 
@@ -230,7 +227,6 @@ class TestImportPreview:
             "soil_samples": [],
             "irrigation_sources": [],
             "irrigation_zones": [],
-            "watering_events": [],
             "sensor_readings": []
         }
 
@@ -270,7 +266,6 @@ class TestImportPreview:
             "soil_samples": [],
             "irrigation_sources": [],
             "irrigation_zones": [],
-            "watering_events": [],
             "sensor_readings": []
         }
 
@@ -309,8 +304,7 @@ class TestImportEndpoint:
                     "soil_samples": [],
                     "irrigation_sources": [],
                     "irrigation_zones": [],
-                    "watering_events": [],
-                    "sensor_readings": []
+                        "sensor_readings": []
                 }
             }
         )
@@ -348,7 +342,6 @@ class TestImportEndpoint:
                 "soil_samples": [],
                 "irrigation_sources": [],
                 "irrigation_zones": [],
-                "watering_events": [],
                 "sensor_readings": []
             }
         }
@@ -392,7 +385,6 @@ class TestImportEndpoint:
                 "soil_samples": [],
                 "irrigation_sources": [],
                 "irrigation_zones": [],
-                "watering_events": [],
                 "sensor_readings": []
             }
         }
@@ -445,7 +437,6 @@ class TestImportEndpoint:
                 "soil_samples": [],
                 "irrigation_sources": [],
                 "irrigation_zones": [],
-                "watering_events": [],
                 "sensor_readings": []
             }
         }
@@ -494,7 +485,6 @@ class TestImportEndpoint:
                 "soil_samples": [],
                 "irrigation_sources": [],
                 "irrigation_zones": [],
-                "watering_events": [],
                 "sensor_readings": []
             }
         }
@@ -559,7 +549,6 @@ class TestImportEndpoint:
                 "soil_samples": [],
                 "irrigation_sources": [],
                 "irrigation_zones": [],
-                "watering_events": [],
                 "sensor_readings": []
             }
         }
@@ -610,7 +599,6 @@ class TestImportEndpoint:
                 "soil_samples": [],
                 "irrigation_sources": [],
                 "irrigation_zones": [],
-                "watering_events": [],
                 "sensor_readings": []
             }
         }
