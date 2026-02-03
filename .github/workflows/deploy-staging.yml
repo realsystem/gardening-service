@@ -1,0 +1,39 @@
+name: Deploy to Staging (Fly.io)
+
+on:
+  # Manual trigger
+  workflow_dispatch:
+
+  # Automatic on push to develop branch
+  push:
+    branches: [develop]
+    paths-ignore:
+      - 'docs/**'
+      - '**.md'
+      - '.gitignore'
+
+jobs:
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Fly CLI
+        uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Deploy API to Staging
+        run: |
+          echo "🚀 Deploying API to staging..."
+          # If you have a staging app, use: flyctl deploy --app gardening-service-api-staging
+          flyctl deploy --app gardening-service-api --remote-only
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "❌ Staging deployment failed!"
+          echo "Check logs at: https://fly.io/dashboard"

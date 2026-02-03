@@ -1,15 +1,32 @@
 # Fly.io configuration for Frontend UI
 # Deploy as separate app from backend
+# Documentation: https://fly.io/docs/reference/configuration/
 
-app = ""
-primary_region = "lax"
+app = "gardening-service-ui"
+primary_region = "sjc"  # Match backend region for low latency
 
+# Automatically stop/start machines to save costs
+auto_stop_machines = true
+auto_start_machines = true
+min_machines_running = 0
+
+# Graceful shutdown
+kill_signal = "SIGTERM"
+kill_timeout = "5s"
+
+# Build configuration
 [build]
+  # Build arg for Vite - CRITICAL: Must be set BEFORE building
+  # This gets baked into the static bundle, not used at runtime
+  [build.args]
+    VITE_API_URL = "https://gardening-service-api.fly.dev"
 
+# NOTE: Frontend is a static build (nginx serving files)
+# No environment variables are used at runtime - all config is build-time
 [env]
-  # Will be overridden at runtime with actual backend URL
-  VITE_API_URL = "https://your-backend-app.fly.dev"
+  # Empty - static assets don't use env vars
 
+# HTTP service configuration
 [http_service]
   internal_port = 3000
   force_https = true
@@ -17,15 +34,27 @@ primary_region = "lax"
   auto_start_machines = true
   min_machines_running = 0
 
-  [http_service.checks]
-    [http_service.checks.alive]
-      type = "http"
-      path = "/"
-      interval = "30s"
-      timeout = "5s"
-      grace_period = "10s"
+  # Concurrency limits for nginx
+  [http_service.concurrency]
+    type = "connections"
+    hard_limit = 100
+    soft_limit = 80
 
-[[vm]]
+  # Health check - nginx should respond to any path
+  [[http_service.checks]]
+    type = "http"
+    method = "get"
+    path = "/"
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "5s"  # nginx starts fast
+
+# VM resources - minimal for static file serving
+# 256MB is plenty for nginx serving static files
+[vm]
   cpu_kind = "shared"
   cpus = 1
   memory_mb = 256
+
+# Note: No metrics endpoint for static frontend
+# Note: No secrets needed for static frontend
