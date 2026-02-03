@@ -61,6 +61,18 @@ export function LandList() {
     }
   };
 
+  const handleToggleLand = (landId: number) => {
+    if (selectedLand?.id === landId) {
+      // Close the currently selected land
+      setSelectedLand(null);
+      setLandTrees([]);
+      setLandStructures([]);
+    } else {
+      // Open the new land
+      handleSelectLand(landId);
+    }
+  };
+
   const handleDeleteLand = async (landId: number) => {
     if (!confirm('Are you sure you want to delete this land? Gardens will be removed from layout but not deleted.')) {
       return;
@@ -141,7 +153,7 @@ export function LandList() {
                 style={selectedLand?.id === land.id
                   ? { backgroundColor: '#3498db', color: 'white' }
                   : { backgroundColor: 'white', color: '#3498db' }}
-                onClick={() => handleSelectLand(land.id)}
+                onClick={() => handleToggleLand(land.id)}
               >
                 {selectedLand?.id === land.id ? 'Viewing' : 'View Layout'}
               </button>
