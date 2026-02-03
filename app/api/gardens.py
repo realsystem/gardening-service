@@ -1,8 +1,11 @@
 """Garden API endpoints"""
+import logging
 from typing import List
 from datetime import date, timedelta
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+
+logger = logging.getLogger(__name__)
 
 from app.database import get_db
 from app.schemas.garden import GardenCreate, GardenUpdate, GardenResponse
@@ -32,6 +35,7 @@ from app.services.layout_service import (
 from app.utils.grid_config import GRID_RESOLUTION
 from app.compliance.service import get_compliance_service
 from app.utils.feature_gating import is_feature_enabled, require_user_group
+from app.rules.task_generator import TaskGenerator
 
 router = APIRouter(prefix="/gardens", tags=["gardens"])
 
@@ -689,3 +693,81 @@ def get_nutrient_optimization(
         ],
         generated_at=result.generated_at
     )
+
+
+@router.post("/{garden_id}/generate-tasks", status_code=status.HTTP_200_OK)
+def generate_garden_tasks(
+    garden_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Generate auto tasks for all plantings in this garden.
+
+    This endpoint triggers the rule-based task generation system for all plantings
+    in the garden. It will create tasks such as:
+    - Harvest tasks (based on days_to_harvest)
+    - Watering tasks (recurring, based on water_requirement)
+    - Nutrient tasks (for hydroponic gardens)
+    - Light schedule tasks (for indoor gardens)
+
+    Returns a summary of tasks created.
+    """
+    # Verify garden exists and user owns it
+    repo = GardenRepository(db)
+    garden = repo.get_by_id(garden_id)
+
+    if not garden:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Garden not found"
+        )
+
+    if garden.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to access this garden"
+        )
+
+    # Get all plantings for this garden
+    plantings = db.query(PlantingEvent).filter(
+        PlantingEvent.garden_id == garden_id
+    ).all()
+
+    if not plantings:
+        return {
+            "garden_id": garden_id,
+            "garden_name": garden.name,
+            "plantings_processed": 0,
+            "tasks_created": 0,
+            "message": "No plantings found in this garden"
+        }
+
+    # Generate tasks for each planting
+    task_generator = TaskGenerator()
+    total_tasks_created = 0
+    tasks_by_type = {}
+
+    for planting in plantings:
+        try:
+            tasks = task_generator.generate_tasks_for_planting(db, planting, current_user.id)
+            total_tasks_created += len(tasks)
+
+            # Count by type for summary
+            for task in tasks:
+                task_type = task.task_type.value
+                tasks_by_type[task_type] = tasks_by_type.get(task_type, 0) + 1
+
+        except Exception as e:
+            # Log error but continue processing other plantings
+            logger.error(f"Failed to generate tasks for planting {planting.id}: {e}")
+            continue
+
+    return {
+        "garden_id": garden_id,
+        "garden_name": garden.name,
+        "plantings_processed": len(plantings),
+        "tasks_created": total_tasks_created,
+        "tasks_by_type": tasks_by_type,
+        "message": f"Successfully generated {total_tasks_created} tasks for {len(plantings)} plantings"
+    }

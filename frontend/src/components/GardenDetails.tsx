@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import type { GardenDetails as GardenDetailsType, GardenShadingInfo } from '../types';
-import { GardenSensorReadings } from './GardenSensorReadings';
 import { CompanionPlantingInsights } from './CompanionPlantingInsights';
 import { NutrientOptimizationPanel } from './NutrientOptimizationPanel';
 
@@ -317,9 +316,6 @@ export function GardenDetails({ gardenId }: GardenDetailsProps) {
           </div>
         )}
       </div>
-
-      {/* Sensor Readings Section */}
-      <GardenSensorReadings gardenId={gardenId} />
     </div>
   );
 }
