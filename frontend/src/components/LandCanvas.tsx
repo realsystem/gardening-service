@@ -221,19 +221,11 @@ export function LandCanvas({ land, gardens, trees = [], structures = [], onUpdat
           x: snappedX,
           y: snappedY,
         });
-        // Update local state optimistically
-        tree.x = snappedX;
-        tree.y = snappedY;
         setErrorMessage('');
-        // Reload shadow data if seasonal shadows are enabled
-        if (showSeasonalShadows) {
-          await onUpdate();
-        }
+        onUpdate();
       } catch (error) {
-        // Revert to original position on error
-        tree.x = dragState.initialX;
-        tree.y = dragState.initialY;
         setErrorMessage((error as Error).message || 'Failed to update tree position');
+        onUpdate();
       } finally {
         setDragState(null);
       }
@@ -258,19 +250,13 @@ export function LandCanvas({ land, gardens, trees = [], structures = [], onUpdat
           x: snappedX,
           y: snappedY,
         });
-        // Update local state optimistically
-        structure.x = snappedX;
-        structure.y = snappedY;
         setErrorMessage('');
-        // Reload shadow data if seasonal shadows are enabled
-        if (showSeasonalShadows) {
-          await onUpdate();
-        }
+        // Reload to fetch updated structure data and refresh all components
+        await onUpdate();
       } catch (error) {
-        // Revert to original position on error
-        structure.x = dragState.initialX;
-        structure.y = dragState.initialY;
         setErrorMessage((error as Error).message || 'Failed to update structure position');
+        // Reload to revert to server state
+        await onUpdate();
       } finally {
         setDragState(null);
       }
