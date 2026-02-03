@@ -19,9 +19,10 @@ from datetime import date, datetime, timedelta
 
 from app.models import (
     User, Garden, PlantVariety, SeedBatch, PlantingEvent, CareTask,
-    SensorReading, SoilSample, IrrigationEvent, IrrigationZone, IrrigationSource,
-    Land, Tree, Structure, GerminationEvent, WateringEvent, CompanionRelationship
+    SoilSample, Land, Tree, Structure, GerminationEvent, CompanionRelationship
 )
+# SensorReading, IrrigationEvent, IrrigationZone, IrrigationSource, WateringEvent
+# removed in platform simplification
 
 
 # =============================================================================

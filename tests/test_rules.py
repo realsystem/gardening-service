@@ -3,7 +3,7 @@ import pytest
 from datetime import date, timedelta
 from unittest.mock import Mock
 
-from app.rules.rules import HarvestRule, WateringRule, SeedViabilityRule
+from app.rules.rules import HarvestRule, SeedViabilityRule
 from app.models.care_task import TaskType, TaskSource
 from app.models.plant_variety import WaterRequirement
 from app.models.planting_event import PlantingEvent
@@ -65,87 +65,6 @@ class TestHarvestRule:
 
         # No task should be generated
         assert len(tasks) == 0
-
-
-class TestWateringRule:
-    """Test WateringRule task generation logic"""
-
-    def test_watering_rule_high_requirement(self, test_db, sample_plant_variety):
-        """Test watering schedule for high water requirement plants (every 2 days)"""
-        planting_date = date(2024, 5, 15)
-        planting_event = Mock()
-        planting_event.id = 1
-        planting_event.plant_variety_id = sample_plant_variety.id
-        planting_event.planting_date = planting_date
-        planting_event.location_in_garden = "Bed 1, Row 2"
-
-        rule = WateringRule()
-        context = {
-            "planting_event": planting_event,
-            "user_id": 1,
-        }
-        tasks = rule.generate_tasks(test_db, context)
-
-        # Should generate 4 watering tasks (TASKS_AHEAD = 4)
-        assert len(tasks) == 4
-
-        # Verify first task
-        first_task = tasks[0]
-        assert first_task["task_type"] == TaskType.WATER
-        assert "Water Tomato" in first_task["title"]
-        assert first_task["due_date"] == planting_date + timedelta(days=2)
-
-        # Verify second task is 2 days after first
-        second_task = tasks[1]
-        assert second_task["due_date"] == planting_date + timedelta(days=4)
-
-    def test_watering_rule_medium_requirement(self, test_db, sample_plant_variety):
-        """Test watering schedule for medium water requirement (every 4 days)"""
-        sample_plant_variety.water_requirement = WaterRequirement.MEDIUM
-        test_db.commit()
-
-        planting_date = date(2024, 5, 15)
-        planting_event = Mock()
-        planting_event.id = 1
-        planting_event.plant_variety_id = sample_plant_variety.id
-        planting_event.planting_date = planting_date
-        planting_event.location_in_garden = "Garden"
-
-        rule = WateringRule()
-        context = {
-            "planting_event": planting_event,
-            "user_id": 1,
-        }
-        tasks = rule.generate_tasks(test_db, context)
-
-        # Verify spacing is 4 days
-        assert len(tasks) == 4
-        assert tasks[0]["due_date"] == planting_date + timedelta(days=4)
-        assert tasks[1]["due_date"] == planting_date + timedelta(days=8)
-
-    def test_watering_rule_low_requirement(self, test_db, sample_plant_variety):
-        """Test watering schedule for low water requirement (every 7 days)"""
-        sample_plant_variety.water_requirement = WaterRequirement.LOW
-        test_db.commit()
-
-        planting_date = date(2024, 5, 15)
-        planting_event = Mock()
-        planting_event.id = 1
-        planting_event.plant_variety_id = sample_plant_variety.id
-        planting_event.planting_date = planting_date
-        planting_event.location_in_garden = None
-
-        rule = WateringRule()
-        context = {
-            "planting_event": planting_event,
-            "user_id": 1,
-        }
-        tasks = rule.generate_tasks(test_db, context)
-
-        # Verify spacing is 7 days
-        assert len(tasks) == 4
-        assert tasks[0]["due_date"] == planting_date + timedelta(days=7)
-        assert tasks[1]["due_date"] == planting_date + timedelta(days=14)
 
 
 class TestSeedViabilityRule:
