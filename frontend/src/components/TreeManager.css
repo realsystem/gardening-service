@@ -167,12 +167,14 @@
 }
 
 .btn-danger {
-  color: #dc3545;
+  background-color: #dc3545;
+  color: white;
   border-color: #dc3545;
 }
 
 .btn-danger:hover {
-  background-color: #fff5f5;
+  background-color: #c82333;
+  border-color: #bd2130;
 }
 
 .error-message {
