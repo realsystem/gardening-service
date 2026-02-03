@@ -14,7 +14,6 @@ from app.models.plant_variety import PlantVariety, WaterRequirement, SunRequirem
 from app.models.seed_batch import SeedBatch
 from app.models.garden import Garden, GardenType, LightSourceType, HydroSystemType
 from app.models.planting_event import PlantingEvent, PlantingMethod, PlantHealth
-from app.models.sensor_reading import SensorReading
 from app.models.care_task import CareTask, TaskType, TaskPriority, TaskStatus, TaskSource
 from app.services.auth_service import AuthService
 
@@ -352,45 +351,6 @@ def hydroponic_planting_event(test_db, sample_user, hydroponic_garden, lettuce_v
     test_db.commit()
     test_db.refresh(planting_event)
     return planting_event
-
-
-# Sensor reading fixtures
-@pytest.fixture
-def indoor_sensor_reading(test_db, sample_user, indoor_garden):
-    """Create an indoor sensor reading"""
-    reading = SensorReading(
-        user_id=sample_user.id,
-        garden_id=indoor_garden.id,
-        reading_date=date.today(),
-        temperature_f=70.0,
-        humidity_percent=55.0,
-        light_hours=16.0
-    )
-    test_db.add(reading)
-    test_db.commit()
-    test_db.refresh(reading)
-    return reading
-
-
-@pytest.fixture
-def hydroponic_sensor_reading(test_db, sample_user, hydroponic_garden):
-    """Create a hydroponic sensor reading"""
-    reading = SensorReading(
-        user_id=sample_user.id,
-        garden_id=hydroponic_garden.id,
-        reading_date=date.today(),
-        temperature_f=72.0,
-        humidity_percent=60.0,
-        light_hours=18.0,
-        ph_level=6.0,
-        ec_ms_cm=1.5,
-        ppm=1050,
-        water_temp_f=68.0
-    )
-    test_db.add(reading)
-    test_db.commit()
-    test_db.refresh(reading)
-    return reading
 
 
 # Care task fixtures
