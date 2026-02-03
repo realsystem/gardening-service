@@ -33,9 +33,10 @@ FROM python:3.12-slim
 # Set working directory
 WORKDIR /app
 
-# Install runtime dependencies only
+# Install runtime dependencies for psycopg2 and PostgreSQL
 RUN apt-get update && apt-get install -y --no-install-recommends \
     postgresql-client \
+    libpq5 \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy installed packages from builder
