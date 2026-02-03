@@ -8,7 +8,6 @@ import enum
 
 class TaskType(str, enum.Enum):
     """Types of care tasks"""
-    WATER = "water"
     FERTILIZE = "fertilize"
     PRUNE = "prune"
     MULCH = "mulch"
@@ -26,7 +25,6 @@ class TaskType(str, enum.Enum):
     ADJUST_PH = "adjust_ph"  # Adjust pH levels
     REPLACE_NUTRIENT_SOLUTION = "replace_nutrient_solution"  # Replace/top-up solution
     CLEAN_RESERVOIR = "clean_reservoir"  # Clean reservoir/system maintenance
-    ADJUST_WATER_CIRCULATION = "adjust_water_circulation"  # Pumps, aeration
     OTHER = "other"
 
 

@@ -5,7 +5,7 @@ from typing import List, Dict, Any
 from sqlalchemy.orm import Session
 
 from app.rules.base_rule import BaseRule
-from app.rules.rules import HarvestRule, WateringRule, SeedViabilityRule
+from app.rules.rules import HarvestRule, SeedViabilityRule
 from app.utils.metrics import MetricsCollector
 from app.utils.feature_flags import is_rule_engine_enabled
 
@@ -39,7 +39,6 @@ class TaskGenerator:
         # Register all rules
         self.rules: List[BaseRule] = [
             HarvestRule(),
-            WateringRule(),
             SeedViabilityRule(),
         ]
 
@@ -61,7 +60,7 @@ class TaskGenerator:
         }
 
         # Determine which rules to apply based on garden type
-        rules = [HarvestRule(), WateringRule()]
+        rules = [HarvestRule()]
 
         # Add indoor-specific rules if this is an indoor garden
         if planting_event.garden and planting_event.garden.garden_type == GardenType.INDOOR:
