@@ -206,10 +206,15 @@ def create_gardens(db: Session, user: User, land: Land, variety_repo: PlantVarie
         db.commit()
         db.refresh(garden)
 
-        # Add planting events for each plant type in the garden
+        # Add planting events for each plant type in the garden with positions
+        planting_index = 0
         for variety_list, plant_name, days_ago in garden_data["plants"]:
             if variety_list:
                 variety = variety_list[0]
+                # Calculate position within garden (centered, spaced out)
+                x_offset = (planting_index % 2) * 0.8 + 0.5  # Spread horizontally
+                y_offset = (planting_index // 2) * 0.8 + 0.5  # Spread vertically
+
                 planting = PlantingEvent(
                     user_id=user.id,
                     garden_id=garden.id,
@@ -217,10 +222,13 @@ def create_gardens(db: Session, user: User, land: Land, variety_repo: PlantVarie
                     plant_count=10,
                     planting_method=PlantingMethod.DIRECT_SOW,
                     planting_date=(datetime.utcnow() - timedelta(days=days_ago)).date(),
+                    x=x_offset,
+                    y=y_offset,
                     notes=f"Planted {plant_name} in {garden.name}"
                 )
                 db.add(planting)
                 total_plants += 1
+                planting_index += 1
 
     db.commit()
     print(f"✓ Created {len(gardens)} gardens with {total_plants} planting events")

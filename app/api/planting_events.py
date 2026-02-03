@@ -25,6 +25,10 @@ def create_planting_event(
     """
     Create a new planting event.
     Automatically generates care tasks (watering, harvest) based on rules.
+
+    Note: Set x/y coordinates (positions within the garden) to enable
+    companion planting analysis. Without positions, companion analysis
+    cannot calculate distances between plants.
     """
     # Verify garden exists and belongs to user
     garden_repo = GardenRepository(db)

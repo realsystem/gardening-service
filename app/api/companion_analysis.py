@@ -94,7 +94,7 @@ def get_companion_analysis(
             "beneficial_pairs": [],
             "conflicts": [],
             "suggestions": [],
-            "message": "Need at least 2 plants for companion analysis"
+            "message": "Need at least 2 plants with positions set for companion analysis. Add plants and set their x/y coordinates."
         }
 
     # Build lookup maps
