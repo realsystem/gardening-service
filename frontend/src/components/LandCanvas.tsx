@@ -222,11 +222,11 @@ export function LandCanvas({ land, gardens, trees = [], structures = [], onUpdat
           y: snappedY,
         });
         setErrorMessage('');
-        onUpdate();
+        await onUpdate(); // Wait for data reload before clearing drag state
+        setDragState(null);
       } catch (error) {
         setErrorMessage((error as Error).message || 'Failed to update tree position');
-        onUpdate();
-      } finally {
+        await onUpdate(); // Reload on error to revert to server state
         setDragState(null);
       }
     } else if (dragState.type === 'structure') {
@@ -251,13 +251,11 @@ export function LandCanvas({ land, gardens, trees = [], structures = [], onUpdat
           y: snappedY,
         });
         setErrorMessage('');
-        // Reload to fetch updated structure data and refresh all components
-        await onUpdate();
+        await onUpdate(); // Wait for data reload before clearing drag state
+        setDragState(null);
       } catch (error) {
         setErrorMessage((error as Error).message || 'Failed to update structure position');
-        // Reload to revert to server state
-        await onUpdate();
-      } finally {
+        await onUpdate(); // Reload on error to revert to server state
         setDragState(null);
       }
     }
