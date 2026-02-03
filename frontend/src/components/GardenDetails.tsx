@@ -7,10 +7,9 @@ import { NutrientOptimizationPanel } from './NutrientOptimizationPanel';
 
 interface GardenDetailsProps {
   gardenId: number;
-  onBack: () => void;
 }
 
-export function GardenDetails({ gardenId, onBack }: GardenDetailsProps) {
+export function GardenDetails({ gardenId }: GardenDetailsProps) {
   const [details, setDetails] = useState<GardenDetailsType | null>(null);
   const [shadingInfo, setShadingInfo] = useState<GardenShadingInfo | null>(null);
   const [loading, setLoading] = useState(true);
@@ -51,9 +50,6 @@ export function GardenDetails({ gardenId, onBack }: GardenDetailsProps) {
     return (
       <div style={{ padding: '20px' }}>
         <div className="error">{error}</div>
-        <button onClick={onBack} className="btn" style={{ marginTop: '15px' }}>
-          Back to Gardens
-        </button>
       </div>
     );
   }
@@ -84,12 +80,6 @@ export function GardenDetails({ gardenId, onBack }: GardenDetailsProps) {
 
   return (
     <div style={{ padding: '20px' }}>
-      <div style={{ marginBottom: '20px' }}>
-        <button onClick={onBack} className="btn btn-secondary">
-          ← Back to Gardens
-        </button>
-      </div>
-
       {/* Garden Header */}
       <div style={{ marginBottom: '30px' }}>
         <h1>{garden.name}</h1>
