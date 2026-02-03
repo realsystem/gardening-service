@@ -8,7 +8,7 @@ from app.models.plant_variety import PlantVariety, WaterRequirement, SunRequirem
 from app.models.seed_batch import SeedBatch
 from app.models.garden import Garden, GardenType, LightSourceType, HydroSystemType
 from app.models.planting_event import PlantingEvent, PlantingMethod, PlantHealth
-from app.models.sensor_reading import SensorReading
+# SensorReading model removed in platform simplification
 from app.models.care_task import CareTask, TaskType, TaskPriority, TaskStatus, TaskSource
 
 
@@ -149,43 +149,13 @@ class TestPlantingEventModel:
         assert event.user.email == "test@example.com"
 
 
-class TestSensorReadingModel:
-    """Test SensorReading model"""
-
-    def test_create_indoor_sensor_reading(self, test_db, indoor_sensor_reading):
-        """Test creating an indoor sensor reading"""
-        assert indoor_sensor_reading.id is not None
-        assert indoor_sensor_reading.temperature_f == 70.0
-        assert indoor_sensor_reading.humidity_percent == 55.0
-        assert indoor_sensor_reading.light_hours == 16.0
-        assert indoor_sensor_reading.ph_level is None
-
-    def test_create_hydroponic_sensor_reading(self, test_db, hydroponic_sensor_reading):
-        """Test creating a hydroponic sensor reading"""
-        assert hydroponic_sensor_reading.id is not None
-        assert hydroponic_sensor_reading.temperature_f == 72.0
-        assert hydroponic_sensor_reading.ph_level == 6.0
-        assert hydroponic_sensor_reading.ec_ms_cm == 1.5
-        assert hydroponic_sensor_reading.ppm == 1050
-        assert hydroponic_sensor_reading.water_temp_f == 68.0
-
-    def test_sensor_reading_relationships(self, test_db, indoor_sensor_reading):
-        """Test sensor reading relationships"""
-        reading = test_db.query(SensorReading).filter(
-            SensorReading.id == indoor_sensor_reading.id
-        ).first()
-
-        assert reading.garden.name == "Indoor Grow Room"
-        assert reading.user.email == "test@example.com"
-
-
 class TestCareTaskModel:
     """Test CareTask model"""
 
     def test_create_care_task(self, test_db, sample_care_task):
         """Test creating a care task"""
         assert sample_care_task.id is not None
-        assert sample_care_task.task_type == TaskType.WATER
+        assert sample_care_task.task_type == TaskType.HARVEST
         assert sample_care_task.priority == TaskPriority.MEDIUM
         assert sample_care_task.status == TaskStatus.PENDING
         assert sample_care_task.is_recurring is False
